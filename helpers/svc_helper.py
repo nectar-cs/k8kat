@@ -1,5 +1,5 @@
 from k8_kat.base.kube_broker import broker
-from utils.utils import Utils
+from utils.main.utils import Utils
 
 
 class SvcHelper:

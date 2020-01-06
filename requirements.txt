@@ -1,3 +1,4 @@
+python-dotenv==0.10.3
 inflection==0.3.1
 cachetools==3.1.1
 certifi==2019.6.16

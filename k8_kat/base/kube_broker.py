@@ -5,7 +5,7 @@ from kubernetes import config, client
 import urllib3
 
 from k8_kat.base.broker_configs import default_config
-from utils.utils import Utils
+from utils.main.utils import Utils
 
 
 class BrokerConnException(Exception):
@@ -23,7 +23,7 @@ class KubeBroker:
     self.client = None
 
   def connect(self, **connect_config):
-    self.connect_config = {**default_config, **connect_config}
+    self.connect_config = {**default_config(), **connect_config}
     connect_in = self.connect_in_cluster
     connect_out = self.connect_out_cluster
     connect_fn = connect_in if self.is_in_cluster_auth() else connect_out
@@ -48,12 +48,13 @@ class KubeBroker:
       return False
 
   def connect_out_cluster(self):
+    cluster_name = self.connect_config['cluster_name']
     sa_name = self.connect_config['sa_name']
     sa_ns = self.connect_config['sa_ns']
+    rep = f"{cluster_name}:{sa_ns}/{sa_name}"
 
     try:
-      print(f"[kube_broker] Out-cluster auth with {self.kubectl()}...")
-
+      print(f"[kube_broker] Out-cluster auth ({rep})...")
       user_token = self.read_target_cluster_user_token()
       configuration = client.Configuration()
       configuration.host = self.read_target_cluster_ip()
@@ -63,7 +64,7 @@ class KubeBroker:
       client.Configuration.set_default(configuration)
       urllib3.disable_warnings()
 
-      print(f"[kube_broker] Out-cluster auth success ({sa_ns}/{sa_name})")
+      print(f"[kube_broker] Out-cluster auth success")
       return True
     except Exception as e:
       print(f"[kube_broker] Out-cluster auth failed ({sa_ns}/{sa_name}): {e}")
@@ -80,8 +81,8 @@ class KubeBroker:
     on_board_config = self.jk_exec('config view')
     clusters = on_board_config['clusters']
     target = self.connect_config['cluster_name']
-    dev_cluster = [c for c in clusters if c['name'] == target][0]
-    return dev_cluster['cluster']['server']
+    cluster_bundle = [c for c in clusters if c['name'] == target][0]
+    return cluster_bundle['cluster']['server']
 
   def read_target_cluster_user_token(self):
     sa_name = self.connect_config['sa_name']

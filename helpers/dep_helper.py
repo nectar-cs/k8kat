@@ -3,7 +3,7 @@
 from k8_kat.base.kube_broker import broker
 from helpers.res_utils import ResUtils
 from helpers.svc_helper import SvcHelper
-from utils.utils import Utils
+from utils.main.utils import Utils
 
 class DepHelper:
   @staticmethod

@@ -5,7 +5,7 @@ from k8_kat.base.kube_broker import broker
 from helpers.res_utils import ResUtils
 from k8_kat.base.kat_res import KatRes
 from k8_kat.pod.pod_utils import PodUtils
-from utils.utils import Utils
+from utils.main.utils import Utils
 
 
 class KatPod(KatRes):

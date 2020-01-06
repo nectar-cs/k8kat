@@ -39,9 +39,9 @@ class ResCollection(UserList):
     return self
 
   def ns(self, *_ns):
-    inst = self() if isinstance(self, type) else self
+    # inst = self() if isinstance(self, type) else self
     actual = list(_ns[0]) if isinstance(_ns[0], list) else list(_ns)
-    return inst.where(ns_in=actual)
+    return self.where(ns_in=actual)
 
   def not_ns(self, *_ns):
     actual = list(_ns[0]) if isinstance(_ns[0], list) else list(_ns)

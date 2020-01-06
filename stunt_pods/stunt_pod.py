@@ -5,7 +5,7 @@ import time
 from kubernetes.stream import stream
 
 from k8_kat.base.k8_kat import K8Kat
-from utils.utils import Utils
+from utils.main.utils import Utils
 
 
 class StuntPod:

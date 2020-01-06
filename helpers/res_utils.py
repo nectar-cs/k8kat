@@ -5,7 +5,7 @@ from kubernetes.client import V1Service, V1ReplicaSet, V1Pod, V1Deployment
 from kubernetes.client.rest import ApiException
 
 from k8_kat.base.kube_broker import broker
-from utils.utils import Utils
+from utils.main.utils import Utils
 
 
 class ResUtils:

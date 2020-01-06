@@ -2,12 +2,12 @@ from kubernetes.client import V1ObjectMeta, V1PodSpec, V1Container
 
 from k8_kat.base.kube_broker import broker
 
-def create(subs):
+def create(**subs):
+  default_labels = dict(app=subs['name'])
   pod = broker.client.V1Pod(
-    api_version='v1',
     metadata=V1ObjectMeta(
       name=subs.get('name'),
-      labels=subs.get('labels')
+      labels=subs.get('labels', default_labels)
     ),
     spec=V1PodSpec(
       containers=[
@@ -22,5 +22,5 @@ def create(subs):
 
   return broker.coreV1.create_namespaced_pod(
     body=pod,
-    namespace=subs.get('ns')
+    namespace=subs['ns']
   )

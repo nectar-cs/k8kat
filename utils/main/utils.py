@@ -2,6 +2,8 @@ import os
 import random
 import string
 import subprocess
+from pathlib import Path
+
 
 class Utils:
 
@@ -15,23 +17,27 @@ class Utils:
     return output.stdout
 
   @staticmethod
-  def run_env():
-    return os.environ.get('ENVIRONMENT', 'development')
+  def root_path() -> str:
+    return str(Path(__file__).parent.parent.parent)
 
   @staticmethod
-  def is_prod():
+  def run_env() -> str:
+    return os.environ.get('KAT_ENV', 'development')
+
+  @staticmethod
+  def is_prod() -> bool:
     return Utils.run_env() == 'production'
 
   @staticmethod
-  def is_dev():
+  def is_dev() -> bool:
     return Utils.run_env() == 'development'
 
   @staticmethod
-  def is_test():
+  def is_test() -> bool:
     return Utils.run_env() == 'test'
 
   @staticmethod
-  def is_ci():
+  def is_ci() -> bool:
     return Utils.is_test() and os.environ.get('CI')
 
   @staticmethod
