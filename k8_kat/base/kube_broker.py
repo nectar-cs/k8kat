@@ -5,7 +5,7 @@ from kubernetes import config, client
 import urllib3
 
 from k8_kat.base.broker_configs import default_config
-from utils.main.utils import Utils
+from utils.main import utils
 
 
 class BrokerConnException(Exception):
@@ -96,7 +96,7 @@ class KubeBroker:
 
   def jk_exec(self, cmd_str):
     cmd_str = f"{self.kubectl()} {cmd_str} -o json"
-    return json.loads(Utils.shell_exec(cmd_str))
+    return json.loads(utils.shell_exec(cmd_str))
 
   def check_connected_or_raise(self):
     if not self.is_connected:

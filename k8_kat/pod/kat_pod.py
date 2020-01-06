@@ -5,7 +5,7 @@ from k8_kat.base.kube_broker import broker
 from helpers.res_utils import ResUtils
 from k8_kat.base.kat_res import KatRes
 from k8_kat.pod.pod_utils import PodUtils
-from utils.main.utils import Utils
+from utils.main import utils
 
 
 class KatPod(KatRes):
@@ -48,7 +48,7 @@ class KatPod(KatRes):
 
   @property
   def ip(self):
-    return Utils.try_or(lambda: self.raw.status.pod_ip)
+    return utils.try_or(lambda: self.raw.status.pod_ip)
 
   @property
   def image(self):
@@ -65,7 +65,7 @@ class KatPod(KatRes):
 
   @property
   def updated_at(self):
-    return Utils.try_or(lambda: self.container_state.started_at)
+    return utils.try_or(lambda: self.container_state.started_at)
 
   @property
   def is_running(self):
@@ -99,7 +99,7 @@ class KatPod(KatRes):
       broker.coreV1.connect_get_namespaced_pod_exec,
       self.name,
       self.namespace,
-      command=Utils.coerce_cmd_format(command),
+      command=utils.coerce_cmd_format(command),
       stderr=False,
       stdin=False,
       stdout=True,

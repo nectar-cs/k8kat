@@ -1,19 +1,20 @@
 import unittest
 
 from k8_kat.base.k8_kat import K8Kat
-from tests.k8_kat.base.k8_kat_test import K8katTest
+from tests.k8_kat.base.cluster_test import ClusterTest
+from utils.testing.fixtures.test_env import TestEnv
 
 
-class TestDepCollection(K8katTest):
+class TestDepCollection(ClusterTest):
 
   @classmethod
   def setUpClass(cls) -> None:
     super(TestDepCollection, cls).setUpClass()
-    cls.create_dep('n1', 'd11', [('c', 'c'), ('l1', 'v1')])
-    cls.create_dep('n1', 'd12', [('c', 'c'), ('l1', 'v2')])
+    TestEnv.create_dep('n1', 'd11', labels=[('c', 'c'), ('l1', 'v1')])
+    TestEnv.create_dep('n1', 'd12', labels=[('c', 'c'), ('l1', 'v2')])
 
-    cls.create_dep('n2', 'd21', [('l1', 'v1')])
-    cls.create_dep('n2', 'd22', [('l2', 'v2')])
+    TestEnv.create_dep('n2', 'd21', labels=[('l1', 'v1')])
+    TestEnv.create_dep('n2', 'd22', labels=[('l2', 'v2')])
 
   def test_names(self):
     result = K8Kat.deps().names('d11').go()

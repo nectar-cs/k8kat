@@ -1,5 +1,5 @@
 import os
-from utils.main.utils import Utils
+from utils.main import utils
 
 _prod_defaults = dict(
   auth_type='in',
@@ -24,30 +24,30 @@ _test_defaults = dict(
   context='microk8s-cluster'
 )
 
-def load_config():
-  if Utils.is_prod():
+def _load_config():
+  if utils.is_prod():
     return _prod_defaults
-  elif Utils.is_dev():
+  elif utils.is_dev():
     return _dev_defaults
-  elif Utils.is_test():
+  elif utils.is_test():
     return _test_defaults
   else:
-    print(f"[broker_configs] WARN unknown env {Utils.run_env()}")
+    print(f"[broker_configs] WARN unknown env {utils.run_env()}")
 
-def load_value(env_var_key, dict_key):
+def _load_value(env_var_key, dict_key):
   env = os.environ
-  from_mem = load_config().get(dict_key)
-  from_env_env = env.get(f"{Utils.run_env().upper()}_{env_var_key}")
+  from_mem = _load_config().get(dict_key)
+  from_env_env = env.get(f"{utils.run_env().upper()}_{env_var_key}")
   from_env = env.get(env_var_key)
   return from_env_env or from_env or from_mem
 
 def default_config():
   return dict(
-    auth_type=load_value('CONNECT_AUTH_TYPE', 'auth_type'),
-    sa_name=load_value('CONNECT_SA_NAME', 'sa_name'),
-    sa_ns=load_value('CONNECT_SA_NS', 'sa_ns'),
-    crb_name=load_value('CONNECT_CRB_NAME', 'cbr_name'),
-    kubectl=load_value('CONNECT_KUBECTL', 'kubectl'),
-    cluster_name=load_value('CONNECT_CLUSTER', 'cluster_name'),
-    context=load_value('CONNECT_CONTEXT', 'context')
+    auth_type=_load_value('CONNECT_AUTH_TYPE', 'auth_type'),
+    sa_name=_load_value('CONNECT_SA_NAME', 'sa_name'),
+    sa_ns=_load_value('CONNECT_SA_NS', 'sa_ns'),
+    crb_name=_load_value('CONNECT_CRB_NAME', 'cbr_name'),
+    kubectl=_load_value('CONNECT_KUBECTL', 'kubectl'),
+    cluster_name=_load_value('CONNECT_CLUSTER', 'cluster_name'),
+    context=_load_value('CONNECT_CONTEXT', 'context')
   )

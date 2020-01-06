@@ -1,11 +1,11 @@
-from utils.main.utils import Utils
+from utils.main import utils
 
 class PodUtils:
 
   @staticmethod
   def container_err(cont_status):
-    term = Utils.try_or(lambda: cont_status.state.terminated)
-    wait = Utils.try_or(lambda: cont_status.state.waiting)
+    term = utils.try_or(lambda: cont_status.state.terminated)
+    wait = utils.try_or(lambda: cont_status.state.waiting)
     if term:
       return term.reason
     elif wait:

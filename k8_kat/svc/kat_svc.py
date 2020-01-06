@@ -4,7 +4,7 @@ from kubernetes.client import V1ServicePort
 
 from k8_kat.base.kube_broker import broker
 from k8_kat.base.kat_res import KatRes
-from utils.main.utils import Utils
+from utils.main import utils
 
 
 class KatSvc(KatRes):
@@ -34,7 +34,7 @@ class KatSvc(KatRes):
   @property
   def external_ip(self) -> str:
     load_bal = self.raw.status.load_balancer
-    return Utils.try_or(lambda: load_bal.ingress[0].ip)
+    return utils.try_or(lambda: load_bal.ingress[0].ip)
 
   @property
   def from_port(self) -> int:
@@ -74,7 +74,7 @@ class KatSvc(KatRes):
   def flat_endpoints(self):
     raw_endpoints = self.raw_endpoints()
     per_sub = lambda sub: [addr for addr in (sub.addresses or [])]
-    return Utils.flatten([per_sub(sub) for sub in raw_endpoints.subsets])
+    return utils.flatten([per_sub(sub) for sub in raw_endpoints.subsets])
 
   @property
   def endpoint_ips(self):

@@ -2,9 +2,9 @@ import unittest
 
 from k8_kat.base.k8_kat import K8Kat
 from k8_kat.svc.kat_svc import KatSvc
-from tests.k8_kat.base.k8_kat_test import K8katTest
+from tests.k8_kat.base.k8_kat_test import ClusterTest
 
-class TestKatSvc(K8katTest):
+class TestKatSvc(ClusterTest):
 
   @classmethod
   def setUpClass(cls) -> None:

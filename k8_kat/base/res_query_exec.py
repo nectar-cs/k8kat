@@ -76,5 +76,3 @@ class ResQueryExec:
     resolve = lambda res: getattr(res, name)
     decide = lambda val: val in values if op else val not in values
     return [r for r in resources if decide(resolve(r))]
-
-

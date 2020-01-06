@@ -5,7 +5,7 @@ from kubernetes.client import V1Service, V1ReplicaSet, V1Pod, V1Deployment
 from kubernetes.client.rest import ApiException
 
 from k8_kat.base.kube_broker import broker
-from utils.main.utils import Utils
+from utils.main import utils
 
 
 class ResUtils:
@@ -14,7 +14,7 @@ class ResUtils:
   @staticmethod
   def label_matrix(matcher):
     pods = matcher.pods()
-    all_labels = Utils.flatten([pod.label_tups for pod in pods])
+    all_labels = utils.flatten([pod.label_tups for pod in pods])
     all_labels = list(set(all_labels))
     all_selectors = list(matcher.pod_select_labels.items())
     col_names = [f"{t[0]}:{t[1]}" for t in all_labels]

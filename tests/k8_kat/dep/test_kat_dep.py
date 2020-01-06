@@ -1,10 +1,10 @@
 import unittest
 
 from k8_kat.dep.kat_dep import KatDep
-from tests.k8_kat.base.k8_kat_test import K8katTest
+from tests.k8_kat.base.k8_kat_test import ClusterTest
 
 
-class TestKatDep(K8katTest):
+class TestKatDep(ClusterTest):
 
   @classmethod
   def setUpClass(cls) -> None:
