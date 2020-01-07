@@ -48,10 +48,11 @@ class KubeBroker:
       return False
 
   def connect_out_cluster(self):
+    context = self.connect_config['context']
     cluster_name = self.connect_config['cluster_name']
     sa_name = self.connect_config['sa_name']
     sa_ns = self.connect_config['sa_ns']
-    rep = f"{cluster_name}:{sa_ns}/{sa_name}"
+    rep = f"cluster={cluster_name}/{context}, perms={sa_ns}/{sa_name}"
 
     try:
       print(f"[kube_broker] Out-cluster auth ({rep})...")

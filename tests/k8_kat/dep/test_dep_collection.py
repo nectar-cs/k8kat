@@ -2,7 +2,7 @@ import unittest
 
 from k8_kat.base.k8_kat import K8Kat
 from tests.k8_kat.base.cluster_test import ClusterTest
-from utils.testing.fixtures.test_env import TestEnv
+from utils.testing.fixtures import test_env
 
 
 class TestDepCollection(ClusterTest):
@@ -10,11 +10,11 @@ class TestDepCollection(ClusterTest):
   @classmethod
   def setUpClass(cls) -> None:
     super(TestDepCollection, cls).setUpClass()
-    TestEnv.create_dep('n1', 'd11', labels=[('c', 'c'), ('l1', 'v1')])
-    TestEnv.create_dep('n1', 'd12', labels=[('c', 'c'), ('l1', 'v2')])
+    test_env.create_dep('n1', 'd11', labels=dict(c='c', l1='v1'))
+    test_env.create_dep('n1', 'd12', labels=dict(c='c', l1='v2'))
 
-    TestEnv.create_dep('n2', 'd21', labels=[('l1', 'v1')])
-    TestEnv.create_dep('n2', 'd22', labels=[('l2', 'v2')])
+    test_env.create_dep('n2', 'd21', labels=dict(l1='v1'))
+    test_env.create_dep('n2', 'd22', labels=dict(l2='v2'))
 
   def test_names(self):
     result = K8Kat.deps().names('d11').go()

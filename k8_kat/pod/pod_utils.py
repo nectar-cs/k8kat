@@ -22,7 +22,7 @@ class PodUtils:
 
   @staticmethod
   def true_pod_state(given_phase: str, cont_status, give_hard_error: bool):
-    error = Utils.try_or(lambda: PodUtils.container_err(cont_status))
+    error = utils.try_or(lambda: PodUtils.container_err(cont_status))
 
     if given_phase == 'Running':
       if not cont_status.ready:

@@ -22,6 +22,7 @@ class ClusterTest(K8KatTest):
 
   @classmethod
   def setUpClass(cls) -> None:
+    super(ClusterTest, cls).setUpClass()
     test_env.terraform()
     broker.connect()
     test_env.create_namespaces()
