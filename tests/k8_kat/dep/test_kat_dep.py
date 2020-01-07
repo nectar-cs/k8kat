@@ -1,7 +1,8 @@
 import unittest
 
 from k8_kat.dep.kat_dep import KatDep
-from tests.k8_kat.base.k8_kat_test import ClusterTest
+from tests.k8_kat.base.cluster_test import ClusterTest
+from utils.testing.fixtures import test_env
 
 
 class TestKatDep(ClusterTest):
@@ -9,8 +10,8 @@ class TestKatDep(ClusterTest):
   @classmethod
   def setUpClass(cls) -> None:
     super(TestKatDep, cls).setUpClass()
-    cls.create_dep('n1', 'd1')
-    cls.nk_label_dep('n1', 'd1', [('l1', 'v1')])
+    test_env.create_dep('n1', 'd1')
+    test_env.nk_label_dep('n1', 'd1', [('l1', 'v1')])
 
   def test_name(self):
     kat_dep = KatDep(self.read_dep('n1', 'd1'))
@@ -21,7 +22,7 @@ class TestKatDep(ClusterTest):
     self.assertEqual(kat_dep.labels, {'app': 'd1', 'l1': 'v1'})
 
   def test_commit(self):
-    self.nk_apply('n1', 'commit-annotated-dep')
+    test_env.k_apply('commit-annotated-dep', 'n1')
     kat_dep = KatDep(self.read_dep('n1', 'da1'))
     self.assertDictEqual(kat_dep.commit, ({
       'sha': 'sha',

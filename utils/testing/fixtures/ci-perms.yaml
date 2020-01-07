@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  namespace: nectar
+  namespace: default
   name: nectar-ci
 
 ---
@@ -12,7 +12,7 @@ metadata:
   name: nectar-ci
 subjects:
 - kind: User
-  name: system:serviceaccount:nectar:nectar-ci
+  name: system:serviceaccount:default:nectar-ci
 roleRef:
   kind: ClusterRole
   name: cluster-admin

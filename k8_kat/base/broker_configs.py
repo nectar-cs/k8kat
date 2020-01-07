@@ -17,11 +17,11 @@ _dev_defaults = dict(
 _test_defaults = dict(
   auth_type='out',
   sa_name='nectar-ci',
-  sa_ns='nectar',
+  sa_ns='default',
   kubectl="microk8s.kubectl",
   crb_name='nectar-ci',
   cluster_name='microk8s-cluster',
-  context='microk8s-cluster'
+  context='microk8s'
 )
 
 def _load_config():
