@@ -7,11 +7,12 @@ _prod_defaults = dict(
 
 _dev_defaults = dict(
   auth_type='out',
-  sa_name='nectar-dev',
-  sa_ns='nectar',
+  sa_name='nectar-ci',
+  sa_ns='default',
   kubectl='kubectl',
   crb_name='nectar',
-  cluster_name='dev'
+  cluster_name='dev',
+  context=None
 )
 
 _test_defaults = dict(

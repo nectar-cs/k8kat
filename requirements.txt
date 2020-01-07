@@ -1,9 +1,0 @@
-python-dotenv==0.10.3
-inflection==0.3.1
-chardet==3.0.4
-kubernetes==10.0.0
-MarkupSafe==1.1.1
-python-dateutil==2.8.0
-rsa==4.0
-six==1.12.0
-urllib3

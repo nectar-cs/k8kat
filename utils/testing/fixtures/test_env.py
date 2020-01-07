@@ -79,5 +79,7 @@ def cleanup():
 
 
 def terraform():
+  utils.set_run_env('test')
   context = default_config()['context']
+  print(f"Terraforming with context {context}")
   k_apply(f"ci-perms", None, context)
