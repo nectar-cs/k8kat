@@ -13,15 +13,15 @@ NAMESPACES = ['n1', 'n2', 'n3']
 
 
 def create_dep(ns: str, name: str, **subs):
-  simple_dep.create(ns=ns, name=name, **subs)
+  return simple_dep.create(ns=ns, name=name, **subs)
 
 
 def create_svc(ns: str, name: str, **subs):
-  simple_svc.create(name=name, ns=ns, **subs)
+  return simple_svc.create(name=name, ns=ns, **subs)
 
 
 def create_pod(ns: str, name: str, **subs):
-  simple_pod.create(name=name, ns=ns, **subs)
+  return simple_pod.create(name=name, ns=ns, **subs)
 
 
 def nk_label_dep(ns: str, name: str, labels: List[Tuple[str, str]]):

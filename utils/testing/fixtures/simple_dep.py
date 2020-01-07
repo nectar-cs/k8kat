@@ -1,7 +1,8 @@
+import time
+
 from kubernetes.client import V1ObjectMeta, V1PodSpec, V1Container, V1DeploymentSpec, V1PodTemplateSpec, V1LabelSelector
 
 from k8_kat.base.kube_broker import broker
-
 
 def create(**subs):
   default_labels = dict(app=subs['name'])
@@ -34,7 +35,19 @@ def create(**subs):
     )
   )
 
-  return broker.appsV1Api.create_namespaced_deployment(
+  broker.appsV1Api.create_namespaced_deployment(
     body=deployment,
     namespace=subs['ns']
   )
+
+  eq_exprs = [f"{t[0]}={t[1]}" for t in list(labels.items())]
+  def pods():
+    return broker.coreV1.list_namespaced_pod(
+      namespace=subs['ns'],
+      label_selector=",".join(eq_exprs)
+    ).items
+
+  while not len(pods()) == deployment.spec.replicas:
+    time.sleep(1)
+
+  return deployment

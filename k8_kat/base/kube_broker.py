@@ -23,7 +23,6 @@ class KubeBroker:
     self.client = None
 
   def connect(self, **connect_config):
-    print(default_config())
     self.connect_config = {**default_config(), **connect_config}
     connect_in = self.connect_in_cluster
     connect_out = self.connect_out_cluster
