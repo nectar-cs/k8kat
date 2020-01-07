@@ -4,15 +4,17 @@ from k8_kat.base.kube_broker import broker
 
 def create(**subs):
   default_labels = dict(app=subs['name'])
+  labels = {**subs.get('labels', {}), **default_labels}
+
   pod = broker.client.V1Pod(
     metadata=V1ObjectMeta(
       name=subs.get('name'),
-      labels=subs.get('labels', default_labels)
+      labels=labels
     ),
     spec=V1PodSpec(
       containers=[
         V1Container(
-          name="primary",
+          name=subs.get('container', 'primary'),
           image=subs.get('image', 'nginx'),
           image_pull_policy="Always"
         )

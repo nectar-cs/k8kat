@@ -17,7 +17,7 @@ class ClusterTest(K8KatTest):
 
   @staticmethod
   def ensure_no_pods(namespaces=None):
-    test_env.delete_pods(namespaces)
+    pass
 
   @classmethod
   def setUpClass(cls) -> None:

@@ -67,17 +67,15 @@ def cleanup():
   for ns in victim_namespaces():
     broker.coreV1.delete_namespace(ns)
 
-  if len(victim_namespaces()):
-    print(f"Waiting for namespaces {victim_namespaces()} to be destroyed...")
+  try:
+    if len(victim_namespaces()):
+      print(f"[test_env] Waiting for ns {victim_namespaces()} to be destroyed...")
 
-  while len(victim_namespaces()):
-    time.sleep(2)
-
-
-def delete_pods(namespaces):
-  namespaces = namespaces if namespaces else NAMESPACES
-  for ns in namespaces:
-    broker.coreV1.delete_collection_namespaced_pod(namespace=ns)
+    while len(victim_namespaces()):
+      time.sleep(2)
+  except Exception as e:
+    print(f"[test_env] Error {str(e)} monitoring ns destruction")
+    pass
 
 
 def terraform():

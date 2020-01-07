@@ -2,14 +2,16 @@ import unittest
 
 from k8_kat.base.k8_kat import K8Kat
 from k8_kat.svc.kat_svc import KatSvc
-from tests.k8_kat.base.k8_kat_test import ClusterTest
+from tests.k8_kat.base.cluster_test import ClusterTest
+from utils.testing.fixtures import test_env
+
 
 class TestKatSvc(ClusterTest):
 
   @classmethod
   def setUpClass(cls) -> None:
     super(TestKatSvc, cls).setUpClass()
-    cls.create_svc('n1', 's1')
+    test_env.create_svc('n1', 's1')
 
   def setUp(self) -> None:
     self.subject: KatSvc = K8Kat.svcs().ns('n1').find('s1')
