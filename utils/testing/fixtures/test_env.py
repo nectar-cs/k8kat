@@ -1,4 +1,5 @@
 import os
+import time
 from typing import List, Tuple
 
 from kubernetes.client import V1Namespace, V1ObjectMeta
@@ -61,10 +62,16 @@ def create_namespaces():
 
 def cleanup():
   api = broker.coreV1
-  crt_nss = [ns.metadata.name for ns in api.list_namespace().items]
-  victim_namespaces = list(set(crt_nss) & set(NAMESPACES))
-  for ns in victim_namespaces:
+  crt_nss = lambda: [_ns.metadata.name for _ns in api.list_namespace().items]
+  victim_namespaces = lambda: list(set(crt_nss()) & set(NAMESPACES))
+  for ns in victim_namespaces():
     broker.coreV1.delete_namespace(ns)
+
+  if len(victim_namespaces()):
+    print(f"Waiting for namespaces {victim_namespaces()} to be destroyed...")
+
+  while len(victim_namespaces()):
+    time.sleep(2)
 
 
 def delete_pods(namespaces):

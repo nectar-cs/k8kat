@@ -1,6 +1,5 @@
 from kubernetes.client import V1Deployment, V1Service
 
-from k8_kat.base.kube_broker import broker
 from helpers.res_utils import ResUtils
 from tests.k8_kat.base.k8_kat_test import K8KatTest
 from utils.testing.fixtures import test_env
@@ -23,10 +22,9 @@ class ClusterTest(K8KatTest):
   @classmethod
   def setUpClass(cls) -> None:
     super(ClusterTest, cls).setUpClass()
-    test_env.terraform()
-    broker.connect()
+    test_env.cleanup()
     test_env.create_namespaces()
 
   @classmethod
   def tearDownClass(cls):
-    test_env.cleanup()
+    pass
