@@ -4,7 +4,7 @@ from kubernetes.client import V1ServicePort
 
 from k8_kat.base.kube_broker import broker
 from k8_kat.base.kat_res import KatRes
-from utils.main import utils
+from k8_kat.utils.main import utils
 
 
 class KatSvc(KatRes):

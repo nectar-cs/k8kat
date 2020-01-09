@@ -3,7 +3,8 @@ import unittest
 from k8_kat.base.k8_kat import K8Kat
 from k8_kat.dep.kat_dep import KatDep
 from tests.k8_kat.base.cluster_test import ClusterTest
-from utils.testing.fixtures import test_env
+from k8_kat.utils.testing.fixtures import test_env
+
 
 class TestKatDep(ClusterTest):
 
@@ -42,11 +43,11 @@ class TestKatDep(ClusterTest):
     ))
 
   def test_image_name(self):
-    kat_dep = KatDep(self.read_dep('n1', 'd1'))
+    kat_dep = K8Kat.deps().ns('n1').find('d1')
     self.assertEqual(kat_dep.image_name, 'nginx')
 
   def test_container_name(self):
-    kat_dep = KatDep(self.read_dep('n1', 'd1'))
+    kat_dep = K8Kat.deps().ns('n1').find('d1')
     self.assertEqual(kat_dep.container_name, 'primary')
 
 

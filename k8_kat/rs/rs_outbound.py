@@ -1,4 +1,4 @@
-from helpers.res_utils import ResUtils
+from k8_kat.utils.main.res_utils import ResUtils
 
 
 class RsOutbound:

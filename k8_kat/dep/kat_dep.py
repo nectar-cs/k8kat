@@ -3,7 +3,7 @@ from typing import Dict, List
 from kubernetes.client import V1PodSpec, V1Container, V1Pod, V1Scale, V1ScaleSpec
 
 from k8_kat.base.kube_broker import broker
-from helpers.res_utils import ResUtils
+from k8_kat.utils.main import res
 from k8_kat.base.kat_res import KatRes
 from k8_kat.pod.kat_pod import KatPod
 from k8_kat.svc.kat_svc import KatSvc
@@ -85,15 +85,15 @@ class KatDep(KatRes):
   def find_and_assoc_svcs(self):
     from k8_kat.base.k8_kat import K8Kat
     candidate_svcs = K8Kat.svcs().ns(self.ns).go()
-    checker = lambda svc: ResUtils.dep_matches_svc(self.raw, svc.raw)
+    checker = lambda svc: res.dep_matches_svc(self.raw, svc.raw)
     self.assoced_svcs = [s for s in candidate_svcs if checker(s)]
 
   def assoc_pods(self, candidates: List[V1Pod]) -> None:
-    checker = lambda pod: ResUtils.dep_owns_pod(self.raw, pod)
+    checker = lambda pod: res.dep_owns_pod(self.raw, pod)
     self.assoced_pods = [KatPod(pod) for pod in candidates if checker(pod)]
 
   def assoc_svcs(self, candidates: [KatSvc]) -> None:
-    checker = lambda svc: ResUtils.dep_matches_svc(self.raw, svc)
+    checker = lambda svc: res.dep_matches_svc(self.raw, svc)
     self.assoced_svcs = [KatSvc(svc) for svc in candidates if checker(svc)]
 
   def _perform_patch_self(self):
@@ -127,3 +127,14 @@ class KatDep(KatRes):
 
   def __repr__(self):
     return f"Dep[{self.ns}:{self.name}({self.labels})]"
+
+
+  @staticmethod
+  def across_namespaces() -> List[Dict[str, str]]:
+    from k8_kat.dep.dep_collection import KatDeps
+    deps = KatDeps().not_ns('kube-system').go()
+    output = []
+    for name in set([dep.name for dep in deps]):
+      appears_in = set([dep.ns for dep in deps if dep.name == name])
+      output.append(dict(name=name, namespaces=list(appears_in)))
+    return output

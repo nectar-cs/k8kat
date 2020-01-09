@@ -2,10 +2,10 @@ from kubernetes.client.rest import ApiException
 from kubernetes.stream import stream
 
 from k8_kat.base.kube_broker import broker
-from helpers.res_utils import ResUtils
+from k8_kat.utils.main import res
 from k8_kat.base.kat_res import KatRes
 from k8_kat.pod.pod_utils import PodUtils
-from utils.main import utils
+from k8_kat.utils.main import utils
 
 
 class KatPod(KatRes):
@@ -90,7 +90,7 @@ class KatPod(KatRes):
         since_seconds=seconds
       )
       log_lines = log_dump.split("\n")
-      return [ResUtils.try_clean_log_line(line) for line in log_lines]
+      return [res.try_clean_log_line(line) for line in log_lines]
     except ApiException:
       return None
 

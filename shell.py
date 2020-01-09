@@ -1,10 +1,8 @@
 import argparse
 
-from k8_kat.base.k8_kat import K8Kat
 from k8_kat.base.kube_broker import broker
-from utils.testing.fixtures import test_env
-from utils.main import utils
-
+from k8_kat.cluster import kat_cluster
+from k8_kat.utils.main import utils
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--env', '-e', help=f"Set the env: {utils.legal_envs}")

@@ -1,4 +1,5 @@
-from utils.main import utils
+from k8_kat.utils.main import utils
+
 
 class PodUtils:
 

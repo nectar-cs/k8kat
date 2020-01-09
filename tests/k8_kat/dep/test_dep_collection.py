@@ -2,7 +2,7 @@ import unittest
 
 from k8_kat.base.k8_kat import K8Kat
 from tests.k8_kat.base.cluster_test import ClusterTest
-from utils.testing.fixtures import test_env
+from k8_kat.utils.testing.fixtures import test_env
 
 
 class TestDepCollection(ClusterTest):
