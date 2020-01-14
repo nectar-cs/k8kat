@@ -50,7 +50,7 @@ class KatDep(KatRes):
 
   @property
   def commit(self) -> Dict[str, str]:
-    every = self.raw.metadata.annotations
+    every = self.raw.metadata.annotations or {}
     return dict([(k, every.get(f"commit-{k}")) for k in COMMIT_KEYS])
 
   @property
@@ -136,5 +136,5 @@ class KatDep(KatRes):
     output = []
     for name in set([dep.name for dep in deps]):
       appears_in = set([dep.ns for dep in deps if dep.name == name])
-      output.append(dict(name=name, namespaces=list(appears_in)))
+      output.append(dict(name=name, namespaces=sorted(list(appears_in))))
     return output

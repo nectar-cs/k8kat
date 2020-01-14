@@ -1,5 +1,6 @@
 import argparse
 
+from k8_kat.base.k8_kat import K8Kat
 from k8_kat.base.kube_broker import broker
 from k8_kat.cluster import kat_cluster
 from k8_kat.utils.main import utils
