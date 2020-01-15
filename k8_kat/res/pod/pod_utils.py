@@ -4,6 +4,14 @@ from k8_kat.utils.main import utils
 
 HEADER_BODY_DELIM = "\r\n\r\n"
 
+
+def coerce_cmd_format(cmd):
+  if isinstance(cmd, str):
+    return cmd.split(" ")
+  else:
+    return cmd
+
+
 def build_curl_cmd(**params):
   raw_headers = params.get('headers', {})
   headers = [f"{0}: {1}".format(k, v) for k, v in raw_headers]

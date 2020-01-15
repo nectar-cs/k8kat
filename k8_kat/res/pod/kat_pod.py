@@ -130,7 +130,7 @@ class KatPod(KatRes):
       broker.coreV1.connect_get_namespaced_pod_exec,
       self.name,
       self.namespace,
-      command=command,
+      command=pod_utils.coerce_cmd_format(command),
       stderr=True,
       stdin=False,
       stdout=True,
