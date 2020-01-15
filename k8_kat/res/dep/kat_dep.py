@@ -58,6 +58,10 @@ class KatDep(KatRes):
     return self.raw.spec.replicas
 
   @property
+  def avail_replicas(self):
+    return self.desired_replicas - self.raw.status.unavailableReplicas
+
+  @property
   def image_pull_policy(self):
     cont_spec = self.raw_container_spec
     return cont_spec and cont_spec.image_pull_policy
@@ -126,8 +130,8 @@ class KatDep(KatRes):
     self._am_dirty = True
 
   def __repr__(self):
-    return f"Dep[{self.ns}:{self.name}({self.labels})]"
-
+    pod_ct = f"{3}/{self.desired_replicas}"
+    return f"\n{self.ns}:{self.name} | {pod_ct}"
 
   @staticmethod
   def across_namespaces() -> List[Dict[str, str]]:

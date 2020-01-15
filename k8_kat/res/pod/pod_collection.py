@@ -9,6 +9,9 @@ class KatPods(ResCollection):
   def create_query(self):
     return ResQuery(PodQueryExec(), KatPod)
 
+  def default(self):
+    return self.ns('default')
+
   def running(self):
     return self.feature_is('status', 'Running')
 
