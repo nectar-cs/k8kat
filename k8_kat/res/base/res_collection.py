@@ -24,7 +24,7 @@ class ResCollection(UserList):
 
   def find(self, name):
     candidates = self.names(name).go()
-    return len(candidates) and candidates[0]
+    return candidates[0] if len(candidates) else None
 
   def names(self, *_names):
     actual = list(_names[0]) if isinstance(_names[0], list) else list(_names)
