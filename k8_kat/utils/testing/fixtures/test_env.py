@@ -4,8 +4,8 @@ from typing import List, Tuple
 
 from kubernetes.client import V1Namespace, V1ObjectMeta
 
-from k8_kat.base.broker_configs import default_config
-from k8_kat.base.kube_broker import broker
+from k8_kat.auth.broker_configs import default_config
+from k8_kat.auth.kube_broker import broker
 from k8_kat.utils.testing.fixtures import simple_pod, simple_dep, simple_svc
 from k8_kat.utils.main import utils
 

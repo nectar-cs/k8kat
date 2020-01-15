@@ -1,6 +1,6 @@
 from kubernetes.client import V1ObjectMeta, V1PodSpec, V1Container
 
-from k8_kat.base.kube_broker import broker
+from k8_kat.auth.kube_broker import broker
 
 def create(**subs):
   default_labels = dict(app=subs['name'])

@@ -3,7 +3,7 @@ import os
 
 import yaml
 
-from k8_kat.base.broker_configs import default_config
+from k8_kat.auth.broker_configs import default_config
 from k8_kat.utils.main import utils
 
 def terraform():
@@ -35,6 +35,7 @@ def terraform():
   from shlex import quote
   cmd = f"{utils.kmd('apply', k=kubectl, ctx=context)} -f -<<EOF\n{quote(output)}\nEOF"
   utils.shell_exec(cmd)
+
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()

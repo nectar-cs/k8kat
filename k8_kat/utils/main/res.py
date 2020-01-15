@@ -1,11 +1,7 @@
 import re
-from typing import Optional, Dict, List
+from typing import Dict
 
-from kubernetes.client import V1Service, V1ReplicaSet, V1Pod, V1Deployment
-from kubernetes.client.rest import ApiException
-
-from k8_kat.base.kube_broker import broker
-from k8_kat.utils.main import utils
+from kubernetes.client import V1Service, V1Pod, V1Deployment
 
 LOG_REGEX = r"(\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b) - - (.*)"
 
