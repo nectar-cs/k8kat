@@ -11,6 +11,15 @@ class KatRes:
     self.raw = raw
     self._assoced_events = None
 
+  def reload(self):
+    try:
+      self.raw = self.find_myself()
+    except Exception as e:
+      print(e)
+
+  def find_myself(self):
+    return None
+
   @property
   def uid(self):
     return self.raw.metadata.uid

@@ -1,3 +1,6 @@
+import time
+
+import kubernetes
 from kubernetes.client.rest import ApiException
 from kubernetes import stream as k8s_streaming
 
@@ -9,8 +12,19 @@ from k8_kat.utils.main import utils
 
 
 class KatPod(KatRes):
-  def __init__(self, raw):
+  def __init__(self, raw, wait_until_running=False):
     super().__init__(raw)
+    if wait_until_running:
+      self.wait_until_running()
+
+  def find_myself(self):
+    try:
+      return broker.coreV1.read_namespaced_pod(
+        namespace=self.namespace,
+        name=self.name
+      )
+    except kubernetes.client.rest.ApiException:
+      return None
 
   @property
   def kind(self):
@@ -44,7 +58,11 @@ class KatPod(KatRes):
 
   @property
   def container_status(self):
-    return self.raw.status.container_statuses[0]
+    cont_statuses = self.raw.status.container_statuses
+    if cont_statuses and len(cont_statuses):
+      return cont_statuses[0]
+    else:
+      return "ContainerCreating"
 
   @property
   def ip(self):
@@ -75,11 +93,14 @@ class KatPod(KatRes):
   def wtf(self):
     return 'coming soon!'
 
-  def delete(self):
+  def delete(self, wait_until_gone=False):
     broker.coreV1.delete_namespaced_pod(
       namespace=self.namespace,
       name=self.name
     )
+    if wait_until_gone:
+      while self.find_myself():
+        time.sleep(0.5)
 
   def _perform_patch_self(self):
     broker.coreV1.patch_namespaced_pod(
@@ -115,6 +136,17 @@ class KatPod(KatRes):
       stdout=True,
       tty=False
     )
+
+  def wait_until_running(self):
+    pod_ready = False
+    for attempts in range(0, 10):
+      if self.is_running:
+        pod_ready = True
+        break
+      else:
+        time.sleep(0.5)
+        self.reload()
+    return pod_ready is not None
 
   def curl_into(self, to_pod, **kwargs):
     kwargs['url'] = to_pod.ip
