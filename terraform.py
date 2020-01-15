@@ -6,6 +6,7 @@ import yaml
 from k8_kat.auth.broker_configs import default_config
 from k8_kat.utils.main import utils
 
+
 def terraform():
   if utils.run_env() == 'production':
     raise Exception('Cannot terraform in production!')
@@ -32,9 +33,13 @@ def terraform():
 
   output = yaml.dump_all([sa, crb])
 
-  from shlex import quote
-  cmd = f"{utils.kmd('apply', k=kubectl, ctx=context)} -f -<<EOF\n{quote(output)}\nEOF"
-  utils.shell_exec(cmd)
+  tmp_file = open("/tmp/k8kats.yaml", "w")
+  tmp_file.write(output)
+  tmp_file.close()
+
+  command = utils.kmd("apply -f /tmp/k8kats.yaml", ctx=context, k=kubectl)
+  print(f"Running {command}")
+  print(utils.shell_exec(command))
 
 
 if __name__ == '__main__':
