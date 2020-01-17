@@ -1,7 +1,6 @@
 import datetime
 from typing import Dict, List
 from kubernetes.client import V1PodSpec, V1Container, V1Pod, V1Scale, V1ScaleSpec
-from kubernetes.client.rest import ApiException
 
 from k8_kat.auth.kube_broker import broker
 from k8_kat.utils.main import res
@@ -18,19 +17,12 @@ class KatDep(KatRes):
     self.assoced_svcs = None
     self._am_dirty = raw is not None
 
-  @staticmethod
-  def find(ns, name):
-    api = broker.appsV1Api
-    return KatDep(api.read_namespaced_deployment(namespace=ns, name=name))
-
-  def find_myself(self):
-    try:
-      return broker.appsV1Api.read_namespaced_deployment(
-        namespace=self.namespace,
-        name=self.name
-      )
-    except ApiException:
-      return None
+  @classmethod
+  def _find(cls, ns, name):
+    return broker.appsV1.read_namespaced_deployment(
+      namespace=ns,
+      name=name
+    )
 
   @property
   def kind(self):
@@ -116,7 +108,7 @@ class KatDep(KatRes):
     self.assoced_svcs = [KatSvc(svc) for svc in candidates if checker(svc)]
 
   def _perform_patch_self(self):
-    broker.appsV1Api.patch_namespaced_deployment(
+    broker.appsV1.patch_namespaced_deployment(
       name=self.name,
       namespace=self.namespace,
       body=self.raw
@@ -124,7 +116,7 @@ class KatDep(KatRes):
     self.reload()
 
   def scale(self, replicas):
-    broker.appsV1Api.patch_namespaced_deployment_scale(
+    broker.appsV1.patch_namespaced_deployment_scale(
       name=self.name,
       namespace=self.ns,
       body=V1Scale(

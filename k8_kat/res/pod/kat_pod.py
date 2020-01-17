@@ -1,6 +1,5 @@
 import time
 
-import kubernetes
 from kubernetes.client.rest import ApiException
 from kubernetes import stream as k8s_streaming
 
@@ -17,14 +16,12 @@ class KatPod(KatRes):
     if wait_until_running:
       self.wait_until_running()
 
-  def find_myself(self):
-    try:
-      return broker.coreV1.read_namespaced_pod(
-        namespace=self.namespace,
-        name=self.name
-      )
-    except kubernetes.client.rest.ApiException:
-      return None
+  @classmethod
+  def _find(cls, ns, name):
+    return broker.coreV1.read_namespaced_pod(
+      namespace=ns,
+      name=name
+    )
 
   @property
   def kind(self):
@@ -85,17 +82,11 @@ class KatPod(KatRes):
   def updated_at(self):
     return utils.try_or(lambda: self.container_state.started_at)
 
-  @property
   def is_running(self):
     return self.status == 'Running'
 
-  @property
   def has_run(self):
     return self.status in ['Failed', 'Succeeded']
-
-  @property
-  def wtf(self):
-    return 'coming soon!'
 
   def delete(self, wait_until_gone=False):
     broker.coreV1.delete_namespaced_pod(
@@ -143,13 +134,13 @@ class KatPod(KatRes):
 
   def wait_until(self, predicate):
     condition_met = False
-    for attempts in range(0, 10):
+    for attempts in range(0, 20):
       if predicate():
-        print(f"Condition {predicate} met. {self.status}. exit")
+        # print(f"Condition {predicate} met. {self.status}. exit")
         condition_met = True
         break
       else:
-        print(f"Condition {predicate} not met. {self.status}")
+        # print(f"Condition {predicate} not met. {self.status}")
         time.sleep(0.5)
         self.reload()
     return condition_met

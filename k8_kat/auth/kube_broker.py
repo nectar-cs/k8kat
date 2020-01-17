@@ -18,7 +18,7 @@ class KubeBroker:
     self.is_connected = False
     self.last_error = None
     self.coreV1 = None
-    self.appsV1Api = None
+    self.appsV1 = None
     self.client = None
 
   def connect(self):
@@ -37,7 +37,7 @@ class KubeBroker:
   def load_api(self):
     self.client = client
     self.coreV1 = client.CoreV1Api()
-    self.appsV1Api = client.AppsV1Api()
+    self.appsV1 = client.AppsV1Api()
 
   def connect_in_cluster(self):
     try:

@@ -27,7 +27,7 @@ def create(**subs):
             V1Container(
               name=subs.get("container", "primary"),
               image=subs.get('image', 'nginx'),
-              image_pull_policy="Always"
+              image_pull_policy="IfNotPresent"
             )
           ]
         )
@@ -35,7 +35,7 @@ def create(**subs):
     )
   )
 
-  broker.appsV1Api.create_namespaced_deployment(
+  broker.appsV1.create_namespaced_deployment(
     body=deployment,
     namespace=subs['ns']
   )

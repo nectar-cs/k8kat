@@ -11,14 +11,22 @@ class KatRes:
     self.raw = raw
     self._assoced_events = None
 
+  @classmethod
+  def _find(cls, ns, name):
+    raise Exception("Unimplemented!")
+
+  @classmethod
+  def find(cls, ns, name):
+    return cls(cls._find(ns, name))
+
+  def find_myself(self):
+    return self._find(self.ns, self.name)
+
   def reload(self):
     try:
       self.raw = self.find_myself()
     except Exception as e:
       print(e)
-
-  def find_myself(self):
-    return None
 
   @property
   def uid(self):

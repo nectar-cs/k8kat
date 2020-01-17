@@ -1,3 +1,5 @@
+import time
+
 from k8_kat.utils.testing.fixtures import test_env
 from tests.res.base.k8_kat_test import K8KatTest
 
@@ -13,6 +15,7 @@ class ClusterTest(K8KatTest):
     super(ClusterTest, cls).setUpClass()
     test_env.cleanup()
     test_env.create_namespaces()
+    time.sleep(2)
 
   @classmethod
   def tearDownClass(cls):

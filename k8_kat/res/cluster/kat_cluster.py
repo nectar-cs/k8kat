@@ -7,7 +7,7 @@ def list_namespaces():
   return list(map(extractor, _namespaces))
 
 def label_combinations():
-  all_deps = broker.appsV1Api.list_deployment_for_all_namespaces().items
+  all_deps = broker.appsV1.list_deployment_for_all_namespaces().items
   map_labels_fn = lambda d: d.spec.selector.match_labels
   label_hash_list = list(map(map_labels_fn, all_deps))
   label_list = []
