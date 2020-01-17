@@ -1,6 +1,7 @@
+import datetime
 from typing import Dict, List
-
 from kubernetes.client import V1PodSpec, V1Container, V1Pod, V1Scale, V1ScaleSpec
+from kubernetes.client.rest import ApiException
 
 from k8_kat.auth.kube_broker import broker
 from k8_kat.utils.main import res
@@ -16,6 +17,20 @@ class KatDep(KatRes):
     self.assoced_pods = None
     self.assoced_svcs = None
     self._am_dirty = raw is not None
+
+  @staticmethod
+  def find(ns, name):
+    api = broker.appsV1Api
+    return KatDep(api.read_namespaced_deployment(namespace=ns, name=name))
+
+  def find_myself(self):
+    try:
+      return broker.appsV1Api.read_namespaced_deployment(
+        namespace=self.namespace,
+        name=self.name
+      )
+    except ApiException:
+      return None
 
   @property
   def kind(self):
@@ -106,6 +121,7 @@ class KatDep(KatRes):
       namespace=self.namespace,
       body=self.raw
     )
+    self.reload()
 
   def scale(self, replicas):
     broker.appsV1Api.patch_namespaced_deployment_scale(
@@ -118,6 +134,23 @@ class KatDep(KatRes):
       )
     )
     self._am_dirty = True
+
+  def add_labels(self, **new_labels: Dict[str, str]):
+    existing = self.raw.metadata.labels
+    merged = {**existing, **new_labels}
+    self.raw.metadata.labels = merged
+    self._perform_patch_self()
+
+  def git_annotate(self, sha, message, branch):
+    annotation = {
+      "commit-sha": sha,
+      "commit-message": message,
+      "commit-branch": branch,
+      "commit-timestamp": str(datetime.datetime.now())
+    }
+    crt_annots = self.raw.metadata.annotations
+    self.raw.metadata.annotations = {**crt_annots, **annotation}
+    self._perform_patch_self()
 
   def replace_image(self, new_image_name):
     self.raw.spec.template.spec.containers[0].image = new_image_name

@@ -90,6 +90,10 @@ class KatPod(KatRes):
     return self.status == 'Running'
 
   @property
+  def has_run(self):
+    return self.status in ['Failed', 'Succeeded']
+
+  @property
   def wtf(self):
     return 'coming soon!'
 
@@ -137,16 +141,21 @@ class KatPod(KatRes):
       tty=False
     )
 
-  def wait_until_running(self):
-    pod_ready = False
+  def wait_until(self, predicate):
+    condition_met = False
     for attempts in range(0, 10):
-      if self.is_running:
-        pod_ready = True
+      if predicate():
+        print(f"Condition {predicate} met. {self.status}. exit")
+        condition_met = True
         break
       else:
+        print(f"Condition {predicate} not met. {self.status}")
         time.sleep(0.5)
         self.reload()
-    return pod_ready is not None
+    return condition_met
+
+  def wait_until_running(self):
+    return self.wait_until(self.is_running)
 
   def curl_into(self, to_pod, **kwargs):
     kwargs['url'] = to_pod.ip
