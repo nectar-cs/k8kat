@@ -148,11 +148,11 @@ class KatPod(KatRes):
     condition_met = False
     for attempts in range(0, 50):
       if predicate():
-        print(f"Condition {predicate} met. {self.status}. exit")
+        # print(f"Condition {predicate} met. {self.status}. exit")
         condition_met = True
         break
       else:
-        print(f"Condition {predicate} not met. {self.status}")
+        # print(f"Condition {predicate} not met. {self.status}")
         time.sleep(0.1)
         self.reload()
     return condition_met

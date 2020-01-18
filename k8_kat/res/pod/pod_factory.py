@@ -15,7 +15,7 @@ def one_shot_curl(ns, **kwargs):
   pod.wait_until(pod.has_run)
   logs = pod.raw_logs()
   response = pod_utils.parse_response(logs)
-  pod.delete(False)
+  pod.delete()
   return response
 
 
@@ -54,7 +54,7 @@ def one_shot_cmd_body(command):
       containers=[
         V1Container(
           name="primary",
-          image='byrnedo/alpine-curl',
+          image='alpine',
           image_pull_policy="IfNotPresent",
           command=command.split(" ")
         )
@@ -71,5 +71,5 @@ def one_shot_cmd(ns, command):
   pod = KatPod(raw_pod)
   pod.wait_until(pod.has_run)
   bundle = dict(code=pod.exit_code, output=pod.raw_logs())
-  pod.delete(False)
+  pod.delete()
   return bundle

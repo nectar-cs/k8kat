@@ -18,6 +18,13 @@ class KatSvc(KatRes):
   def kind(self):
     return "Service"
 
+  @classmethod
+  def _find(cls, ns, name):
+    return broker.coreV1.read_namespaced_service(
+      namespace=ns,
+      name=name
+    )
+
   @property
   def pod_select_labels(self) -> Dict[str, str]:
     return self.raw.spec.selector or {}

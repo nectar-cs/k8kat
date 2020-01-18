@@ -17,16 +17,16 @@ class KatDep(KatRes):
     self.assoced_svcs = None
     self._am_dirty = raw is not None
 
+  @property
+  def kind(self):
+    return "Deployment"
+
   @classmethod
   def _find(cls, ns, name):
     return broker.appsV1.read_namespaced_deployment(
       namespace=ns,
       name=name
     )
-
-  @property
-  def kind(self):
-    return "Deployment"
 
   @property
   def raw_pod_spec(self) -> V1PodSpec:
