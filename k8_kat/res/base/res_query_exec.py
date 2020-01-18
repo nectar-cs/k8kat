@@ -38,8 +38,14 @@ class ResQueryExec:
   @staticmethod
   def filter_name_in(name_list: List[str], resources: List[KatRes]):
     if name_list is not None:
-
       return [res for res in resources if res.name in name_list]
+    else:
+      return resources
+
+  @staticmethod
+  def filter_name_like(substring: str, resources: List[KatRes]):
+    if substring is not None:
+      return [res for res in resources if (substring in res.name)]
     else:
       return resources
 

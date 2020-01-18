@@ -26,6 +26,13 @@ class ResCollection(UserList):
     candidates = self.names(name).go()
     return candidates[0] if len(candidates) else None
 
+  def find_like(self, substring):
+    self.like(substring).go()
+    return self[0] if len(self) else None
+
+  def like(self, substring):
+    return self.where(name_like=substring)
+
   def names(self, *_names):
     actual = list(_names[0]) if isinstance(_names[0], list) else list(_names)
     return self.where(name_in=actual)
@@ -33,6 +40,14 @@ class ResCollection(UserList):
   def not_names(self, *_names):
     actual = list(_names[0]) if isinstance(_names[0], list) else list(_names)
     return self.where(name_not_in=actual)
+
+  def latest(self):
+    sorted_coll = sorted(self, reverse=True)
+    return sorted_coll[0] if len(sorted_coll) else None
+
+  def oldest(self):
+    sorted_coll = sorted(self, reverse=False)
+    return sorted_coll[0] if len(sorted_coll) else None
 
   def where(self, **query_hash):
     self.query.update(**query_hash)
@@ -95,9 +110,8 @@ class ResCollection(UserList):
     return self.feature_not_in(feature, [challenge])
 
   def delete_all(self):
-    actual_namespaces = self.pluck('namespace', True)
-    actual_names = self.pluck('name', True)
-    self.query.delete(actual_namespaces, actual_names)
+    for resource in self.go():
+      resource.delete()
 
   def serialize(self, serializer):
     return [serializer(res) for res in self.go()]

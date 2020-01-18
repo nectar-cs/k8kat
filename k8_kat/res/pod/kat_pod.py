@@ -1,5 +1,6 @@
 import time
 
+from kubernetes.client import V1PodStatus
 from kubernetes.client.rest import ApiException
 from kubernetes import stream as k8s_streaming
 
@@ -34,6 +35,10 @@ class KatPod(KatRes):
     return {k: base[k] for k in base.keys() if k != bad_key}
 
   @property
+  def phase(self):
+    return self.raw.status.phase
+
+  @property
   def status(self):
     return pod_utils.true_pod_state(
       self.raw.status.phase,
@@ -54,19 +59,19 @@ class KatPod(KatRes):
     return self.raw.spec.containers[0]
 
   @property
-  def container_status(self):
+  def container_status(self) -> V1PodStatus:
     cont_statuses = self.raw.status.container_statuses
     if cont_statuses and len(cont_statuses):
       return cont_statuses[0]
     else:
-      return "ContainerCreating"
+      return None
 
   @property
-  def ip(self):
+  def ip(self) -> str:
     return utils.try_or(lambda: self.raw.status.pod_ip)
 
   @property
-  def image(self):
+  def image(self) -> str:
     return self.container and self.container.image
 
   @property
@@ -78,15 +83,20 @@ class KatPod(KatRes):
         return state.running or state.waiting or state.terminated
     return None
 
+  # @property
+  # def exit_code(self):
+  #   if self.container_status:
+  #     if self.container_status.
+
   @property
   def updated_at(self):
     return utils.try_or(lambda: self.container_state.started_at)
 
   def is_running(self):
-    return self.status == 'Running'
+    return self.full_status == 'Running'
 
   def has_run(self):
-    return self.status in ['Failed', 'Succeeded']
+    return self.full_status in ['Failed', 'Succeeded']
 
   def delete(self, wait_until_gone=False):
     broker.coreV1.delete_namespaced_pod(
@@ -108,13 +118,16 @@ class KatPod(KatRes):
     self.raw.spec.containers[0].image = new_image_name
     self._perform_patch_self()
 
+  def raw_logs(self, seconds=60):
+    return broker.coreV1.read_namespaced_pod_log(
+      namespace=self.namespace,
+      name=self.name,
+      since_seconds=seconds
+    )
+
   def logs(self, seconds=60):
     try:
-      log_dump = broker.coreV1.read_namespaced_pod_log(
-        namespace=self.namespace,
-        name=self.name,
-        since_seconds=seconds
-      )
+      log_dump = self.raw_logs(seconds)
       log_lines = log_dump.split("\n")
       return [res.try_clean_log_line(line) for line in log_lines]
     except ApiException:
@@ -134,14 +147,14 @@ class KatPod(KatRes):
 
   def wait_until(self, predicate):
     condition_met = False
-    for attempts in range(0, 20):
+    for attempts in range(0, 50):
       if predicate():
-        # print(f"Condition {predicate} met. {self.status}. exit")
+        print(f"Condition {predicate} met. {self.status}. exit")
         condition_met = True
         break
       else:
-        # print(f"Condition {predicate} not met. {self.status}")
-        time.sleep(0.5)
+        print(f"Condition {predicate} not met. {self.status}")
+        time.sleep(0.1)
         self.reload()
     return condition_met
 

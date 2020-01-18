@@ -2,6 +2,7 @@ from typing import List, Tuple, Dict
 
 from k8_kat.auth.kube_broker import broker
 from k8_kat.res.events.kat_event import KatEvent
+from k8_kat.utils.main import utils
 
 
 class KatRes:
@@ -10,6 +11,9 @@ class KatRes:
     self.is_dirty = False
     self.raw = raw
     self._assoced_events = None
+
+  def __lt__(self, other):
+    return self.created_at < other.created_at
 
   @classmethod
   def _find(cls, ns, name):
@@ -50,6 +54,11 @@ class KatRes:
   @property
   def ns(self):
     return self.namespace
+
+  @property
+  def created_at(self):
+    getter = lambda: self.raw.metadata.creation_timestamp
+    return utils.try_or(getter)
 
   @property
   def labels(self):

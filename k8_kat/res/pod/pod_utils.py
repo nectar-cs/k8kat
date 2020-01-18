@@ -1,4 +1,5 @@
 import re
+from typing import List
 
 from k8_kat.utils.main import utils
 
@@ -12,17 +13,18 @@ def coerce_cmd_format(cmd):
     return cmd
 
 
-def build_curl_cmd(**params):
+def build_curl_cmd(**params) -> List[str]:
   raw_headers = params.get('headers', {})
   headers = [f"{0}: {1}".format(k, v) for k, v in raw_headers]
   body = params.get('body', None)
 
   cmd = [
-    "curl",
+    "curl" if params.get('with_command') else None,
     "-s",
     "-i",
     '-X', params.get('verb', 'GET'),
-    '-H', headers,
+    '-H' if headers else None,
+    headers if headers else None,
     '-d' if body else None, body if body else None,
     "--connect-timeout", "1",
     f"{params['url']}{params.get('path', '/')}"
@@ -70,11 +72,13 @@ def container_err(cont_status):
   else:
     return None
 
+
 def easy_error(state, pod):
   if state == 'Error' or state == 'Failed':
     return container_err(pod)
   else:
     return None
+
 
 def true_pod_state(given_phase: str, cont_status, give_hard_error: bool):
   error = utils.try_or(lambda: container_err(cont_status))

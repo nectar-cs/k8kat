@@ -1,23 +1,30 @@
 from kubernetes.client import V1PodSpec, V1Container, V1ObjectMeta, V1Pod
 
 from k8_kat.auth.kube_broker import broker
+from k8_kat.res.pod import pod_utils
 from k8_kat.res.pod.kat_pod import KatPod
 from k8_kat.utils.main import utils
 
 
-def one_shot_curl(ns, curl_cmd):
+def one_shot_curl(ns, **kwargs):
   raw_pod = broker.coreV1.create_namespaced_pod(
-    body=one_shot_curler_body(curl_cmd),
+    body=one_shot_curler_body(**kwargs),
     namespace=ns
   )
   pod = KatPod(raw_pod)
+  print(f"Waiting for one-shot-curler...")
   pod.wait_until(pod.has_run)
-  logs = pod.logs()
-  pod.delete(False)
-  return logs
+  print(f"It's now {pod.status}")
+  logs = pod.raw_logs()
+  response = pod_utils.parse_response(logs)
+  print(f"Returned: {logs}")
+  # pod.delete(False)
+  return response
 
 
-def one_shot_curler_body(curl_cmd):
+def one_shot_curler_body(**kwargs):
+  args = pod_utils.build_curl_cmd(**kwargs, with_command=False)
+
   return V1Pod(
     api_version='v1',
     metadata=V1ObjectMeta(
@@ -30,7 +37,7 @@ def one_shot_curler_body(curl_cmd):
           name="primary",
           image='byrnedo/alpine-curl',
           image_pull_policy="IfNotPresent",
-          args=curl_cmd
+          args=args
         )
       ]
     )

@@ -45,6 +45,10 @@ class ResQuery:
     return self._hash['name_in']
 
   @property
+  def name_like(self):
+    return self._hash['name_like']
+
+  @property
   def namespace(self):
     return self._hash['ns_in'][0]
 
@@ -104,6 +108,7 @@ class ResQuery:
     deps = self.executor.filter_ns_in(self.ns_in, deps)
     deps = self.executor.filter_ns_nin(self.ns_not_in, deps)
     deps = self.executor.filter_name_in(self.name_in, deps)
+    deps = self.executor.filter_name_like(self.name_like, deps)
 
     if self.has_any_lb_any_filters():
       deps = self.executor.filter_lb_inc_any(self.lbs_inc_any, deps)
@@ -137,17 +142,18 @@ class ResQuery:
 
   @staticmethod
   def default_query_hash():
-    return {
-      'ns_in': None,
-      'ns_nin': None,
-      'name_in': None,
-      'name_nin': None,
-      'lbs_inc_each': None,
-      'lbs_exc_each': None,
-      'lbs_inc_any': None,
-      'lbs_exc_any': None,
-      'feature_filters': []
-    }
+    return dict(
+      ns_in=None,
+      ns_nin=None,
+      name_in=None,
+      name_nin=None,
+      name_like=None,
+      lbs_inc_each=None,
+      lbs_exc_each=None,
+      lbs_inc_any=None,
+      lbs_exc_any=None,
+      feature_filters=[]
+    )
 
   @staticmethod
   def label_query_keys():
