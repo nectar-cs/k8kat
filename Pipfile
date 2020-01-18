@@ -8,6 +8,7 @@ verify_ssl = true
 [packages]
 python-dotenv = "*"
 kubernetes = "~=10.0.1"
+twine = "*"
 
 [requires]
 python_version = "3.6"
