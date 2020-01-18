@@ -12,13 +12,10 @@ def one_shot_curl(ns, **kwargs):
     namespace=ns
   )
   pod = KatPod(raw_pod)
-  print(f"Waiting for one-shot-curler...")
   pod.wait_until(pod.has_run)
-  print(f"It's now {pod.status}")
   logs = pod.raw_logs()
   response = pod_utils.parse_response(logs)
-  print(f"Returned: {logs}")
-  # pod.delete(False)
+  pod.delete(False)
   return response
 
 
@@ -32,6 +29,7 @@ def one_shot_curler_body(**kwargs):
       labels=dict(owner='nectar', role='curler')
     ),
     spec=V1PodSpec(
+      restart_policy='Never',
       containers=[
         V1Container(
           name="primary",
@@ -44,25 +42,34 @@ def one_shot_curler_body(**kwargs):
   )
 
 
-def curl_pod(ns, name):
-  pod = V1Pod(
+def one_shot_cmd_body(command):
+  return V1Pod(
     api_version='v1',
     metadata=V1ObjectMeta(
-      name=name,
-      labels={"nectar-type": "stunt-pod"}
+      name=f"nectar-curler-{utils.rand_str(5)}",
+      labels=dict(owner='nectar', role='curler')
     ),
     spec=V1PodSpec(
+      restart_policy='Never',
       containers=[
         V1Container(
           name="primary",
-          image='xnectar/curler:latest',
-          image_pull_policy="Always"
+          image='byrnedo/alpine-curl',
+          image_pull_policy="IfNotPresent",
+          command=command.split(" ")
         )
       ]
     )
   )
 
-  return broker.coreV1.create_namespaced_pod(
-    body=pod,
+
+def one_shot_cmd(ns, command):
+  raw_pod = broker.coreV1.create_namespaced_pod(
+    body=one_shot_cmd_body(command),
     namespace=ns
   )
+  pod = KatPod(raw_pod)
+  pod.wait_until(pod.has_run)
+  bundle = dict(code=pod.exit_code, output=pod.raw_logs())
+  pod.delete(False)
+  return bundle

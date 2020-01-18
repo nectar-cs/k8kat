@@ -47,6 +47,10 @@ class KatPod(KatRes):
     )
 
   @property
+  def exit_code(self):
+    return utils.try_or(lambda: self.container_state.exit_code)
+
+  @property
   def full_status(self):
     return pod_utils.true_pod_state(
       self.raw.status.phase,
@@ -82,11 +86,6 @@ class KatPod(KatRes):
         state = status.state
         return state.running or state.waiting or state.terminated
     return None
-
-  # @property
-  # def exit_code(self):
-  #   if self.container_status:
-  #     if self.container_status.
 
   @property
   def updated_at(self):

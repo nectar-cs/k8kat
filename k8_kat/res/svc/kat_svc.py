@@ -81,4 +81,4 @@ class KatSvc(KatRes):
     return [ep.ip for ep in self.flat_endpoints()]
 
   def __repr__(self):
-    return f"Svc[{self.ns}:{self.name}({self.internal_ip})]"
+    return f"\n{self.ns}:{self.name} | {self.type} | {self.internal_ip}"

@@ -33,6 +33,9 @@ class ResCollection(UserList):
   def like(self, substring):
     return self.where(name_like=substring)
 
+  def default(self):
+    return self.ns('default')
+
   def names(self, *_names):
     actual = list(_names[0]) if isinstance(_names[0], list) else list(_names)
     return self.where(name_in=actual)

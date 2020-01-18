@@ -35,14 +35,6 @@ def parse_status(header):
   out = re.search('HTTP/(\d*)\.(\d*) (\d*) .*', header)
   return out.group(3)
 
-def format_empty_response():
-  return {
-    "raw": "N/A",
-    "headers": ["N/A"],
-    "body": "Could not connect",
-    "status": "N/A",
-    "finished": False
-  }
 
 def parse_response(response):
   if response:
@@ -51,15 +43,21 @@ def parse_response(response):
     body_parts = parts[1:len(parts)]
     body = body_parts[0]
 
-    return {
-      "raw": response,
-      "headers": headers,
-      "body": body,
-      "status": parse_status(headers[0]),
-      "finished": True
-    }
+    return dict(
+      raw=response,
+      headers=headers,
+      body=body,
+      status=parse_status(headers[0]),
+      finished=True
+    )
   else:
-    return format_empty_response()
+    return dict(
+      raw="N/A",
+      headers=["N/A"],
+      body="Could not connect",
+      status="N/A",
+      finished=False
+    )
 
 
 def container_err(cont_status):

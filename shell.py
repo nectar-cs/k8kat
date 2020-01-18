@@ -5,6 +5,7 @@ from k8_kat.res.base.k8_kat import K8Kat as Kt
 from k8_kat.res.dep.kat_dep import KatDep
 from k8_kat.res.pod import pod_factory
 from k8_kat.res.pod.kat_pod import KatPod
+from k8_kat.res.svc.kat_svc import KatSvc
 from k8_kat.utils.main import utils
 from k8_kat.utils.testing.fixtures import test_env
 
