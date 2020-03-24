@@ -1,5 +1,7 @@
 from typing import List, Tuple, Dict
 
+from kubernetes.client.rest import ApiException
+
 from k8_kat.auth.kube_broker import broker
 from k8_kat.res.events.kat_event import KatEvent
 from k8_kat.utils.main import utils
@@ -20,11 +22,26 @@ class KatRes:
     raise Exception("Unimplemented!")
 
   @classmethod
+  def _collection_class(cls):
+    raise Exception("Unimplemented!")
+
+  @classmethod
+  def q(cls):
+    return cls._collection_class()
+
+  @classmethod
   def find(cls, ns, name):
-    return cls(cls._find(ns, name))
+    try:
+      return cls(cls._find(ns, name))
+    except ApiException:
+      return None
 
   def find_myself(self):
     return self._find(self.ns, self.name)
+
+  def update(self):
+    self._perform_patch_self()
+    self.reload()
 
   def reload(self):
     try:

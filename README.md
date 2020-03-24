@@ -3,6 +3,10 @@
 
 ### Environment Setup
 
+During development, use symlinks to include this package instead of pipenv:
+cd /project/using/k8kat
+ln -s $k8kat_path/k8kat
+
 ### Building
 
 https://packaging.python.org/tutorials/packaging-projects/

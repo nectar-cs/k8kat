@@ -160,8 +160,8 @@ class KatDep(KatRes):
 
   @staticmethod
   def across_namespaces() -> List[Dict[str, str]]:
-    from k8_kat.res.dep.dep_collection import KatDeps
-    deps = KatDeps().not_ns('kube-system').go()
+    from k8_kat.res.dep.dep_collection import DepCollection
+    deps = DepCollection().not_ns('kube-system').go()
     output = []
     for name in set([dep.name for dep in deps]):
       appears_in = set([dep.ns for dep in deps if dep.name == name])

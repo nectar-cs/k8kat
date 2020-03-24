@@ -17,16 +17,16 @@ class KatPod(KatRes):
     if wait_until_running:
       self.wait_until_running()
 
+  @property
+  def kind(self):
+    return "Pod"
+
   @classmethod
   def _find(cls, ns, name):
     return broker.coreV1.read_namespaced_pod(
       namespace=ns,
       name=name
     )
-
-  @property
-  def kind(self):
-    return "Pod"
 
   @property
   def labels(self):
