@@ -2,6 +2,9 @@ import re
 from typing import Dict
 
 from kubernetes.client import V1Service, V1Pod, V1Deployment
+from kubernetes.client.rest import ApiException
+
+from k8_kat.auth.kube_broker import broker
 
 LOG_REGEX = r"(\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b) - - (.*)"
 
@@ -11,6 +14,13 @@ def try_clean_log_line(line):
     return match.group(2) or line
   except:
     return line
+
+def does_ns_exist(name: str) -> bool:
+  try:
+    broker.coreV1.read_namespace(name)
+    return True
+  except ApiException:
+    return False
 
 def dep_owns_pod(dep: V1Deployment, pod: V1Pod) -> bool:
   if dep.metadata.namespace == pod.metadata.namespace:
