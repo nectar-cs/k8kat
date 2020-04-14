@@ -1,9 +1,6 @@
 
-class PodSolver:
 
-  @staticmethod
-  def solve(pod):
-    events = pod.events()
+class PodSolver:
 
   @staticmethod
   def is_img_pull_bkf(pod, _):

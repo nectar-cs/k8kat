@@ -2,8 +2,11 @@ from k8_kat.auth.kube_broker import broker
 from k8_kat.res.base.kat_res import KatRes
 import json
 
-
 class KatMap(KatRes):
+
+  @property
+  def kind(self):
+    return "ConfigMap"
 
   @property
   def data(self):
@@ -30,21 +33,17 @@ class KatMap(KatRes):
     self.raw.data = {**self.raw.data, **new_data}
     self.update()
 
-  @property
-  def kind(self):
-    return "ConfigMap"
-
   @classmethod
-  def _find(cls, ns, name):
-    return broker.coreV1.read_namespaced_config_map(
-      namespace=ns,
-      name=name
+  def _api_methods(cls):
+    return dict(
+      read=broker.coreV1.read_namespaced_config_map,
+      delete=broker.coreV1.delete_namespaced_config_map
     )
 
   @classmethod
   def _collection_class(cls):
     from k8_kat.res.config_map.config_map_collection import ConfigMapCollection
-    return ConfigMapCollection()
+    return ConfigMapCollection
 
   def _perform_patch_self(self):
     broker.coreV1.patch_namespaced_config_map(

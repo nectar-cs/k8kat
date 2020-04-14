@@ -17,6 +17,7 @@ class KubeBroker:
     self.connect_config = {}
     self.is_connected = False
     self.last_error = None
+    self.rbacV1 = None
     self.coreV1 = None
     self.appsV1 = None
     self.client = None
@@ -36,6 +37,7 @@ class KubeBroker:
 
   def load_api(self):
     self.client = client
+    self.rbacV1 = client.RbacAuthorizationV1Api()
     self.coreV1 = client.CoreV1Api()
     self.appsV1 = client.AppsV1Api()
 

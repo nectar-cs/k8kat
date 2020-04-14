@@ -6,7 +6,6 @@ from k8_kat.auth.kube_broker import broker
 from k8_kat.res.base.kat_res import KatRes
 from k8_kat.utils.main import utils
 
-
 class KatSvc(KatRes):
 
   def __init__(self, raw):
@@ -17,13 +16,6 @@ class KatSvc(KatRes):
   @property
   def kind(self):
     return "Service"
-
-  @classmethod
-  def _find(cls, ns, name):
-    return broker.coreV1.read_namespaced_service(
-      namespace=ns,
-      name=name
-    )
 
   @property
   def pod_select_labels(self) -> Dict[str, str]:
@@ -82,6 +74,19 @@ class KatSvc(KatRes):
     raw_endpoints = self.raw_endpoints()
     per_sub = lambda sub: [addr for addr in (sub.addresses or [])]
     return utils.flatten([per_sub(sub) for sub in raw_endpoints.subsets])
+
+  @classmethod
+  def _api_methods(cls):
+    return dict(
+      read=broker.coreV1.read_namespaced_service,
+      patch=broker.coreV1.patch_namespaced_service,
+      delete=broker.coreV1.delete_namespaced_service
+    )
+
+  @classmethod
+  def _collection_class(cls):
+    from k8_kat.res.svc.svc_collection import SvcCollection
+    return SvcCollection
 
   @property
   def endpoint_ips(self):

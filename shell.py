@@ -9,11 +9,12 @@ from k8_kat.res.pod.kat_pod import KatPod
 from k8_kat.res.config_map.kat_map import KatMap
 from k8_kat.res.svc.kat_svc import KatSvc
 from k8_kat.utils.main import utils
-from k8_kat.utils.testing.fixtures import test_env
+from k8_kat.utils.testing.fixtures import test_env, simple_pod
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--env', '-e', help=f"Set the env: {utils.legal_envs}")
 args = parser.parse_args()
+
 
 def coerce_env():
   Kt.deps()

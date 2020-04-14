@@ -21,13 +21,6 @@ class KatDep(KatRes):
   def kind(self):
     return "Deployment"
 
-  @classmethod
-  def _find(cls, ns, name):
-    return broker.appsV1.read_namespaced_deployment(
-      namespace=ns,
-      name=name
-    )
-
   @property
   def raw_pod_spec(self) -> V1PodSpec:
     return self.raw.spec.template.spec
@@ -107,14 +100,6 @@ class KatDep(KatRes):
     checker = lambda svc: res.dep_matches_svc(self.raw, svc)
     self.assoced_svcs = [KatSvc(svc) for svc in candidates if checker(svc)]
 
-  def _perform_patch_self(self):
-    broker.appsV1.patch_namespaced_deployment(
-      name=self.name,
-      namespace=self.namespace,
-      body=self.raw
-    )
-    self.reload()
-
   def scale(self, replicas):
     broker.appsV1.patch_namespaced_deployment_scale(
       name=self.name,
@@ -133,17 +118,6 @@ class KatDep(KatRes):
     self.raw.metadata.labels = merged
     self._perform_patch_self()
 
-  def git_annotate(self, sha, message, branch):
-    annotation = {
-      "commit-sha": sha,
-      "commit-message": message,
-      "commit-branch": branch,
-      "commit-timestamp": str(datetime.datetime.now())
-    }
-    crt_annots = self.raw.metadata.annotations
-    self.raw.metadata.annotations = {**crt_annots, **annotation}
-    self._perform_patch_self()
-
   def replace_image(self, new_image_name):
     self.raw.spec.template.spec.containers[0].image = new_image_name
     self._perform_patch_self()
@@ -157,6 +131,18 @@ class KatDep(KatRes):
   def __repr__(self):
     pod_ct = f"{3}/{self.desired_replicas}"
     return f"\n{self.ns}:{self.name} | {pod_ct}"
+
+  @classmethod
+  def _collection_class(cls):
+    from k8_kat.res.dep.dep_collection import DepCollection
+    return DepCollection
+
+  @classmethod
+  def _api_methods(cls):
+    return dict(
+      read=broker.appsV1.read_namespaced_deployment,
+      patch=broker.appsV1.patch_namespaced_deployment,
+    )
 
   @staticmethod
   def across_namespaces() -> List[Dict[str, str]]:

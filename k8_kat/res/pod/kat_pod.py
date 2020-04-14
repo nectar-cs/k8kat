@@ -21,13 +21,6 @@ class KatPod(KatRes):
   def kind(self):
     return "Pod"
 
-  @classmethod
-  def _find(cls, ns, name):
-    return broker.coreV1.read_namespaced_pod(
-      namespace=ns,
-      name=name
-    )
-
   @property
   def labels(self):
     base = super().labels
@@ -98,20 +91,9 @@ class KatPod(KatRes):
     return self.full_status in ['Failed', 'Succeeded']
 
   def delete(self, wait_until_gone=False):
-    broker.coreV1.delete_namespaced_pod(
-      namespace=self.namespace,
-      name=self.name
-    )
     if wait_until_gone:
       while self.find_myself():
         time.sleep(0.5)
-
-  def _perform_patch_self(self):
-    broker.coreV1.patch_namespaced_pod(
-      name=self.name,
-      namespace=self.namespace,
-      body=self.raw
-    )
 
   def replace_image(self, new_image_name):
     self.raw.spec.containers[0].image = new_image_name
@@ -170,6 +152,19 @@ class KatPod(KatRes):
     if result is not None:
       result = pod_utils.parse_response(result)
     return result
+
+  @classmethod
+  def _api_methods(cls):
+    return dict(
+      read=broker.coreV1.read_namespaced_pod,
+      patch=broker.coreV1.patch_namespaced_pod,
+      delete=broker.coreV1.delete_namespaced_pod
+    )
+
+  @classmethod
+  def _collection_class(cls):
+    from k8_kat.res.pod.pod_collection import PodCollection
+    return PodCollection
 
   def __repr__(self):
     return f"\n{self.ns}:{self.name} | {self.image} | {self.status}"
