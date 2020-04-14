@@ -29,8 +29,16 @@ class KatRes:
     except ApiException:
       return None
 
+  @classmethod
+  def _find(cls, ns, name):
+    impl = cls._api_methods().get('read')
+    if impl:
+      return impl(namespace=ns, name=name)
+    else:
+      raise NotImplementedError
+
   def find_myself(self):
-    return self._find(self.ns, self.name)
+    return self.find(self.ns, self.name)
 
   def update(self):
     self._perform_patch_self()
@@ -82,14 +90,6 @@ class KatRes:
     return self.labels.get(which)
 
   @classmethod
-  def _find(cls, ns, name):
-    impl = cls._api_methods().get('read')
-    if impl:
-      return impl(namespace=ns, name=name)
-    else:
-      raise NotImplementedError
-
-  @classmethod
   def _collection_class(cls):
     raise NotImplementedError
 
@@ -126,15 +126,17 @@ class KatRes:
   def _api_methods(cls):
     return dict()
 
-  def delete(self, wait_until_gone):
+  def _delete(self):
     impl = self._api_methods().get('delete')
     if impl:
       impl(namespace=self.ns, name=self.name)
-      if wait_until_gone:
-        while self.find_myself():
-          time.sleep(0.5)
-    else:
-      raise NotImplementedError
+
+
+  def delete(self, wait_until_gone=False):
+    self._delete()
+    if wait_until_gone:
+      while self.find_myself():
+        time.sleep(0.5)
 
   def serialize(self, serializer):
     return serializer(self)
