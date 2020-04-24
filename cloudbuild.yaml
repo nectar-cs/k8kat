@@ -1,0 +1,10 @@
+steps:
+  - id: "Publish"
+    name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '.'
+      - '-f'
+      - 'PublishDockerfile'
+      - "--build-arg"
+      - "PASSWORD=${_PASSWORD}"
