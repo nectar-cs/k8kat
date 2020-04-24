@@ -1,14 +1,10 @@
 import time
+import unittest
 
 from k8_kat.utils.testing.fixtures import test_env
-from tests.res.base.k8_kat_test import K8KatTest
 
 
-class ClusterTest(K8KatTest):
-
-  @staticmethod
-  def ensure_no_pods(namespaces=None):
-    pass
+class ClusterTest(unittest.TestCase):
 
   @classmethod
   def setUpClass(cls) -> None:
@@ -16,7 +12,3 @@ class ClusterTest(K8KatTest):
     test_env.cleanup()
     test_env.create_namespaces()
     time.sleep(2)
-
-  @classmethod
-  def tearDownClass(cls):
-    pass

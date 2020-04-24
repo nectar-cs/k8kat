@@ -18,13 +18,4 @@ roleRef:
   name: cluster-admin
   apiGroup: rbac.authorization.k8s.io
 
----
-
-installer_sec_profiles:
-  - name: default
-  - name: Berzerk
-    perms:
-      mutatingwebhookconfigurations:
-        verbs: ['create']
-        reasons: "To do this and that"
 

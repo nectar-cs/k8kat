@@ -38,7 +38,7 @@ class KatRes:
       raise NotImplementedError
 
   def find_myself(self):
-    return self.find(self.ns, self.name)
+    return self._find(self.ns, self.name)
 
   def update(self):
     self._perform_patch_self()

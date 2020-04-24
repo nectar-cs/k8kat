@@ -7,11 +7,14 @@ from k8_kat.auth.broker_configs import default_config
 from k8_kat.utils.main import utils
 
 
-def terraform():
+def finder(candidates, name):
+  return [rd for rd in candidates if rd['kind'] == name][0]
+
+
+def apply_perms():
   if utils.run_env() == 'production':
     raise Exception('Cannot terraform in production!')
 
-  finder = lambda name: [rd for rd in res_defs if rd['kind'] == name][0]
   sa_name, sa_ns = [default_config()['sa_name'], default_config()['sa_ns']]
   crb_name, context = [default_config()['crb_name'], default_config()['context']]
   kubectl = default_config()['kubectl']
@@ -20,10 +23,11 @@ def terraform():
   print(f"Terraforming context {default_config()['context']}: {message}...")
 
   root = utils.root_path()
-  stream = open(os.path.join(root, f"utils/testing/fixtures/ci-perms.yaml"), 'r')
+  ci_prems_path = os.path.join(root, f"utils/testing/fixtures/ci-perms.yaml")
+  stream = open(ci_prems_path, 'r')
 
   res_defs = [data for data in yaml.load_all(stream, Loader=yaml.BaseLoader)]
-  sa, crb = [finder('ServiceAccount'), finder('ClusterRoleBinding')]
+  sa, crb = [finder(res_defs, 'ServiceAccount'), finder(res_defs, 'ClusterRoleBinding')]
   subject = f"system:serviceaccount:{sa_ns}:{sa_name}"
 
   sa['metadata']['name'] = sa_name or sa['metadata']['name']
@@ -39,7 +43,7 @@ def terraform():
 
   command = utils.kmd("apply -f /tmp/k8kats.yaml", ctx=context, k=kubectl)
   print(f"Running {command}")
-  print(utils.shell_exec(command))
+  utils.shell_exec(command)
 
 
 if __name__ == '__main__':
@@ -48,4 +52,4 @@ if __name__ == '__main__':
   args = parser.parse_args()
   if args.env:
     utils.set_run_env(args.env)
-  terraform()
+  apply_perms()

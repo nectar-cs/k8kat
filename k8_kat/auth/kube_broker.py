@@ -14,7 +14,7 @@ class BrokerConnException(Exception):
 class KubeBroker:
 
   def __init__(self):
-    self.connect_config = default_config()
+    self.connect_config = {}
     self.is_connected = False
     self.last_error = None
     self.rbacV1 = None
@@ -23,6 +23,7 @@ class KubeBroker:
     self.client = None
 
   def connect(self):
+    self.connect_config = default_config()
     connect_in = self.connect_in_cluster
     connect_out = self.connect_out_cluster
     connect_fn = connect_in if self.is_in_cluster_auth() else connect_out

@@ -2,11 +2,10 @@ import unittest
 from typing import Tuple
 
 from k8_kat.res.base.label_set_expressions import LabelLogic
-from tests.res.base.k8_kat_test import K8KatTest
 
 kls = LabelLogic
 
-class TestLabelLogic(K8KatTest):
+class TestLabelLogic(unittest.TestCase):
 
   @property
   def and_tuple(self) -> Tuple:

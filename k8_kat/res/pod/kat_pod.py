@@ -84,10 +84,14 @@ class KatPod(KatRes):
   def updated_at(self):
     return utils.try_or(lambda: self.container_state.started_at)
 
-  def is_running(self):
-    return self.full_status == 'Running'
+  def is_running(self) -> bool:
+    wtf_kubernetes = self.raw.status
+    if type(wtf_kubernetes) == str:
+      return wtf_kubernetes == 'Running'
+    else:
+      return wtf_kubernetes.phase == 'Running'
 
-  def has_run(self):
+  def has_run(self) -> bool:
     return self.full_status in ['Failed', 'Succeeded']
 
   def delete(self, wait_until_gone=False):
@@ -130,11 +134,9 @@ class KatPod(KatRes):
     condition_met = False
     for attempts in range(0, 50):
       if predicate():
-        # print(f"Condition {predicate} met. {self.status}. exit")
         condition_met = True
         break
       else:
-        # print(f"Condition {predicate} not met. {self.status}")
         time.sleep(0.1)
         self.reload()
     return condition_met
