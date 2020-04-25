@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nectar
+  namespace: default
+
+---
+
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: runner
+  name: runner
+  namespace: default
+spec:
+  serviceAccount: nectar
+  restartPolicy: Never
+  containers:
+    - name: main
+      imagePullPolicy: Never
+      image: test-run:latest

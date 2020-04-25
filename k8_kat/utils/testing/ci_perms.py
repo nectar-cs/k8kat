@@ -53,10 +53,7 @@ def apply_perms():
   sa = sa_dict(name=sa_name, ns=sa_ns)
   crb = crb_dict(name=crb_name, subject=subject)
 
-  output = yaml.dump_all([sa, crb])
-  tmp_file = open(out_file, "w")
-  tmp_file.write(output)
-  tmp_file.close()
+  with open('out_file', 'w') as f: f.write(yaml.dump_all([sa, crb]))
 
   command = utils.kmd(f"apply -f {out_file}", ctx=context, k=kubectl)
   print(f"Running {command}")

@@ -1,0 +1,24 @@
+FROM ubuntu
+
+WORKDIR /app
+RUN apt-get update && apt-get install -y \
+                             curl \
+                             docker.io \
+                              apt-transport-https \
+                              gnupg2 \
+                              jq
+
+RUN curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+RUN echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" |  tee -a /etc/apt/sources.list.d/kubernetes.list
+RUN apt-get update && apt-get install -y kubectl
+
+RUN curl -Lo ./kind "https://kind.sigs.k8s.io/dl/v0.7.0/kind-$(uname)-amd64"
+RUN chmod +x ./kind
+RUN mv ./kind /usr/local/bin
+
+ADD madness.sh /app/.
+ADD tests/k8s/runner.yaml /app/.
+
+RUN ls /app
+
+CMD ["/app/madness.sh"]

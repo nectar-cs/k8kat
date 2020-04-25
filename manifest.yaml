@@ -1,0 +1,104 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nectar
+
+---
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nectar
+  namespace: nectar
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: nectar-cluster-wide-role
+  namespace: nectar
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments", "deployments/scale"]
+    verbs: ["*"]
+  - apiGroups: [""]
+    resources: ["services", "events", "endpoints", "pods/logs"]
+    verbs: ["*"]
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["*"]
+  - apiGroups: [""]
+    resources: ["pods", "pods/exec", "pods/attach"]
+    verbs: ['*']
+
+---
+
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: nectar-permissions
+  namespace: nectar
+subjects:
+  - kind: ServiceAccount
+    name: nectar
+    namespace: nectar
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bay
+  namespace: nectar
+  labels:
+    app: bay
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bay
+  template:
+    metadata:
+      labels:
+        app: bay
+    spec:
+      serviceAccountName: nectar
+      containers:
+        - name: bay
+          image: bay
+          imagePullPolicy: Never
+          env:
+            - name: KAT_ENV
+              value: production
+            - name: FLASK_ENV
+              value: production
+            - name: CONNECT_AUTH_TYPE
+              value: in
+
+
+
+---
+
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: bay
+  namespace: nectar
+  labels:
+    app: bay
+spec:
+  type: ClusterIP
+  selector:
+    app: bay
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 5000
+
+

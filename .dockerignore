@@ -1,1 +1,11 @@
 .env
+.git
+.gitignore
+.idea
+CreateKindDockerfile
+LICENSE
+README.md
+TestImageDockerfile
+__pycache__
+cloudbuild.yaml
+k8_kat.egg-info
