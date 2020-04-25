@@ -32,6 +32,8 @@ steps:
       - "-v"
       - "/var/run/docker.sock:/var/run/docker.sock"
       - "--net=host"
+      - '--cache-from'
+      - 'gcr.io/nectar-bazaar/kind-base:latest'
       - "test-suite-cluster:latest"
 
   - id: "Publish"
@@ -50,6 +52,6 @@ steps:
       - "xnectar"
       - "-p"
       - "${_PASSWORD}"
-      - "dist/*;"
+      - "/app/dist/*;"
       - "exit"
       - "0"
