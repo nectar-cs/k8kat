@@ -2,7 +2,7 @@ import unittest
 
 from k8_kat.res.base.k8_kat import K8Kat
 from k8_kat.res.svc.kat_svc import KatSvc
-from k8_kat.utils.testing.fixtures import test_env
+from k8_kat.utils.testing import test_env
 from tests.res.base.cluster_test import ClusterTest
 
 

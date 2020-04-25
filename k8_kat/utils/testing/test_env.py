@@ -1,55 +1,118 @@
-import argparse
 import os
+import time
+from threading import Thread
+from typing import List, Tuple
 
-import yaml
+from kubernetes.client import V1Namespace, V1ObjectMeta
 
 from k8_kat.auth.broker_configs import default_config
+from k8_kat.auth.kube_broker import broker
+from k8_kat.utils.testing import simple_pod, simple_svc, simple_dep
 from k8_kat.utils.main import utils
 
-
-def finder(candidates, name):
-  return [rd for rd in candidates if rd['kind'] == name][0]
+NAMESPACES = ['n1', 'n2', 'n3']
 
 
-def apply_perms():
-  if utils.run_env() == 'production':
-    raise Exception('Cannot terraform in production!')
+def create_dep(ns: str, name: str, **subs):
+  return simple_dep.create(ns=ns, name=name, **subs)
 
-  sa_name, sa_ns = [default_config()['sa_name'], default_config()['sa_ns']]
-  crb_name, context = [default_config()['crb_name'], default_config()['context']]
-  kubectl = default_config()['kubectl']
 
-  message = dict(sa_name=sa_name, sa_ns=sa_ns, crb_name=crb_name)
-  print(f"Terraforming context {default_config()['context']}: {message}...")
+def create_svc(ns: str, name: str, **subs):
+  return simple_svc.create(name=name, ns=ns, **subs)
 
+
+def create_pod(ns: str, name: str, **subs):
+  return simple_pod.create(name=name, ns=ns, **subs)
+
+
+def nk_label_dep(ns: str, name: str, labels: List[Tuple[str, str]]):
+  api = broker.appsV1
+  dep = api.read_namespaced_deployment(namespace=ns, name=name)
+  dep.metadata.labels = {t[0]: t[1] for t in labels}
+  api.patch_namespaced_deployment(namespace=ns, name=name, body=dep)
+
+
+def k_apply(filename, **kwargs):
+  config = default_config()
   root = utils.root_path()
-  ci_prems_path = os.path.join(root, f"utils/testing/fixtures/ci-perms.yaml")
-  stream = open(ci_prems_path, 'r')
-
-  res_defs = [data for data in yaml.load_all(stream, Loader=yaml.BaseLoader)]
-  sa, crb = [finder(res_defs, 'ServiceAccount'), finder(res_defs, 'ClusterRoleBinding')]
-  subject = f"system:serviceaccount:{sa_ns}:{sa_name}"
-
-  sa['metadata']['name'] = sa_name or sa['metadata']['name']
-  sa['metadata']['namespace'] = sa_ns or sa['metadata']['namespace']
-  crb['metadata']['name'] = crb_name or crb['metadata']['name']
-  crb['subjects'][0]['name'] = subject or crb['subjects'][0]['name']
-
-  output = yaml.dump_all([sa, crb])
-
-  tmp_file = open("/tmp/k8kats.yaml", "w")
-  tmp_file.write(output)
-  tmp_file.close()
-
-  command = utils.kmd("apply -f /tmp/k8kats.yaml", ctx=context, k=kubectl)
-  print(f"Running {command}")
-  utils.shell_exec(command)
+  filename = os.path.join(root, f"utils/testing/fixtures/{filename}.yaml")
+  kubectl, context = config['kubectl'], config['context']
+  utils.k_exec(f"apply -f {filename}", k=kubectl, ctx=context, **kwargs)
 
 
-if __name__ == '__main__':
-  parser = argparse.ArgumentParser()
-  parser.add_argument('--env', '-e', help=f"Set the env: {utils.legal_envs}")
-  args = parser.parse_args()
-  if args.env:
-    utils.set_run_env(args.env)
-  apply_perms()
+def create_namespaces():
+  api = broker.coreV1
+  crt_nss = [ns.metadata.name for ns in api.list_namespace().items]
+
+  for desired_ns in NAMESPACES:
+    if desired_ns not in crt_nss:
+      api.create_namespace(
+        body=V1Namespace(metadata=V1ObjectMeta(name=desired_ns))
+      )
+
+def pod_wiper(ns):
+  broker.coreV1.delete_collection_namespaced_pod(ns)
+
+def dep_wiper(ns):
+  broker.appsV1.delete_collection_namespaced_deployment(ns)
+
+def svc_wiper(ns):
+  api = broker.coreV1
+  svcs = api.list_namespaced_service(ns).items
+  for svc in svcs:
+    api.delete_namespaced_service(
+      namespace=ns, name=svc.metadata.name
+    )
+
+def is_ns_clean(ns):
+  if len(broker.coreV1.list_namespaced_pod(ns).items):
+    return False
+
+  if len(broker.coreV1.list_namespaced_service(ns).items):
+    return False
+
+  if len(broker.appsV1.list_namespaced_deployment(ns).items):
+    return False
+
+  return True
+
+def dirty_namespaces():
+  return [ns for ns in NAMESPACES if not is_ns_clean(ns)]
+
+def _cleanup():
+  api = broker.coreV1
+  crt_nss = lambda: [_ns.metadata.name for _ns in api.list_namespace().items]
+  victim_namespaces = lambda: list(set(crt_nss()) & set(NAMESPACES))
+  for ns in victim_namespaces():
+    broker.coreV1.delete_namespace(ns)
+
+  try:
+    if len(victim_namespaces()):
+      print(f"[test_env] Waiting for ns {victim_namespaces()} to be destroyed...")
+
+    while len(victim_namespaces()):
+      time.sleep(2)
+  except Exception as e:
+    print(f"[test_env] Error {str(e)} monitoring ns destruction")
+    pass
+
+
+def cleanup():
+  threads = []
+  for ns in NAMESPACES:
+    threads.append(Thread(target=pod_wiper, args=(ns,)))
+    threads.append(Thread(target=dep_wiper, args=(ns,)))
+    threads.append(Thread(target=svc_wiper, args=(ns,)))
+
+  [thread.start() for thread in threads]
+  [thread.join() for thread in threads]
+
+  try:
+    if len(dirty_namespaces()):
+      print(f"[test_env] Waiting for ns {dirty_namespaces()} res's to be destroyed...")
+
+    while len(dirty_namespaces()):
+      time.sleep(1)
+  except Exception as e:
+    print(f"[test_env] Error {str(e)} monitoring ns destruction")
+    pass

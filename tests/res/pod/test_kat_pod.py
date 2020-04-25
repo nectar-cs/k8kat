@@ -1,5 +1,5 @@
 from k8_kat.res.pod.kat_pod import KatPod
-from k8_kat.utils.testing.fixtures import test_env
+from k8_kat.utils.testing import test_env
 from tests.res.base.cluster_test import ClusterTest
 
 
