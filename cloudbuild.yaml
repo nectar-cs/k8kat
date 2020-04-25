@@ -1,3 +1,6 @@
+images:
+  - "gcr.io/nectar-bazaar/k8-kat:latest"
+
 steps:
 
   - id: "Build Virtual Cluster"
@@ -22,7 +25,7 @@ steps:
 
   - id: "Build Test Image"
     name: 'gcr.io/cloud-builders/docker'
-    waitFor: []
+    waitFor: ["Pull Cached Image"]
     args:
       - "build"
       - "."
@@ -31,13 +34,6 @@ steps:
       - "-t"
       - "k8-kat:latest"
       - "-t"
-      - "gcr.io/nectar-bazaar/k8-kat:latest"
-
-  - id: "Cache Test Image"
-    name: 'gcr.io/cloud-builders/docker'
-    waitFor: ["Build Test Image"]
-    args:
-      - "push"
       - "gcr.io/nectar-bazaar/k8-kat:latest"
 
   - id: "Run Tests in Virtual Cluster"
