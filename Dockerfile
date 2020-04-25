@@ -28,5 +28,4 @@ ENV LC_ALL=C.UTF-8 \
     CONNECT_CONTEXT=kind-kind \
     CONNECT_KUBECTL=kubectl
 
-RUN pipenv run python3 setup.py sdist bdist_wheel
-CMD ["pipenv", "run", "python3", "-m", "unittest"]
+ENTRYPOINT ["./main_image.sh"]

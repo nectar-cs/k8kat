@@ -11,7 +11,7 @@ steps:
       - "-t"
       - "test-suite-cluster:latest"
       - "--cache-from"
-      - "ubuntu"
+      - "gcr.io/nectar-bazaar/kind-base:latest"
 
   - id: "Build Test Image"
     name: 'gcr.io/cloud-builders/docker'
@@ -20,18 +20,18 @@ steps:
       - "build"
       - "."
       - "--cache-from"
-      - "gcr.io/nectar-bazaar/test-run:latest"
-      - "-f"
-      - "TestImageDockerfile"
+      - "gcr.io/nectar-bazaar/k8-kat:latest"
       - "-t"
-      - "test-run:latest"
+      - "k8-kat:latest"
+      - "-t"
+      - "gcr.io/nectar-bazaar/k8-kat:latest"
 
   - id: "Cache Test Image"
     name: 'gcr.io/cloud-builders/docker'
     waitFor: ["Build Test Image"]
     args:
       - "push"
-      - "gcr.io/nectar-bazaar/test-run:latest"
+      - "gcr.io/nectar-bazaar/k8-kat:latest"
 
   - id: "Run Tests in Virtual Cluster"
     name: 'gcr.io/cloud-builders/docker'
@@ -48,17 +48,7 @@ steps:
     waitFor: ["Run Tests in Virtual Cluster"]
     args:
       - 'run'
-      - 'test-run:latest'
-      - 'pipenv'
-      - 'run'
-      - "python3"
-      - "-m"
-      - "twine"
-      - "upload"
-      - "-u"
-      - "xnectar"
-      - "-p"
-      - "${_PASSWORD}"
-      - "/app/dist/*;"
-      - "exit"
-      - "0"
+      - "--env"
+      - "PASSWORD=${_PASSWORD}"
+      - 'k8-kat:latest'
+      - "publish"

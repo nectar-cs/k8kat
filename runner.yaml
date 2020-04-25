@@ -33,4 +33,4 @@ spec:
   containers:
     - name: main
       imagePullPolicy: Never
-      image: test-run:latest
+      image: k8-kat:latest

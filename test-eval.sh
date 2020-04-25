@@ -1,6 +1,6 @@
 #!/bin/bash
 
-kind load docker-image test-run:latest
+kind load docker-image k8-kat:latest
 kubectl delete pod -l app=runner -n default
 kubectl apply -f runner.yaml
 
