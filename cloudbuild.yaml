@@ -13,6 +13,13 @@ steps:
       - "--cache-from"
       - "gcr.io/nectar-bazaar/kind-base:latest"
 
+  - id: "Pull Cached Image"
+    name: 'gcr.io/cloud-builders/docker'
+    waitFor: []
+    args:
+      - "pull"
+      - "gcr.io/nectar-bazaar/k8-kat:latest"
+
   - id: "Build Test Image"
     name: 'gcr.io/cloud-builders/docker'
     waitFor: []
