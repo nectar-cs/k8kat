@@ -34,3 +34,4 @@ spec:
     - name: main
       imagePullPolicy: Never
       image: k8-kat:latest
+      args: ['test']
