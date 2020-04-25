@@ -28,6 +28,5 @@ ENV LC_ALL=C.UTF-8 \
     CONNECT_CONTEXT=kind-kind \
     CONNECT_KUBECTL=kubectl
 
-RUN ls -a /app
-
+RUN pipenv run python3 setup.py sdist bdist_wheel
 CMD ["pipenv", "run", "python3", "-m", "unittest"]

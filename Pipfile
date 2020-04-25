@@ -8,6 +8,9 @@ verify_ssl = true
 [packages]
 python-dotenv = "*"
 kubernetes = "~=10.0.1"
+keyring = "*"
+twine = "*"
+keyrings-alt = "*"
 
 [requires]
 python_version = "3.6"

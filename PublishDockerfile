@@ -5,11 +5,8 @@ ARG PASSWORD
 RUN pip3 install pipenv
 ADD Pipfile Pipfile.lock ./
 RUN pipenv install
-RUN pipenv install keyring
-RUN pipenv install keyrings.alt
-RUN pipenv install twine
 
 ADD . .
 
 RUN pipenv run python3 setup.py sdist bdist_wheel
-RUN pipenv run python3 -m twine upload -u xnectar -p "$PASSWORD" dist/*; exit 0
+#RUN pipenv run python3 -m twine upload -u xnectar -p "$PASSWORD" dist/*; exit 0

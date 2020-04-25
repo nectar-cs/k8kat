@@ -20,7 +20,4 @@ ADD madness.sh .
 ADD test-eval.sh .
 ADD runner.yaml .
 
-RUN ls /app
-RUN ls
-
 CMD ["./madness.sh"]
