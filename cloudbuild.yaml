@@ -1,6 +1,40 @@
 steps:
+
+  - id: "Build Virtual Cluster"
+    name: 'gcr.io/cloud-builders/docker'
+    waitFor: []
+    args:
+      - "build"
+      - "."
+      - "-f"
+      - "CreateKindDockerfile"
+      - "-t"
+      - "test-suite-cluster:latest"
+
+  - id: "Build Test Image"
+    name: 'gcr.io/cloud-builders/docker'
+    waitFor: []
+    args:
+      - "build"
+      - "."
+      - "-f"
+      - "TestImageDockerfile"
+      - "-t"
+      - "test-run:latest"
+
+  - id: "Run Tests in Virtual Cluster"
+    name: 'gcr.io/cloud-builders/docker'
+    waitFor: ["Build Virtual Cluster", "Build Test Image"]
+    args:
+      - "run"
+      - "-v"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "--net=host"
+      - "test-suite-cluster:latest"
+
   - id: "Publish"
     name: 'gcr.io/cloud-builders/docker'
+    waitFor: ["Run Tests in Virtual Cluster"]
     args:
       - 'build'
       - '.'
