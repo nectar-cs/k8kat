@@ -19,10 +19,19 @@ steps:
     args:
       - "build"
       - "."
+      - "--cache-from"
+      - "gcr.io/nectar-bazaar/test-run:latest"
       - "-f"
       - "TestImageDockerfile"
       - "-t"
       - "test-run:latest"
+
+  - id: "Cache Test Image"
+    name: 'gcr.io/cloud-builders/docker'
+    waitFor: ["Build Test Image"]
+    args:
+      - "push"
+      - "gcr.io/nectar-bazaar/test-run:latest"
 
   - id: "Run Tests in Virtual Cluster"
     name: 'gcr.io/cloud-builders/docker'
@@ -32,8 +41,6 @@ steps:
       - "-v"
       - "/var/run/docker.sock:/var/run/docker.sock"
       - "--net=host"
-      - '--cache-from'
-      - 'gcr.io/nectar-bazaar/kind-base:latest'
       - "test-suite-cluster:latest"
 
   - id: "Publish"
