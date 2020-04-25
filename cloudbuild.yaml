@@ -10,6 +10,7 @@ steps:
       - "CreateKindDockerfile"
       - "-t"
       - "test-suite-cluster:latest"
+    timeout: '1200s'
 
   - id: "Build Test Image"
     name: 'gcr.io/cloud-builders/docker'
@@ -21,6 +22,7 @@ steps:
       - "TestImageDockerfile"
       - "-t"
       - "test-run:latest"
+    timeout: '1200s'
 
   - id: "Run Tests in Virtual Cluster"
     name: 'gcr.io/cloud-builders/docker'
@@ -31,6 +33,7 @@ steps:
       - "/var/run/docker.sock:/var/run/docker.sock"
       - "--net=host"
       - "test-suite-cluster:latest"
+    timeout: '1200s'
 
   - id: "Publish"
     name: 'gcr.io/cloud-builders/docker'
@@ -42,3 +45,4 @@ steps:
       - 'PublishDockerfile'
       - "--build-arg"
       - "PASSWORD=${_PASSWORD}"
+    timeout: '1200s'
