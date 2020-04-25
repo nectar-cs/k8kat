@@ -9,7 +9,7 @@ class ClusterTest(unittest.TestCase):
   @classmethod
   def setUpClass(cls) -> None:
     super(ClusterTest, cls).setUpClass()
-    ci_perms.init_test_suite()
+    ci_perms.init_test_suite(load_env=True)
     test_env.cleanup()
     test_env.create_namespaces()
     time.sleep(2)

@@ -137,7 +137,7 @@ class KatPod(KatRes):
         condition_met = True
         break
       else:
-        time.sleep(0.1)
+        time.sleep(1)
         self.reload()
     return condition_met
 

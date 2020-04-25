@@ -68,12 +68,12 @@ def update_readiness(readiness):
   test_ready_obj['ready'] = readiness
 
 
-def init_test_suite():
+def init_test_suite(load_env=True):
   if not is_ready():
     os.environ['FLASK_ENV'] = 'test'
     os.environ['KAT_ENV'] = 'test'
-
-    dotenv.load_dotenv()
+    if load_env:
+      dotenv.load_dotenv()
     apply_perms()
     broker.connect_or_raise()
     update_readiness(True)
