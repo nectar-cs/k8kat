@@ -16,9 +16,11 @@ RUN curl -Lo ./kind "https://kind.sigs.k8s.io/dl/v0.7.0/kind-$(uname)-amd64"
 RUN chmod +x ./kind
 RUN mv ./kind /usr/local/bin
 
-ADD madness.sh /app/.
-ADD tests/k8s/runner.yaml /app/.
+ADD madness.sh .
+ADD test-eval.sh .
+ADD runner.yaml .
 
 RUN ls /app
+RUN ls
 
-CMD ["/app/madness.sh"]
+CMD ["./madness.sh"]

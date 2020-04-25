@@ -14,8 +14,10 @@ done
 
 kubectl logs runner
 
-if [[ "$status == Completed" ]]; then
+if [[ "$status" == "Succeeded" ]]; then
+  echo "Exit code 0"
   exit 0
 else
+    echo "Exit code 1: $status"
   exit 1
 fi
