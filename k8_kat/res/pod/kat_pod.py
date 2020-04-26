@@ -94,11 +94,6 @@ class KatPod(KatRes):
   def has_run(self) -> bool:
     return self.full_status in ['Failed', 'Succeeded']
 
-  def delete(self, wait_until_gone=False):
-    if wait_until_gone:
-      while self.find_myself():
-        time.sleep(0.5)
-
   def replace_image(self, new_image_name):
     self.raw.spec.containers[0].image = new_image_name
     self._perform_patch_self()

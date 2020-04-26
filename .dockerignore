@@ -9,4 +9,6 @@ __pycache__
 cloudbuild.yaml
 k8_kat.egg-info
 dist/
+build/
+dist
 build

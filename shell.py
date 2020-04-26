@@ -2,6 +2,10 @@ import argparse
 
 from k8_kat.auth.kube_broker import broker
 from k8_kat.res.base.k8_kat import K8Kat as Kt
+from k8_kat.res.dep.kat_dep import KatDep
+from k8_kat.res.pod.kat_pod import KatPod
+from k8_kat.res.rbac.rbac import KatClusterRole, KatClusterRoleBinding, KatRole, KatRoleBinding
+from k8_kat.res.svc.kat_svc import KatSvc
 from k8_kat.utils.main import utils
 
 parser = argparse.ArgumentParser()

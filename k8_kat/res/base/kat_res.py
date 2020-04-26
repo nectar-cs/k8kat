@@ -20,7 +20,13 @@ class KatRes:
 
   @classmethod
   def q(cls):
-    return cls._collection_class()()
+    delegate = cls._collection_class()
+    if delegate:
+      return delegate()
+
+  @classmethod
+  def is_namespaced(cls):
+    return True
 
   @classmethod
   def find(cls, ns, name):
@@ -33,9 +39,18 @@ class KatRes:
   def _find(cls, ns, name):
     impl = cls._api_methods().get('read')
     if impl:
-      return impl(namespace=ns, name=name)
+      if cls.is_namespaced():
+        return impl(name=name, namespace=ns)
+      else:
+        return impl(name=name)
     else:
       raise NotImplementedError
+
+  @classmethod
+  def delete_if_exists(cls, ns, name, wait_until_gone=False):
+    instance = cls.find(ns, name)
+    if instance:
+      instance.delete(wait_until_gone)
 
   def find_myself(self):
     return self._find(self.ns, self.name)
@@ -47,8 +62,9 @@ class KatRes:
   def reload(self):
     try:
       self.raw = self.find_myself()
-    except Exception as e:
-      print(e)
+      return True
+    except ApiException as e:
+      return False
 
   @property
   def uid(self):
@@ -90,12 +106,12 @@ class KatRes:
     return self.labels.get(which)
 
   @classmethod
-  def _collection_class(cls):
-    raise NotImplementedError
+  def _collection_class(cls) -> any:
+    return None
 
   @property
   def pod_select_labels(self) -> Dict[str, str]:
-    raise NotImplementedError
+    return {}
 
   def events(self):
     if self._assoced_events is None:
@@ -129,13 +145,15 @@ class KatRes:
   def _delete(self):
     impl = self._api_methods().get('delete')
     if impl:
-      impl(namespace=self.ns, name=self.name)
-
+      if self.is_namespaced():
+        impl(name=self.name, namespace=self.ns)
+      else:
+        impl(name=self.name)
 
   def delete(self, wait_until_gone=False):
     self._delete()
     if wait_until_gone:
-      while self.find_myself():
+      while self.reload():
         time.sleep(0.5)
 
   def serialize(self, serializer):
