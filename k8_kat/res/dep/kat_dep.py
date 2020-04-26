@@ -66,6 +66,12 @@ class KatDep(KatRes):
     cont_spec = self.raw_container_spec
     return cont_spec and cont_spec.image_pull_policy
 
+  def is_running(self):
+    try:
+      return self.raw.status.ready_replicas > 0
+    except:
+      return False
+
   def svcs(self, force_reload=False) -> [KatSvc]:
     if force_reload or self.assoced_svcs is None:
       self.find_and_assoc_svcs()

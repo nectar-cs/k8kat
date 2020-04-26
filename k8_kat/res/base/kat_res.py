@@ -113,6 +113,17 @@ class KatRes:
   def pod_select_labels(self) -> Dict[str, str]:
     return {}
 
+  def wait_until(self, predicate):
+    condition_met = False
+    for attempts in range(0, 50):
+      if predicate():
+        condition_met = True
+        break
+      else:
+        time.sleep(1)
+        self.reload()
+    return condition_met
+
   def events(self):
     if self._assoced_events is None:
       api = broker.coreV1

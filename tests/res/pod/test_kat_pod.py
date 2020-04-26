@@ -12,6 +12,10 @@ class TestKatPod(ClusterTest):
     test_env.create_pod('n1', 'p2')
     test_env.create_pod('n2', 'p1')
 
+  @classmethod
+  def kat_res(cls):
+    return KatPod
+
   def setUp(self) -> None:
     self.pod = KatPod.find('n1', 'p1')
 
@@ -23,3 +27,5 @@ class TestKatPod(ClusterTest):
     self.pod.wait_until_running()
     output = self.pod.shell_exec("echo foo").strip()
     self.assertEqual(output, "foo")
+
+

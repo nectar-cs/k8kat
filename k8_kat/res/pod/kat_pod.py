@@ -125,17 +125,6 @@ class KatPod(KatRes):
       tty=False
     )
 
-  def wait_until(self, predicate):
-    condition_met = False
-    for attempts in range(0, 50):
-      if predicate():
-        condition_met = True
-        break
-      else:
-        time.sleep(1)
-        self.reload()
-    return condition_met
-
   def wait_until_running(self):
     return self.wait_until(self.is_running)
 
