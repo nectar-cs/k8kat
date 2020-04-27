@@ -11,6 +11,8 @@ kubernetes = "~=10.0.1"
 keyring = "*"
 twine = "*"
 keyrings-alt = "*"
+coverage = "*"
+codecov = "*"
 
 [requires]
 python_version = "3.6"

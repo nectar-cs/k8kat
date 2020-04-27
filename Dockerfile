@@ -26,6 +26,7 @@ ENV LC_ALL=C.UTF-8 \
     CONNECT_SA_NAME=nectar \
     CONNECT_CLUSTER=kind-kind \
     CONNECT_CONTEXT=kind-kind \
-    CONNECT_KUBECTL=kubectl
+    CONNECT_KUBECTL=kubectl \
+    CODECOV_TOKEN=$CODECOV_TOKEN
 
 ENTRYPOINT ["./main_image.sh"]

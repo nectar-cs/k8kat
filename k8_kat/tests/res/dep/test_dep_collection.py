@@ -1,8 +1,8 @@
 import unittest
 
 from k8_kat.res.base.k8_kat import K8Kat
+from k8_kat.tests.res.base.cluster_test import ClusterTest
 from k8_kat.utils.testing import test_env
-from tests.res.base.cluster_test import ClusterTest
 
 
 class TestDepCollection(ClusterTest):

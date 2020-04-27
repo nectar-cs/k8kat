@@ -1,0 +1,8 @@
+[run]
+omit =
+    */site-packages/*
+    */distutils/*
+    tests/*
+
+
+source=k8_kat
