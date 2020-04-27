@@ -113,13 +113,16 @@ class KatRes:
   def pod_select_labels(self) -> Dict[str, str]:
     return {}
 
-  def wait_until(self, predicate):
+  def wait_until(self, predicate, max_time_sec=None):
+    start_time = time.time()
     condition_met = False
     for attempts in range(0, 50):
       if predicate():
         condition_met = True
         break
       else:
+        if max_time_sec and time.time() - start_time > max_time_sec:
+          return False
         time.sleep(1)
         self.reload()
     return condition_met
