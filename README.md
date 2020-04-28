@@ -1,7 +1,6 @@
 
-[![PyPI version fury.io](https://badge.fury.io/py/k8-kat.svg)](https://pypi.org/project/k8-kat/)
 [![PyPI pyversions](https://img.shields.io/pypi/pyversions/k8-kat.svg)](https://pypi.python.org/pypi/k8-kat/)
-
+[![PyPI version fury.io](https://badge.fury.io/py/k8-kat.svg)](https://pypi.org/project/k8-kat/)
 [![codecov](https://codecov.io/gh/nectar-cs/k8-kat/branch/master/graph/badge.svg)](https://codecov.io/gh/nectar-cs/k8-kat)
 
 ## Development

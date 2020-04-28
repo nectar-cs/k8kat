@@ -1,7 +1,0 @@
-FROM gcr.io/nectar-bazaar/kind-base:latest
-
-ADD madness.sh .
-ADD test-eval.sh .
-ADD runner.yaml .
-
-CMD ["./madness.sh"]

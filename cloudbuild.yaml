@@ -3,18 +3,12 @@ images:
 
 steps:
 
-  - id: "Build Virtual Cluster"
+  - id: "Pull Kind Cluster CI Image"
     name: 'gcr.io/cloud-builders/docker'
     waitFor: []
     args:
-      - "build"
-      - "."
-      - "-f"
-      - "CreateKindDockerfile"
-      - "-t"
-      - "test-suite-cluster:latest"
-      - "--cache-from"
-      - "gcr.io/nectar-bazaar/kind-base:latest"
+      - "pull"
+      - "gcr.io/nectar-bazaar/kind-ci-cluster"
 
   - id: "Pull Cached Image"
     name: 'gcr.io/cloud-builders/docker'
@@ -37,16 +31,19 @@ steps:
       - "k8-kat:latest"
       - "-t"
       - "gcr.io/nectar-bazaar/k8-kat:latest"
+      - "-t"
+      - "test-image"
+
 
   - id: "Run Tests in Virtual Cluster"
     name: 'gcr.io/cloud-builders/docker'
-    waitFor: ["Build Virtual Cluster", "Build Test Image"]
+    waitFor: ["Pull Kind Cluster CI Image", "Build Test Image"]
     args:
       - "run"
       - "-v"
       - "/var/run/docker.sock:/var/run/docker.sock"
       - "--net=host"
-      - "test-suite-cluster:latest"
+      - "gcr.io/nectar-bazaar/kind-ci-cluster:latest"
 
   - id: "Publish"
     name: 'gcr.io/cloud-builders/docker'
