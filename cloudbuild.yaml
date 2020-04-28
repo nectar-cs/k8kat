@@ -32,7 +32,7 @@ steps:
       - "-t"
       - "gcr.io/nectar-bazaar/k8-kat:latest"
       - "-t"
-      - "test-image"
+      - "test-image:latest"
 
 
   - id: "Run Tests in Virtual Cluster"
