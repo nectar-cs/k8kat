@@ -136,10 +136,13 @@ class KatRes:
       self._assoced_events = mine
     return self._assoced_events
 
+  def trigger(self):
+    self.set_label(trigger=utils.rand_str())
+
   def set_label(self, **labels):
     new_label_dict = {**self.labels, **labels}
     self.raw.metadata.labels = new_label_dict
-    self._perform_patch_self()
+    self.patch()
 
   def _perform_patch_self(self):
     patch_method = self._api_methods().get('patch')
@@ -151,6 +154,10 @@ class KatRes:
       )
     else:
       raise NotImplementedError
+
+  def patch(self):
+    self._perform_patch_self()
+    self.reload()
 
   @classmethod
   def _api_methods(cls):

@@ -95,7 +95,7 @@ def destroy_namespaces_async(terminating, count, spared: List[str]):
     raise RuntimeError("Cluster is full!")
 
 
-def request(count: int, spared: List[str] = None):
+def request(count: int, spared: List[str] = None) -> List[str]:
   spared = spared if spared is not None else []
   crt_state = get_ns()
   avail_now = avail_now_names(crt_state)

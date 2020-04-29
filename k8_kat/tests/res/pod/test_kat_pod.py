@@ -25,9 +25,17 @@ class TestKatPod(ClusterTest):
     self.assertEqual(self.pod.name, 'p1')
     self.assertEqual(self.pod.ns, self.n1)
 
+  def test_label(self):
+    self.assertIsNone(self.pod.labels.get('foo'))
+    self.pod.set_label(foo='bar')
+    self.assertEqual(self.pod.labels.get('foo'), 'bar')
+
+  def test_trigger(self):
+    self.assertIsNone(self.pod.labels.get('trigger'))
+    self.pod.trigger()
+    self.assertIsNotNone(self.pod.labels.get('trigger'))
+
   def test_shell_exec(self):
     self.pod.wait_until_running()
     output = self.pod.shell_exec("echo foo").strip()
     self.assertEqual(output, "foo")
-
-

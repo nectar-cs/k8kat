@@ -1,3 +1,5 @@
+import yaml
+
 from k8_kat.auth.kube_broker import broker
 from k8_kat.res.base.kat_res import KatRes
 import json
@@ -15,10 +17,14 @@ class KatMap(KatRes):
   def json(self, field_name):
     raw_value = self.data.get(field_name)
     if raw_value is not None:
-      try:
-        return json.loads(raw_value)
-      except json.decoder.JSONDecodeError:
-        return None
+      return json.loads(raw_value)
+    else:
+      return None
+
+  def yaml(self, field_name):
+    raw_value = self.data.get(field_name)
+    if raw_value is not None:
+      return yaml.load(raw_value, Loader=yaml.FullLoader)
     else:
       return None
 
