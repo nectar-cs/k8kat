@@ -15,10 +15,6 @@ class TestKatPod(ClusterTest):
     test_env.create_pod(cls.n2, 'p1')
 
   @classmethod
-  def tearDownClass(cls) -> None:
-    ns_factory.relinquish_all()
-
-  @classmethod
   def kat_res(cls):
     return KatPod
 
