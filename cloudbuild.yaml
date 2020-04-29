@@ -34,7 +34,6 @@ steps:
       - "-t"
       - "test-image:latest"
 
-
   - id: "Run Tests in Virtual Cluster"
     name: 'gcr.io/cloud-builders/docker'
     waitFor: ["Pull Kind Cluster CI Image", "Build Test Image"]

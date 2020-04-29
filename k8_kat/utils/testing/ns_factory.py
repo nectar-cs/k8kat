@@ -8,7 +8,6 @@ from kubernetes.client.rest import ApiException
 
 from k8_kat.auth.kube_broker import broker
 from k8_kat.res.ns.kat_ns import KatNs
-from k8_kat.res.sa.kat_service_account import KatServiceAccount
 
 config = dict(
   max_ns=10
@@ -70,11 +69,9 @@ def wait_for_term(wait_for_n: int):
 
 
 def destroy_ns(name):
-  print(f"Starting {name} destruction")
   try:
     broker.coreV1.delete_namespace(name)
   except ApiException:
-    print(f"Finished {name} destruction")
     pass
 
 
@@ -96,7 +93,6 @@ def destroy_namespaces_async(terminating, count, spared: List[str]):
 def request(count: int, spared: List[str] = None):
   spared = spared if spared is not None else []
   crt_state = get_ns()
-  print(crt_state)
   avail_now = avail_now_names(crt_state)
   terminating = terminating_names(crt_state)
   if len(avail_now) >= count:
