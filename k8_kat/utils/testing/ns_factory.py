@@ -20,6 +20,11 @@ def possible_names():
 def max_ns() -> int:
   return config['max_ns']
 
+def update_max_ns(new_max_ns):
+  if new_max_ns < max_ns():
+    print("Warning! Setting lower max_ns can cause bugs!")
+  config['max_ns'] = new_max_ns
+
 
 def make_name(index: int) -> str:
   return f"ns{index + 1}"
