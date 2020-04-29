@@ -1,10 +1,14 @@
+import re
 import time
 from threading import Thread
 from typing import Tuple, List
 
 from kubernetes.client import V1Namespace, V1ObjectMeta
+from kubernetes.client.rest import ApiException
 
 from k8_kat.auth.kube_broker import broker
+from k8_kat.res.ns.kat_ns import KatNs
+from k8_kat.res.sa.kat_service_account import KatServiceAccount
 
 config = dict(
   max_ns=10
@@ -22,25 +26,41 @@ def make_name(index: int) -> str:
   return f"ns{index + 1}"
 
 
-def create_ns(name) -> V1Namespace:
-  return broker.coreV1.create_namespace(
+def is_nectar_test_ns(name: str) -> bool:
+  return re.search("^ns(\d*)$", name) is not None
+
+
+def create_ns(name) -> str:
+  broker.coreV1.create_namespace(
     body=V1Namespace(metadata=V1ObjectMeta(name=name))
   )
+  kat_ns = KatNs.find(name, name)
+  while not (kat_ns and kat_ns.is_work_ready()):
+    kat_ns = KatNs.find(name, name)
+    time.sleep(0.5)
+  return name
+
 
 
 def get_ns() -> List[Tuple[str, str]]:
   api = broker.coreV1
   simplified = lambda n: (n.metadata.name, n.status.phase)
-  return [simplified(ns) for ns in api.list_namespace().items]
+  all_cluster_ns = [simplified(ns) for ns in api.list_namespace().items]
+  return [ns for ns in all_cluster_ns if is_nectar_test_ns(ns[0])]
 
 
 def avail_now_names(crt_list) -> List[str]:
   crt_names = [ns[0] for ns in crt_list]
-  return list(set(possible_names()) - set(crt_names))
+  terminating = terminating_names(crt_list)
+  return list(set(possible_names()) - set(crt_names) - set(terminating))
 
 
 def terminating_names(crt_list) -> List[str]:
   return [ns[0] for ns in crt_list if ns[1] == 'Terminating']
+
+
+def running_names(crt_list) -> List[str]:
+  return [ns[0] for ns in crt_list if ns[1] == 'Active']
 
 
 def wait_for_term(wait_for_n: int):
@@ -51,8 +71,11 @@ def wait_for_term(wait_for_n: int):
 
 def destroy_ns(name):
   print(f"Starting {name} destruction")
-  broker.coreV1.delete_namespace(name)
-  print(f"Finished {name} destruction")
+  try:
+    broker.coreV1.delete_namespace(name)
+  except ApiException:
+    print(f"Finished {name} destruction")
+    pass
 
 
 def initiate_ns_destroy(name):
@@ -64,31 +87,37 @@ def destroy_namespaces_async(terminating, count, spared: List[str]):
 
   if victim_names >= count:
     victim_names = victim_names[:count]
-    print(f"Enough non-terminating ns to destroy: {victim_names}")
     for victim_name in victim_names:
       initiate_ns_destroy(victim_name)
   else:
     raise RuntimeError("Cluster is full!")
 
 
-def request(count: int, spared: List[str]):
+def request(count: int, spared: List[str] = None):
+  spared = spared if spared is not None else []
   crt_state = get_ns()
+  print(crt_state)
   avail_now = avail_now_names(crt_state)
   terminating = terminating_names(crt_state)
   if len(avail_now) >= count:
-    return [create_ns(name).metadata.name for name in avail_now]
+    required_subset = avail_now[:count]
+    return [create_ns(name) for name in required_subset]
   else:
     missing_count = len(avail_now) - count
-    print(f"Too few avail: {count} < {len(avail_now)}. Need {missing_count}.")
     if not len(terminating) >= missing_count:
       amount_needed = missing_count - len(terminating)
       destroy_namespaces_async(amount_needed, terminating, spared)
     wait_for_term(len(terminating) - missing_count)
     avail_now = avail_now_names(get_ns())
-    print(f"Wait finished, delivering: {avail_now}")
     assert len(avail_now) >= count
-    return [create_ns(name).metadata.name for name in avail_now]
+    return [create_ns(name) for name in avail_now]
 
-def relinquish(names: List[str]):
+
+def relinquish(*names: List[str]):
   for name in names:
-    initiate_ns_destroy(name)
+    if name not in terminating_names(get_ns()):
+      initiate_ns_destroy(name)
+
+
+def relinquish_all():
+  relinquish(*running_names(get_ns()))

@@ -1,9 +1,8 @@
-from typing import Dict
-
 from kubernetes.client.rest import ApiException
 
 from k8_kat.auth.kube_broker import broker
 from k8_kat.res.base.kat_res import KatRes
+from k8_kat.res.sa.kat_service_account import KatServiceAccount
 
 
 class KatNs(KatRes):
@@ -23,10 +22,20 @@ class KatNs(KatRes):
   def _delete(self):
     broker.coreV1.delete_namespace(self.name)
 
+  def is_active(self) -> bool:
+    if self.raw.status:
+      return self.raw.status.phase == 'Active'
+    else:
+      return False
+
+  def is_work_ready(self) -> bool:
+    if self.is_active():
+      default_sa = KatServiceAccount.find(self.name, 'default')
+      if default_sa:
+        if len(default_sa.secrets()) == 1:
+          return None not in default_sa.secrets()
+    return False
+
   @classmethod
   def _collection_class(cls):
-    pass
-
-  @property
-  def pod_select_labels(self) -> Dict[str, str]:
     pass
