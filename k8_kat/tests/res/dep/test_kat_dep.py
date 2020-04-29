@@ -1,8 +1,6 @@
-import unittest
-
-from k8_kat.res.base.k8_kat import K8Kat
+from k8_kat.res.dep.kat_dep import KatDep
 from k8_kat.tests.res.base.cluster_test import ClusterTest
-from k8_kat.utils.testing import test_env, ns_factory
+from k8_kat.utils.testing import ns_factory, test_helper
 
 
 class TestKatDep(ClusterTest):
@@ -11,30 +9,19 @@ class TestKatDep(ClusterTest):
   def setUpClass(cls) -> None:
     super(TestKatDep, cls).setUpClass()
     cls.n1, = ns_factory.request(1)
-    test_env.create_dep(
-      cls.n1,
-      'd1',
-      image='nginx',
-      container='primary',
-      labels=dict(l1='v1'),
-      annotations={
-        'commit-sha': 'sha',
-        'commit-message': 'message',
-        'commit-branch': 'branch',
-        'commit-timestamp': 'timestamp'
-      }
-    )
+    create_dep(cls.n1)
+
+  def dep(self):
+    return KatDep.find(self.n1, 'd1')
 
   def test_name(self):
-    kat_dep = K8Kat.deps().ns(self.n1).find('d1')
-    self.assertEqual(kat_dep.name, 'd1')
+    self.assertEqual(self.dep().name, 'd1')
 
   def test_labels(self):
-    kat_dep = K8Kat.deps().ns(self.n1).find('d1')
-    self.assertEqual(kat_dep.labels, {'app': 'd1', 'l1': 'v1'})
+    self.assertEqual(self.dep().labels, {'app': 'd1', 'l1': 'v1'})
 
   def test_commit(self):
-    kat_dep = K8Kat.deps().ns(self.n1).find('d1')
+    kat_dep = KatDep.find(self.n1, 'd1')
     self.assertDictEqual(kat_dep.commit, dict(
       sha='sha',
       message='message',
@@ -43,13 +30,23 @@ class TestKatDep(ClusterTest):
     ))
 
   def test_image_name(self):
-    kat_dep = K8Kat.deps().ns(self.n1).find('d1')
-    self.assertEqual(kat_dep.image_name, 'nginx')
+    self.assertEqual(self.dep().image_name, 'nginx')
 
   def test_container_name(self):
-    kat_dep = K8Kat.deps().ns(self.n1).find('d1')
-    self.assertEqual(kat_dep.container_name, 'primary')
+    self.assertEqual(self.dep().container_name, 'primary')
 
 
-if __name__ == '__main__':
-  unittest.main()
+def create_dep(ns):
+  return test_helper.create_dep(
+    ns,
+    'd1',
+    image='nginx',
+    container='primary',
+    labels=dict(l1='v1'),
+    annotations={
+      'commit-sha': 'sha',
+      'commit-message': 'message',
+      'commit-branch': 'branch',
+      'commit-timestamp': 'timestamp'
+    }
+  )

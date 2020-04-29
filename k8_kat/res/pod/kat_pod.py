@@ -1,5 +1,3 @@
-import time
-
 from kubernetes.client import V1PodStatus
 from kubernetes.client.rest import ApiException
 from kubernetes import stream as k8s_streaming

@@ -1,6 +1,6 @@
 from k8_kat.res.pod.kat_pod import KatPod
 from k8_kat.tests.res.base.cluster_test import ClusterTest
-from k8_kat.utils.testing import test_env, ns_factory
+from k8_kat.utils.testing import test_helper, ns_factory
 
 
 class TestKatPod(ClusterTest):
@@ -10,9 +10,9 @@ class TestKatPod(ClusterTest):
     super(TestKatPod, cls).setUpClass()
     result = ns_factory.request(2)
     cls.n1, cls.n2 = result
-    test_env.create_pod(cls.n1, 'p1')
-    test_env.create_pod(cls.n1, 'p2')
-    test_env.create_pod(cls.n2, 'p1')
+    test_helper.create_pod(cls.n1, 'p1')
+    test_helper.create_pod(cls.n1, 'p2')
+    test_helper.create_pod(cls.n2, 'p1')
 
   @classmethod
   def kat_res(cls):

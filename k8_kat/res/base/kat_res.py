@@ -15,14 +15,22 @@ class KatRes:
     self.raw = raw
     self._assoced_events = None
 
-  def __lt__(self, other):
-    return self.created_at < other.created_at
+  def reload(self):
+    try:
+      self.raw = self.find_myself()
+      return True
+    except ApiException as e:
+      return False
 
-  @classmethod
-  def q(cls):
-    delegate = cls._collection_class()
-    if delegate:
-      return delegate()
+  def delete(self, wait_until_gone=False):
+    self._delete()
+    if wait_until_gone:
+      while self.reload():
+        time.sleep(0.5)
+
+  def patch(self):
+    self._perform_patch_self()
+    self.reload()
 
   @classmethod
   def is_namespaced(cls):
@@ -54,17 +62,6 @@ class KatRes:
 
   def find_myself(self):
     return self._find(self.ns, self.name)
-
-  def update(self):
-    self._perform_patch_self()
-    self.reload()
-
-  def reload(self):
-    try:
-      self.raw = self.find_myself()
-      return True
-    except ApiException as e:
-      return False
 
   @property
   def uid(self):
@@ -101,17 +98,6 @@ class KatRes:
   @property
   def label_tups(self) -> List[Tuple[str, str]]:
     return list(self.labels.items())
-
-  def label(self, which):
-    return self.labels.get(which)
-
-  @classmethod
-  def _collection_class(cls) -> any:
-    return None
-
-  @property
-  def pod_select_labels(self) -> Dict[str, str]:
-    return {}
 
   def wait_until(self, predicate, max_time_sec=None):
     start_time = time.time()
@@ -155,9 +141,8 @@ class KatRes:
     else:
       raise NotImplementedError
 
-  def patch(self):
-    self._perform_patch_self()
-    self.reload()
+  def __lt__(self, other):
+    return self.created_at < other.created_at
 
   @classmethod
   def _api_methods(cls):
@@ -170,12 +155,6 @@ class KatRes:
         impl(name=self.name, namespace=self.ns)
       else:
         impl(name=self.name)
-
-  def delete(self, wait_until_gone=False):
-    self._delete()
-    if wait_until_gone:
-      while self.reload():
-        time.sleep(0.5)
 
   def serialize(self, serializer):
     return serializer(self)
