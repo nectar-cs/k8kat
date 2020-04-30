@@ -19,12 +19,12 @@ class KatDep(KatRes):
     return "Deployment"
 
   @property
-  def raw_pod_spec(self) -> V1PodSpec:
+  def pod_spec(self) -> V1PodSpec:
     return self.raw.spec.template.spec
 
   @property
   def raw_container_spec(self) -> V1Container:
-    specs = self.raw_pod_spec.containers
+    specs = self.pod_spec.containers
     return specs[0] if len(specs) else None
 
   @property

@@ -73,11 +73,6 @@ class KatSvc(KatRes):
       delete=broker.coreV1.delete_namespaced_service
     )
 
-  @classmethod
-  def _collection_class(cls):
-    from k8_kat.res.svc.svc_collection import SvcCollection
-    return SvcCollection
-
   @property
   def endpoint_ips(self):
     return [ep.ip for ep in self.flat_endpoints()]

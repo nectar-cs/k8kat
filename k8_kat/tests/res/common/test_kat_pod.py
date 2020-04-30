@@ -3,6 +3,7 @@ from kubernetes.client import V1Container, V1EnvVar, V1EnvVarSource, V1ConfigMap
 from k8_kat.auth.kube_broker import broker
 from k8_kat.res.pod.kat_pod import KatPod
 from k8_kat.tests.res.base.test_kat_res import Base
+from k8_kat.utils.main import utils
 from k8_kat.utils.testing import test_helper, simple_pod
 
 
@@ -23,6 +24,12 @@ class TestKatPod(Base.TestKatRes):
 
   def create_res(self, name, ns=None):
     test_helper.create_pod(ns, name)
+
+  def setUp(self) -> None:
+    self.pod_name = utils.rand_str()
+
+  # def test_states(self):
+  #   create_crasher(ns=super().pns, name=self.pod_name)
 
   # def setUp(self) -> None:
   #   self.pod = KatPod.find(self.n1, 'p1')
@@ -50,21 +57,21 @@ class TestKatPod(Base.TestKatRes):
   #     print(pod.body().status)
 
 
-def crasher(**kwargs):
+def create_crasher(**kwargs):
   simple_pod.create(
     cmd="not-a-real-command",
     **kwargs
   )
 
 
-def puller(**kwargs):
+def create_puller(**kwargs):
   simple_pod.create(
     image="not-a-real-image",
     **kwargs
   )
 
 
-def one_container_crasher(**kwargs):
+def create_one_container_crasher(**kwargs):
   orig = simple_pod.pod(**kwargs)
   orig.spec.containers.append(
     V1Container(command='not-a-real-command')
@@ -75,7 +82,7 @@ def one_container_crasher(**kwargs):
   )
 
 
-def init_crasher(**kwargs):
+def create_init_crasher(**kwargs):
   orig = simple_pod.pod(**kwargs)
   orig.spec.init_containers = [
     V1Container(
@@ -88,7 +95,7 @@ def init_crasher(**kwargs):
   )
 
 
-def config_map_wisher(**kwargs):
+def create_config_map_wisher(**kwargs):
   orig = simple_pod.pod(**kwargs)
   orig.spec.containers[0].env = [
     V1EnvVar(
@@ -107,7 +114,7 @@ def config_map_wisher(**kwargs):
   )
 
 
-def lengthy_terminator(**kwargs):
+def create_lengthy_terminator(**kwargs):
   simple_pod.create(
     image="nginx",
     cmd=["/bin/sh", "-c", "--"],

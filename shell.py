@@ -1,7 +1,6 @@
 import argparse
 
 from k8_kat.auth.kube_broker import broker
-from k8_kat.res.base.k8_kat import K8Kat as Kt
 from k8_kat.res.dep.kat_dep import KatDep
 from k8_kat.res.ns.kat_ns import KatNs
 from k8_kat.res.pod.kat_pod import KatPod
@@ -16,7 +15,6 @@ args = parser.parse_args()
 
 
 def coerce_env():
-  Kt.deps()
   if args.env:
     utils.set_run_env(args.env)
 
@@ -24,6 +22,8 @@ def main():
   coerce_env()
   print(f"Running shell in {utils.run_env()}")
   broker.connect()
+  if args.env:
+    utils.set_run_env(args.env)
 
 
 if __name__ == '__main__':

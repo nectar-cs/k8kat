@@ -1,5 +1,5 @@
 import time
-from typing import Dict, Callable
+from typing import Dict, Callable, Optional
 
 from kubernetes.client.rest import ApiException
 
@@ -59,15 +59,9 @@ class KatRes:
 # --
 # --
 
-  def read(self):
-    return self.find(self.name, self.ns)
-
-  def reload(self):
-    try:
-      self.raw = self.read()
-      return self
-    except ApiException:
-      return None
+  def reload(self) -> Optional['KatRes']:
+    self.raw = self.find_raw(self.name, self.ns)
+    return self if self.raw else None
 
   def delete(self, wait_until_gone=False):
     self._perform_delete_self()
@@ -75,11 +69,11 @@ class KatRes:
       while self.reload():
         time.sleep(0.5)
 
-  def patch(self):
+  def patch(self) -> Optional['KatRes']:
     self._perform_patch_self()
-    self.reload()
+    return self.reload()
 
-  def wait_until(self, predicate, max_time_sec=None):
+  def wait_until(self, predicate, max_time_sec=None) -> bool:
     start_time = time.time()
     condition_met = False
     for attempts in range(0, 50):
