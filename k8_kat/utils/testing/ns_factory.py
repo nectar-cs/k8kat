@@ -38,12 +38,11 @@ def create_ns(name) -> str:
   broker.coreV1.create_namespace(
     body=V1Namespace(metadata=V1ObjectMeta(name=name))
   )
-  kat_ns = KatNs.find(name, name)
-  # while not (kat_ns and kat_ns.is_work_ready()):
-  while not kat_ns:
+
+  kat_ns = KatNs.find(name)
+  while not (kat_ns and kat_ns.is_work_ready()):
     kat_ns = KatNs.find(name, name)
-    time.sleep(3)
-  time.sleep(8)
+    time.sleep(.5)
   return name
 
 

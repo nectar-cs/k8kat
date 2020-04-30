@@ -12,7 +12,7 @@ class TestKatSvc(ClusterTest):
     test_helper.create_svc(cls.n1, 's1')
 
   def setUp(self) -> None:
-    self.subject: KatSvc = KatSvc.find(self.n1, 's1')
+    self.subject: KatSvc = KatSvc.find('s1', self.n1)
 
   def test_internal_ip(self):
     self.assertIsNotNone(self.subject.internal_ip)

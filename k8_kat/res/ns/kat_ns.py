@@ -1,4 +1,4 @@
-from kubernetes.client.rest import ApiException
+from typing import Callable, Dict
 
 from k8_kat.auth.kube_broker import broker
 from k8_kat.res.base.kat_res import KatRes
@@ -7,19 +7,11 @@ from k8_kat.res.sa.kat_service_account import KatServiceAccount
 
 class KatNs(KatRes):
 
-  @classmethod
-  def find(cls, ns, name=None):
-    try:
-      return cls(cls._find(ns, name))
-    except ApiException:
-      return None
+  @property
+  def kind(self):
+    return "Namespace"
 
-  @classmethod
-  def _find(cls, ns, name):
-    _id = ns or name
-    return broker.coreV1.read_namespace(name=_id)
-
-  def _delete(self):
+  def _perform_delete_self(self):
     broker.coreV1.delete_namespace(self.name)
 
   def is_active(self) -> bool:
@@ -30,12 +22,30 @@ class KatNs(KatRes):
 
   def is_work_ready(self) -> bool:
     if self.is_active():
-      default_sa = KatServiceAccount.find(self.name, 'default')
+      default_sa = KatServiceAccount.find('default', self.name)
       if default_sa:
         if len(default_sa.secrets()) == 1:
           return None not in default_sa.secrets()
     return False
 
+# --
+# --
+# --
+# -------------------------------PLUMBING-------------------------------
+# --
+# --
+# --
+
   @classmethod
-  def _collection_class(cls):
-    pass
+  def is_namespaced(cls) -> bool:
+    return False
+
+  @classmethod
+  def _api_methods(cls):
+    return dict(
+      read=broker.coreV1.read_namespace,
+      patch=broker.coreV1.patch_namespace,
+      delete=broker.coreV1.delete_namespace
+    )
+
+

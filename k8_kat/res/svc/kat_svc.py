@@ -57,16 +57,6 @@ class KatSvc(KatRes):
   def type(self) -> str:
     return self.raw.spec.type
 
-  def pods(self, force_reload=False):
-    if force_reload or self.assoced_pods is None:
-      self.find_and_assoc_pods()
-    return self.assoced_pods
-
-  def find_and_assoc_pods(self):
-    from k8_kat.res.base.k8_kat import K8Kat
-    matchers = list(self.pod_select_labels.items())
-    self.assoced_pods = K8Kat.pods().parent_ns(self.ns).lbs_inc_each(matchers).go()
-
   def raw_endpoints(self):
     return broker.coreV1.read_namespaced_endpoints(self.name, self.ns)
 

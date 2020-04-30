@@ -6,16 +6,17 @@ class Base:
   class TestKatRes(ClusterTest):
 
     def setUp(self) -> None:
-      self.parent_ns, = ns_factory.request(1)
+      self.pns, = ns_factory.request(1)
 
     def tearDown(self) -> None:
-      ns_factory.relinquish(self.parent_ns)
+      ns_factory.relinquish(self.pns)
 
-    def test_find(self):
-      self.create_res(self.parent_ns, 'foo')
-      found = self.res_class().find(self.parent_ns, 'foo')
+    def test_find_namespaced(self):
+      print(f"Got my ns {self.pns}")
+      self.create_res('foo', self.pns)
+      found = self.res_class().find('foo', self.pns)
       self.assertIsNotNone(found)
-      self.assertEqual(found.metadata.name, 'foo')
+      self.assertEqual(found.raw.metadata.name, 'foo')
 
     # def test_reload(self):
     #   pass
@@ -26,7 +27,7 @@ class Base:
     # def test_delete(self):
     #   pass
 
-    def create_res(self, ns, name):
+    def create_res(self, name, ns=None):
       raise NotImplementedError
 
     def res_class(self):

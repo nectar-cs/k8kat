@@ -2,9 +2,8 @@ from kubernetes.client import V1Container, V1EnvVar, V1EnvVarSource, V1ConfigMap
 
 from k8_kat.auth.kube_broker import broker
 from k8_kat.res.pod.kat_pod import KatPod
-from k8_kat.tests.res.base.cluster_test import ClusterTest
 from k8_kat.tests.res.base.test_kat_res import Base
-from k8_kat.utils.testing import test_helper, ns_factory, simple_pod
+from k8_kat.utils.testing import test_helper, simple_pod
 
 
 class TestKatPod(Base.TestKatRes):
@@ -22,7 +21,7 @@ class TestKatPod(Base.TestKatRes):
   def res_class(cls):
     return KatPod
 
-  def create_res(self, ns, name):
+  def create_res(self, name, ns=None):
     test_helper.create_pod(ns, name)
 
   # def setUp(self) -> None:

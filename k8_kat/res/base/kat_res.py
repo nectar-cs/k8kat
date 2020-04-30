@@ -28,10 +28,7 @@ class KatRes:
 
   @property
   def kind(self):
-    _kind = self.raw.kind
-    if not _kind:
-      raise NotImplementedError
-    return _kind
+    raise NotImplementedError
 
   @property
   def name(self) -> str:
@@ -63,7 +60,7 @@ class KatRes:
 # --
 
   def read(self):
-    return self.find(self.ns, self.name)
+    return self.find(self.name, self.ns)
 
   def reload(self):
     try:
@@ -73,7 +70,7 @@ class KatRes:
       return None
 
   def delete(self, wait_until_gone=False):
-    self._delete()
+    self._perform_delete_self()
     if wait_until_gone:
       while self.reload():
         time.sleep(0.5)
@@ -125,7 +122,7 @@ class KatRes:
 # --
 
   @classmethod
-  def find(cls, ns, name):
+  def find_raw(cls, name, ns=None):
     try:
       fn: Callable = cls._api_methods().get('read')
       is_ns: bool = cls.is_namespaced()
@@ -134,8 +131,13 @@ class KatRes:
       return None
 
   @classmethod
+  def find(cls, name, ns=None):
+    raw_res = cls.find_raw(name, ns)
+    return cls(raw_res) if raw_res else None
+
+  @classmethod
   def delete_if_exists(cls, ns, name, wait_until_gone=False):
-    instance = cls.find(ns, name)
+    instance = cls.find(name, ns)
     if instance:
       instance.delete(wait_until_gone)
 
@@ -157,27 +159,20 @@ class KatRes:
 
   def _perform_patch_self(self):
     patch_method = self._api_methods().get('patch')
-    if patch_method:
-      patch_method(
-        name=self.name,
-        namespace=self.namespace,
-        body=self.raw
-      )
-    else:
-      raise NotImplementedError
+    self.ns_agnostic_call(patch_method, body=self.raw)
+
+  def _perform_delete_self(self):
+    impl = self._api_methods().get('delete')
+    self.ns_agnostic_call(impl)
 
   def __lt__(self, other):
     return self.created_at < other.created_at
 
-  def _delete(self):
-    impl = self._api_methods().get('delete')
-    self.ns_agnostic_call(impl)
-
-  def ns_agnostic_call(self, impl: Callable) -> any:
+  def ns_agnostic_call(self, impl: Callable, **kwargs) -> any:
     if self.is_namespaced():
-      return impl(name=self.name, namespace=self.ns)
+      return impl(name=self.name, namespace=self.ns, **kwargs)
     else:
-      return impl(name=self.name)
+      return impl(name=self.name, **kwargs)
 
   def serialize(self, serializer):
     return serializer(self)

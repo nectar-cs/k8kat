@@ -12,7 +12,7 @@ class TestKatDep(ClusterTest):
     create_dep(cls.n1)
 
   def dep(self):
-    return KatDep.find(self.n1, 'd1')
+    return KatDep.find(, 'd1', self.n1
 
   def test_name(self):
     self.assertEqual(self.dep().name, 'd1')
@@ -21,7 +21,7 @@ class TestKatDep(ClusterTest):
     self.assertEqual(self.dep().labels, {'app': 'd1', 'l1': 'v1'})
 
   def test_commit(self):
-    kat_dep = KatDep.find(self.n1, 'd1')
+    kat_dep = KatDep.find('d1', self.n1)
     self.assertDictEqual(kat_dep.commit, dict(
       sha='sha',
       message='message',

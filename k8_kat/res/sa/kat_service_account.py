@@ -26,6 +26,6 @@ class KatServiceAccount(KatRes):
 
   def secrets(self) -> List[any]:
     from k8_kat.res.secret.kat_secret import KatSecret
-    make = lambda sd: KatSecret.find(sd.namespace or self.ns, sd.name)
+    make = lambda sd: KatSecret.find(sd.name, sd.namespace or self.ns)
     secret_descriptors = self.body().secrets or []
     return [make(secret_desc) for secret_desc in secret_descriptors]
