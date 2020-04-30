@@ -39,11 +39,12 @@ def create_ns(name) -> str:
     body=V1Namespace(metadata=V1ObjectMeta(name=name))
   )
   kat_ns = KatNs.find(name, name)
-  while not (kat_ns and kat_ns.is_work_ready()):
+  # while not (kat_ns and kat_ns.is_work_ready()):
+  while not kat_ns:
     kat_ns = KatNs.find(name, name)
-    time.sleep(0.5)
+    time.sleep(3)
+  time.sleep(8)
   return name
-
 
 
 def get_ns() -> List[Tuple[str, str]]:

@@ -8,12 +8,12 @@ from k8_kat.res.base.kat_res import KatRes
 
 class KatServiceAccount(KatRes):
 
-  def raw_ob(self) -> V1ServiceAccount:
-    return self.raw
-
   @property
   def kind(self):
     return "ServiceAccount"
+
+  def body(self) -> V1ServiceAccount:
+    return self.raw
 
   @classmethod
   def _api_methods(cls):
@@ -27,9 +27,5 @@ class KatServiceAccount(KatRes):
   def secrets(self) -> List[any]:
     from k8_kat.res.secret.kat_secret import KatSecret
     make = lambda sd: KatSecret.find(sd.namespace or self.ns, sd.name)
-    secret_descriptors = self.raw_ob().secrets or []
+    secret_descriptors = self.body().secrets or []
     return [make(secret_desc) for secret_desc in secret_descriptors]
-
-  @classmethod
-  def _collection_class(cls):
-    pass

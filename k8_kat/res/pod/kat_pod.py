@@ -1,4 +1,6 @@
-from kubernetes.client import V1PodStatus
+from typing import Optional, List
+
+from kubernetes.client import V1PodStatus, V1Pod, V1Container, V1ContainerStatus
 from kubernetes.client.rest import ApiException
 from kubernetes import stream as k8s_streaming
 
@@ -15,6 +17,14 @@ class KatPod(KatRes):
     if wait_until_running:
       self.wait_until_running()
 
+# --
+# --
+# --
+# -------------------------------PROPERTIES-------------------------------
+# --
+# --
+# --
+
   @property
   def kind(self):
     return "Pod"
@@ -27,35 +37,15 @@ class KatPod(KatRes):
 
   @property
   def phase(self):
-    return self.raw.status.phase
+    return self.body().status.phase
 
   @property
-  def status(self):
-    return pod_utils.true_pod_state(
-      self.raw.status.phase,
-      self.container_status,
-      False
-    )
+  def container(self) -> V1Container:
+    return self.body().spec.containers[0]
 
   @property
-  def exit_code(self):
-    return utils.try_or(lambda: self.container_state.exit_code)
-
-  @property
-  def full_status(self):
-    return pod_utils.true_pod_state(
-      self.raw.status.phase,
-      self.container_status,
-      True
-    )
-
-  @property
-  def container(self):
-    return self.raw.spec.containers[0]
-
-  @property
-  def container_status(self) -> V1PodStatus:
-    cont_statuses = self.raw.status.container_statuses
+  def container_status(self) -> Optional[V1PodStatus]:
+    cont_statuses = self.body().status.container_statuses
     if cont_statuses and len(cont_statuses):
       return cont_statuses[0]
     else:
@@ -63,38 +53,64 @@ class KatPod(KatRes):
 
   @property
   def ip(self) -> str:
-    return utils.try_or(lambda: self.raw.status.pod_ip)
+    return utils.try_or(lambda: self.body().status.pod_ip)
 
   @property
   def image(self) -> str:
     return self.container and self.container.image
 
   @property
-  def container_state(self):
-    status = self.container_status
-    if status:
-      if status.state:
-        state = status.state
-        return state.running or state.waiting or state.terminated
-    return None
-
-  @property
   def updated_at(self):
-    return utils.try_or(lambda: self.container_state.started_at)
+    return self.body().status.start_time
+
+# --
+# --
+# --
+# -------------------------------INTEL-------------------------------
+# --
+# --
+# --
+
+  def body(self) -> V1Pod:
+    return self.body()
 
   def is_running(self) -> bool:
-    wtf_kubernetes = self.raw.status
+    wtf_kubernetes = self.body().status.phase
     if type(wtf_kubernetes) == str:
       return wtf_kubernetes == 'Running'
     else:
       return wtf_kubernetes.phase == 'Running'
 
-  def has_run(self) -> bool:
-    return self.full_status in ['Failed', 'Succeeded']
+  def container_reasons(self, _type: str) -> List[str]:
+    main_statuses = self.body().status.container_statuses
+    init_statuses = self.body().status.init_container_statuses
 
-  def replace_image(self, new_image_name):
-    self.raw.spec.containers[0].image = new_image_name
-    self._perform_patch_self()
+    def reason(container_status: V1ContainerStatus) -> Optional[str]:
+      return getattr(container_status.state, _type).reason
+
+    return [reason(status) for status in main_statuses + init_statuses]
+
+  def has_settled(self) -> bool:
+    return self.is_running() or self.is_screwed()
+
+  def is_screwed(self) -> bool:
+    if self.is_pending():
+      reasons = [r for r in self.container_reasons('waiting') if r]
+      return len(reasons) > 0
+    return False
+
+  def is_pending(self) -> bool:
+    return self.body().status.phase == 'Pending'
+
+  def has_run(self) -> bool:
+    return self.body().status.phase in ['Failed', 'Succeeded']
+
+  def has_failed(self) -> bool:
+    return self.body().status.phase == 'Failed'
+
+  def is_terminating(self):
+    print("IMPLEMENT ME")
+    raise NotImplementedError
 
   def raw_logs(self, seconds=60):
     return broker.coreV1.read_namespaced_pod_log(
@@ -111,6 +127,14 @@ class KatPod(KatRes):
     except ApiException:
       return None
 
+# --
+# --
+# --
+# -------------------------------ACTION-------------------------------
+# --
+# --
+# --
+
   def shell_exec(self, command):
     return k8s_streaming.stream(
       broker.coreV1.connect_get_namespaced_pod_exec,
@@ -123,14 +147,21 @@ class KatPod(KatRes):
       tty=False
     )
 
+  def replace_image(self, new_image_name):
+    self.body().spec.containers[0].image = new_image_name
+    self._perform_patch_self()
+
   def wait_until_running(self):
     return self.wait_until(self.is_running)
 
-  def curl_into(self, to_pod, **kwargs):
-    kwargs['url'] = to_pod.ip
-    return self.run_curl(**kwargs)
+  def wait_until_settled(self):
+    return self.wait_until(self.is_running)
 
-  def run_curl(self, **kwargs):
+  def curl_to_other_pod(self, to_pod, **kwargs):
+    kwargs['url'] = to_pod.ip
+    return self.invoke_curl(**kwargs)
+
+  def invoke_curl(self, **kwargs):
     fmt_command = pod_utils.build_curl_cmd(**kwargs)
     result = self.shell_exec(fmt_command)
     if result is not None:
@@ -145,10 +176,5 @@ class KatPod(KatRes):
       delete=broker.coreV1.delete_namespaced_pod
     )
 
-  @classmethod
-  def _collection_class(cls):
-    from k8_kat.res.pod.pod_collection import PodCollection
-    return PodCollection
-
   def __repr__(self):
-    return f"\n{self.ns}:{self.name} | {self.image} | {self.status}"
+    return f"\n{self.ns}:{self.name} | {self.image}"

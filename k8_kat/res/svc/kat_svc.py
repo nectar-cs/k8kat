@@ -65,7 +65,7 @@ class KatSvc(KatRes):
   def find_and_assoc_pods(self):
     from k8_kat.res.base.k8_kat import K8Kat
     matchers = list(self.pod_select_labels.items())
-    self.assoced_pods = K8Kat.pods().ns(self.ns).lbs_inc_each(matchers).go()
+    self.assoced_pods = K8Kat.pods().parent_ns(self.ns).lbs_inc_each(matchers).go()
 
   def raw_endpoints(self):
     return broker.coreV1.read_namespaced_endpoints(self.name, self.ns)
