@@ -56,7 +56,7 @@ steps:
 
   - id: "Publish"
     name: 'gcr.io/cloud-builders/docker'
-    waitFor: ["Fetch Secrets", "Pull Cached Image"]
+    waitFor: ["Run Tests in Virtual Cluster"]
     entrypoint: 'bash'
     args:
       - '-c'
