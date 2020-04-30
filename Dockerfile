@@ -8,4 +8,9 @@ RUN pipenv install
 
 ADD . /app
 
+ARG CODECOV_TOKEN
+ENV CODECOV_TOKEN=$CODECOV_TOKEN
+
+RUN echo $CODECOV_TOKEN
+
 ENTRYPOINT ["/py-ci/start.sh"]

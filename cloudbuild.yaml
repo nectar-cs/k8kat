@@ -3,40 +3,50 @@ images:
 
 steps:
 
-  - id: "Pull Kind Cluster CI Image"
+  - id: "Fetch Secrets"
+    name: "gcr.io/cloud-builders/gcloud"
+    entrypoint: 'bash'
+    waitFor: []
+    args:
+      - '-c'
+      - 'gcloud secrets versions access latest --secret=k8-kat-codecov-token > covp.txt;
+         gcloud secrets versions access latest --secret=pypi-password > pypip.txt;
+       '
+
+  - id: "Pull Cached Kind Cluster CI Image"
     name: 'gcr.io/cloud-builders/docker'
     waitFor: []
     args:
       - "pull"
       - "gcr.io/nectar-bazaar/kind-ci-cluster"
 
-  - id: "Pull Cached Image"
+  - id: "Pull Cached Main Image"
     name: 'gcr.io/cloud-builders/docker'
     waitFor: []
     args:
       - "pull"
       - "gcr.io/nectar-bazaar/k8-kat:latest"
 
-  - id: "Build Test Image"
+  - id: "Build Main Image"
     name: 'gcr.io/cloud-builders/docker'
-    waitFor: ["Pull Cached Image"]
+    entrypoint: 'bash'
+    waitFor:
+      - "Pull Cached Main Image"
+      - "Fetch Secrets"
     args:
-      - "build"
-      - "."
-      - "--cache-from"
-      - "gcr.io/nectar-bazaar/k8-kat:latest"
-      - "--build-arg"
-      - "CODECOV_TOKEN=${_CODECOV_TOKEN}"
-      - "-t"
-      - "k8-kat:latest"
-      - "-t"
-      - "gcr.io/nectar-bazaar/k8-kat:latest"
-      - "-t"
-      - "test-image:latest"
+      -  '-c'
+      - 'docker build .
+         --cache-from gcr.io/nectar-bazaar/k8-kat:latest
+         --build-arg CODECOV_TOKEN=$(cat covp.txt)
+         -t gcr.io/nectar-bazaar/k8-kat:latest
+         -t test-image:latest
+      '
 
   - id: "Run Tests in Virtual Cluster"
     name: 'gcr.io/cloud-builders/docker'
-    waitFor: ["Pull Kind Cluster CI Image", "Build Test Image"]
+    waitFor:
+      - "Pull Cached Kind Cluster CI Image"
+      - "Build Main Image"
     args:
       - "run"
       - "-v"
@@ -46,10 +56,11 @@ steps:
 
   - id: "Publish"
     name: 'gcr.io/cloud-builders/docker'
-    waitFor: ["Run Tests in Virtual Cluster"]
+    waitFor: ["Fetch Secrets", "Pull Cached Image"]
+    entrypoint: 'bash'
     args:
-      - 'run'
-      - "--env"
-      - "PASSWORD=${_PASSWORD}"
-      - 'k8-kat:latest'
-      - "publish"
+      - '-c'
+      - 'docker run --env PYPI_PASSWORD="$(cat pypip.txt)"
+         gcr.io/nectar-bazaar/k8-kat:latest
+         publish
+        '
