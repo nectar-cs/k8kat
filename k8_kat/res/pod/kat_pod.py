@@ -72,14 +72,14 @@ class KatPod(KatRes):
 # --
 
   def body(self) -> V1Pod:
-    return self.body()
+    return self.raw
 
   def main_container_states(self) -> List[V1ContainerState]:
-    statuses = self.body().status.container_statuses
+    statuses = self.body().status.container_statuses or []
     return [status.state for status in statuses]
 
   def init_container_states(self) -> List[V1ContainerState]:
-    statuses = self.body().status.init_container_statuses
+    statuses = self.body().status.init_container_statuses or []
     return [status.state for status in statuses]
 
   def is_running_normally(self):
@@ -88,13 +88,17 @@ class KatPod(KatRes):
       runners = filter_states(main_states, 'running')
       return len(main_states) == len(runners)
 
+  def is_pending_normally(self):
+    return self.is_pending() and not self.is_pending_morbidly()
+
+  def is_running_morbidly(self):
+    return self.is_running() and not self.is_running_normally()
+
   def is_broken(self) -> bool:
     return self.is_pending_morbidly() or self.has_failed()
 
   def has_settled(self) -> bool:
-    return self.has_succeeded() or \
-           self.is_running_normally() or \
-           self.is_broken()
+    return not self.is_pending_normally()
 
   def is_pending_morbidly(self) -> bool:
     if self.is_pending():

@@ -11,15 +11,6 @@ from k8_kat.utils.testing import test_helper, simple_pod
 
 class TestKatPod(Base.TestKatRes):
 
-  # @classmethod
-  # def setUpClass(cls) -> None:
-  #   super(TestKatPod, cls).setUpClass()
-  #   result = ns_factory.request(2)
-  #   cls.n1, cls.n2 = result
-  #   test_helper.create_pod(cls.n1, 'p1')
-  #   test_helper.create_pod(cls.n1, 'p2')
-  #   test_helper.create_pod(cls.n2, 'p1')
-
   @classmethod
   def res_class(cls):
     return KatPod
@@ -31,44 +22,60 @@ class TestKatPod(Base.TestKatRes):
     super().setUp()
     self.pod_name = utils.rand_str()
 
-  def test_states_crashing_pod(self):
-    pod = create_crasher(ns=self.pns, name=self.pod_name)
+  def pre_crash_assertions(self, pod):
+    self.assertFalse(pod.is_running())
+    self.assertTrue(pod.is_pending())
+    self.assertFalse(pod.is_running_normally())
+    self.assertTrue(pod.is_pending_normally())
+    self.assertFalse(pod.is_running_morbidly())
+    self.assertFalse(pod.is_pending_morbidly())
+    self.assertFalse(pod.has_settled())
+    time.sleep(10)
+    pod.reload()
+
+  def running_morbidly_assertions(self, pod):
+    self.assertTrue(pod.is_running())
+    self.assertFalse(pod.is_pending())
+    self.assertFalse(pod.is_running_normally())
     self.assertFalse(pod.is_pending_morbidly())
     self.assertFalse(pod.is_running_normally())
-    time.sleep(3)
+    self.assertTrue(pod.is_running_morbidly())
+    self.assertTrue(pod.has_settled())
 
-    for i in range(30):
-      pod.reload()
-      print(pod.raw.status.phase)
-      print(pod.raw.status.init_container_statuses)
-      print(pod.raw.status.container_statuses)
-      time.sleep(.2)
+  def pending_morbidly_assertions(self, pod):
+    self.assertFalse(pod.is_running())
+    self.assertTrue(pod.is_pending())
+    self.assertFalse(pod.is_running_normally())
+    self.assertTrue(pod.is_pending_morbidly())
+    self.assertFalse(pod.is_running_normally())
+    self.assertFalse(pod.is_running_morbidly())
+    self.assertTrue(pod.has_settled())
 
-  # def setUp(self) -> None:
-  #   self.pod = KatPod.find(self.n1, 'p1')
+  def test_states_crashing_pod(self):
+    pod = create_crasher(ns=self.pns, name=self.pod_name)
+    self.pre_crash_assertions(pod)
+    self.running_morbidly_assertions(pod)
 
-  # def test_label(self):
-  #   self.assertIsNone(self.pod.labels.get('foo'))
-  #   self.pod.set_label(foo='bar')
-  #   self.assertEqual(self.pod.labels.get('foo'), 'bar')
-  #
-  # def test_trigger(self):
-  #   self.assertIsNone(self.pod.labels.get('trigger'))
-  #   self.pod.trigger()
-  #   self.assertIsNotNone(self.pod.labels.get('trigger'))
-  #
-  # def test_shell_exec(self):
-  #   self.pod.wait_until_running()
-  #   output = self.pod.shell_exec("echo foo").strip()
-  #   self.assertEqual(output, "foo")
-  #
-  # def test_states(self):
-  #   ns, = ns_factory.request(1)
-  #   crasher(ns=ns, name='p')
-  #   for i in range(20):
-  #     pod = KatPod.find(ns, 'p')
-  #     print(pod.body().status)
+  def test_states_image_pull_error(self):
+    pod = create_puller(ns=self.pns, name=self.pod_name)
+    self.pre_crash_assertions(pod)
+    self.pending_morbidly_assertions(pod)
 
+  def test_init_crasher(self):
+    pod = create_init_crasher(ns=self.pns, name=self.pod_name)
+    self.pre_crash_assertions(pod)
+    self.pending_morbidly_assertions(pod)
+
+  def test_config_map_wisher(self):
+    pod = create_config_map_wisher(ns=self.pns, name=self.pod_name)
+    self.pre_crash_assertions(pod)
+    self.pending_morbidly_assertions(pod)
+
+  def test_shell_exec(self):
+    pod = KatPod(test_helper.create_pod(self.pns, self.pod_name))
+    pod.wait_until_running()
+    self.assertEqual(pod.shell_exec("echo foo").strip(), "foo")
+    self.assertEqual(pod.shell_exec("whoami").strip(), "root")
 
 def create_crasher(**kwargs) -> KatPod:
   return KatPod(simple_pod.create(
@@ -81,22 +88,6 @@ def create_puller(**kwargs):
     image="not-a-real-image",
     **kwargs
   ))
-
-
-def create_one_container_crasher(**kwargs):
-  orig = simple_pod.pod(**kwargs)
-  orig.spec.containers.append(
-    V1Container(
-      name='doom',
-      image='nginx',
-      command=['not-a-real-command']
-    )
-  )
-  return KatPod(broker.coreV1.create_namespaced_pod(
-    body=orig,
-    namespace=kwargs.get('ns')
-  ))
-
 
 def create_init_crasher(**kwargs):
   orig = simple_pod.pod(**kwargs)
@@ -127,33 +118,8 @@ def create_config_map_wisher(**kwargs):
       )
     )
   ]
-  broker.coreV1.create_namespaced_pod(
-    body=orig,
-    namespace=kwargs.get('ns')
-  )
-
-
-def create_lengthy_initializer(**kwargs):
-  orig = simple_pod.pod(**kwargs)
-  orig.spec.init_containers = [
-    V1Container(
-      name='doom',
-      image='nginx',
-      command=["/bin/sh", "-c", "--"],
-      args=["sleep 1"],
-    )
-  ]
 
   return KatPod(broker.coreV1.create_namespaced_pod(
     body=orig,
     namespace=kwargs.get('ns')
   ))
-
-
-def create_lengthy_terminator(**kwargs):
-  simple_pod.create(
-    image="nginx",
-    cmd=["/bin/sh", "-c", "--"],
-    args=["while true; do sleep 10; done;"],
-    **kwargs
-  )

@@ -3,6 +3,7 @@ from typing import List, Tuple
 
 from k8_kat.auth.broker_configs import default_config
 from k8_kat.auth.kube_broker import broker
+from k8_kat.res.pod.kat_pod import KatPod
 from k8_kat.utils.main import utils
 from k8_kat.utils.testing import simple_pod, simple_svc, simple_dep
 
@@ -17,7 +18,7 @@ def create_svc(ns: str, name: str, **subs):
   return simple_svc.create(name=name, ns=ns, **subs)
 
 
-def create_pod(ns: str, name: str, **subs):
+def create_pod(ns: str, name: str, **subs) -> KatPod:
   return simple_pod.create(name=name, ns=ns, **subs)
 
 
