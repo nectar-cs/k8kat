@@ -31,15 +31,18 @@ class TestKatPod(Base.TestKatRes):
     super().setUp()
     self.pod_name = utils.rand_str()
 
-  # def test_states(self):
-  #   pod = create_lengthy_initializer(ns=self.pns, name=self.pod_name)
-  #   # time.sleep(10)
-  #   for i in range(30):
-  #     pod.reload()
-  #     print(pod.raw.status.phase)
-  #     print(pod.raw.status.init_container_statuses)
-  #     print(pod.raw.status.container_statuses)
-  #     time.sleep(.2)
+  def test_states_crashing_pod(self):
+    pod = create_crasher(ns=self.pns, name=self.pod_name)
+    self.assertFalse(pod.is_pending_morbidly())
+    self.assertFalse(pod.is_running_normally())
+    time.sleep(3)
+
+    for i in range(30):
+      pod.reload()
+      print(pod.raw.status.phase)
+      print(pod.raw.status.init_container_statuses)
+      print(pod.raw.status.container_statuses)
+      time.sleep(.2)
 
   # def setUp(self) -> None:
   #   self.pod = KatPod.find(self.n1, 'p1')

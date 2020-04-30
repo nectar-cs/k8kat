@@ -82,28 +82,30 @@ class KatPod(KatRes):
     statuses = self.body().status.init_container_statuses
     return [status.state for status in statuses]
 
-  def is_working(self):
+  def is_running_normally(self):
     if self.is_running():
       main_states = self.main_container_states()
       runners = filter_states(main_states, 'running')
       return len(main_states) == len(runners)
 
   def is_broken(self) -> bool:
-    return self.is_pending_morbidly() or self.is_failed()
+    return self.is_pending_morbidly() or self.has_failed()
 
   def has_settled(self) -> bool:
-    return self.is_working() or self.is_broken()
+    return self.has_succeeded() or \
+           self.is_running_normally() or \
+           self.is_broken()
 
   def is_pending_morbidly(self) -> bool:
     if self.is_pending():
       init_states = self.init_container_states()
       waiting_init = filter_states(init_states, 'waiting')
-      if has_morbid_reasons(waiting_init):
-        return False
+      if has_morbid_pending_reasons(waiting_init):
+        return True
 
       main_states = self.main_container_states()
       main_init = filter_states(main_states, 'waiting')
-      return has_morbid_reasons(main_init)
+      return has_morbid_pending_reasons(main_init)
     else:
       return False
 
@@ -113,14 +115,14 @@ class KatPod(KatRes):
   def is_pending(self) -> bool:
     return self.body().status.phase == 'Pending'
 
-  def is_failed(self):
-    return self.body().status.phase == 'Failed'
-
   def has_run(self) -> bool:
     return self.body().status.phase in ['Failed', 'Succeeded']
 
   def has_failed(self) -> bool:
     return self.body().status.phase == 'Failed'
+
+  def has_succeeded(self):
+    return self.body().status.phase == 'Succeeded'
 
   def is_terminating(self):
     print("IMPLEMENT ME")
@@ -194,7 +196,7 @@ class KatPod(KatRes):
     return f"\n{self.ns}:{self.name} | {self.image}"
 
 
-def has_morbid_reasons(states: List[V1ContainerState]):
+def has_morbid_pending_reasons(states: List[V1ContainerState]):
   reasons = set([state.waiting.reason for state in states])
   good_reasons = {'ContainerCreating', 'PullingImage'}
   bad_reasons = reasons - good_reasons
