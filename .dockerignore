@@ -1,9 +1,5 @@
 .env
-.git
-.gitignore
 .idea
-.coverage
-coverage.xml
 
 .Python
 build/
