@@ -17,7 +17,7 @@ def pod(**subs):
           name=subs.get('container', 'primary'),
           image=subs.get('image', 'nginx'),
           image_pull_policy="IfNotPresent",
-          command=subs.get('cmd', None),
+          command=subs.get('cmd', '').split(' '),
           args=subs.get('args', None)
         )
       ]

@@ -10,4 +10,4 @@ class TestKatDep(Base.TestKatRes):
     return KatDep
 
   def create_res(self, name, ns=None):
-    test_helper.create_dep(ns, name)
+    return test_helper.create_dep(ns, name)

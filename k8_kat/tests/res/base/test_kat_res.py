@@ -17,6 +17,13 @@ class Base:
     def setUp(self) -> None:
       self.res_name = utils.rand_str(8)
 
+    def test_init(self):
+      body = self.create_res(self.res_name, self.pns)
+      res = self.res_class()(body)
+      self.assertIsInstance(res, self.res_class())
+      self.assertEqual(res.raw.metadata.name, self.res_name)
+      self.assertEqual(res.raw.kind, res.kind)
+
     def test_find(self):
       self.create_res(self.res_name, self.pns)
       res = self.get_res()

@@ -11,7 +11,7 @@ class TestKatSvc(Base.TestKatRes):
     return KatSvc
 
   def create_res(self, name, ns=None):
-    test_helper.create_svc(ns, name)
+    return test_helper.create_svc(ns, name)
 
   # @classmethod
   # def setUpClass(cls) -> None:

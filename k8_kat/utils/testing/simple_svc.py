@@ -25,7 +25,7 @@ def create(**subs):
     )
   )
 
-  broker.coreV1.create_namespaced_service(
+  return broker.coreV1.create_namespaced_service(
     body=svc,
     namespace=subs['ns']
   )

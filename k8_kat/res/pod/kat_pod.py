@@ -1,6 +1,6 @@
 from typing import Optional, List
 
-from kubernetes.client import V1PodStatus, V1Pod, V1Container, V1ContainerStatus
+from kubernetes.client import V1PodStatus, V1Pod, V1Container, V1ContainerStatus, V1ContainerState
 from kubernetes.client.rest import ApiException
 from kubernetes import stream as k8s_streaming
 
@@ -74,33 +74,47 @@ class KatPod(KatRes):
   def body(self) -> V1Pod:
     return self.body()
 
-  def is_running(self) -> bool:
-    wtf_kubernetes = self.body().status.phase
-    if type(wtf_kubernetes) == str:
-      return wtf_kubernetes == 'Running'
-    else:
-      return wtf_kubernetes.phase == 'Running'
+  def main_container_states(self) -> List[V1ContainerState]:
+    statuses = self.body().status.container_statuses
+    return [status.state for status in statuses]
 
-  def container_reasons(self, _type: str) -> List[str]:
-    main_statuses = self.body().status.container_statuses
-    init_statuses = self.body().status.init_container_statuses
+  def init_container_states(self) -> List[V1ContainerState]:
+    statuses = self.body().status.init_container_statuses
+    return [status.state for status in statuses]
 
-    def reason(container_status: V1ContainerStatus) -> Optional[str]:
-      return getattr(container_status.state, _type).reason
+  def is_working(self):
+    if self.is_running():
+      main_states = self.main_container_states()
+      runners = filter_states(main_states, 'running')
+      return len(main_states) == len(runners)
 
-    return [reason(status) for status in main_statuses + init_statuses]
+  def is_broken(self) -> bool:
+    return self.is_pending_morbidly() or self.is_failed()
 
   def has_settled(self) -> bool:
-    return self.is_running() or self.is_screwed()
+    return self.is_working() or self.is_broken()
 
-  def is_screwed(self) -> bool:
+  def is_pending_morbidly(self) -> bool:
     if self.is_pending():
-      reasons = [r for r in self.container_reasons('waiting') if r]
-      return len(reasons) > 0
-    return False
+      init_states = self.init_container_states()
+      waiting_init = filter_states(init_states, 'waiting')
+      if has_morbid_reasons(waiting_init):
+        return False
+
+      main_states = self.main_container_states()
+      main_init = filter_states(main_states, 'waiting')
+      return has_morbid_reasons(main_init)
+    else:
+      return False
+
+  def is_running(self) -> bool:
+    return self.body().status.phase == 'Running'
 
   def is_pending(self) -> bool:
     return self.body().status.phase == 'Pending'
+
+  def is_failed(self):
+    return self.body().status.phase == 'Failed'
 
   def has_run(self) -> bool:
     return self.body().status.phase in ['Failed', 'Succeeded']
@@ -178,3 +192,17 @@ class KatPod(KatRes):
 
   def __repr__(self):
     return f"\n{self.ns}:{self.name} | {self.image}"
+
+
+def has_morbid_reasons(states: List[V1ContainerState]):
+  reasons = set([state.waiting.reason for state in states])
+  good_reasons = {'ContainerCreating', 'PullingImage'}
+  bad_reasons = reasons - good_reasons
+  return len(bad_reasons) > 0
+
+def filter_states(states: List[V1ContainerState], _type: str) -> List[V1ContainerState]:
+  return [state for state in states if getattr(state, _type)]
+
+
+
+

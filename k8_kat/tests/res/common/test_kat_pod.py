@@ -1,3 +1,5 @@
+import time
+
 from kubernetes.client import V1Container, V1EnvVar, V1EnvVarSource, V1ConfigMapKeySelector
 
 from k8_kat.auth.kube_broker import broker
@@ -23,13 +25,21 @@ class TestKatPod(Base.TestKatRes):
     return KatPod
 
   def create_res(self, name, ns=None):
-    test_helper.create_pod(ns, name)
+    return test_helper.create_pod(ns, name)
 
   def setUp(self) -> None:
+    super().setUp()
     self.pod_name = utils.rand_str()
 
   # def test_states(self):
-  #   create_crasher(ns=super().pns, name=self.pod_name)
+  #   pod = create_lengthy_initializer(ns=self.pns, name=self.pod_name)
+  #   # time.sleep(10)
+  #   for i in range(30):
+  #     pod.reload()
+  #     print(pod.raw.status.phase)
+  #     print(pod.raw.status.init_container_statuses)
+  #     print(pod.raw.status.container_statuses)
+  #     time.sleep(.2)
 
   # def setUp(self) -> None:
   #   self.pod = KatPod.find(self.n1, 'p1')
@@ -57,42 +67,48 @@ class TestKatPod(Base.TestKatRes):
   #     print(pod.body().status)
 
 
-def create_crasher(**kwargs):
-  simple_pod.create(
+def create_crasher(**kwargs) -> KatPod:
+  return KatPod(simple_pod.create(
     cmd="not-a-real-command",
     **kwargs
-  )
-
+  ))
 
 def create_puller(**kwargs):
-  simple_pod.create(
+  return KatPod(simple_pod.create(
     image="not-a-real-image",
     **kwargs
-  )
+  ))
 
 
 def create_one_container_crasher(**kwargs):
   orig = simple_pod.pod(**kwargs)
   orig.spec.containers.append(
-    V1Container(command='not-a-real-command')
+    V1Container(
+      name='doom',
+      image='nginx',
+      command=['not-a-real-command']
+    )
   )
-  broker.coreV1.create_namespaced_pod(
+  return KatPod(broker.coreV1.create_namespaced_pod(
     body=orig,
     namespace=kwargs.get('ns')
-  )
+  ))
 
 
 def create_init_crasher(**kwargs):
   orig = simple_pod.pod(**kwargs)
   orig.spec.init_containers = [
     V1Container(
-      command='not-a-real-command'
+      name='doom',
+      image='nginx',
+      command=['not-a-real-command']
     )
   ]
-  broker.coreV1.create_namespaced_pod(
+
+  return KatPod(broker.coreV1.create_namespaced_pod(
     body=orig,
     namespace=kwargs.get('ns')
-  )
+  ))
 
 
 def create_config_map_wisher(**kwargs):
@@ -112,6 +128,23 @@ def create_config_map_wisher(**kwargs):
     body=orig,
     namespace=kwargs.get('ns')
   )
+
+
+def create_lengthy_initializer(**kwargs):
+  orig = simple_pod.pod(**kwargs)
+  orig.spec.init_containers = [
+    V1Container(
+      name='doom',
+      image='nginx',
+      command=["/bin/sh", "-c", "--"],
+      args=["sleep 1"],
+    )
+  ]
+
+  return KatPod(broker.coreV1.create_namespaced_pod(
+    body=orig,
+    namespace=kwargs.get('ns')
+  ))
 
 
 def create_lengthy_terminator(**kwargs):
