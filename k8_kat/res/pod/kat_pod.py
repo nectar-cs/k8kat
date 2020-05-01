@@ -193,7 +193,7 @@ class KatPod(KatRes):
       delete=broker.coreV1.delete_namespaced_pod
     )
 
-  def __repr__(self):
+  def __repr__(self): #Testing change
     return f"\n{self.ns}:{self.name} | {self.image}"
 
 
