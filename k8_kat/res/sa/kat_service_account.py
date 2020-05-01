@@ -20,6 +20,7 @@ class KatServiceAccount(KatRes):
     return(
       dict(
         read=broker.coreV1.read_namespaced_service_account,
+        patch=broker.coreV1.patch_namespaced_service_account,
         delete=broker.coreV1.delete_namespaced_service_account,
       )
     )

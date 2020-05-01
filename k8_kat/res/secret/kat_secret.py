@@ -18,8 +18,7 @@ class KatSecret(KatRes):
     return(
       dict(
         read=broker.coreV1.read_namespaced_secret,
+        patch=broker.coreV1.patch_namespaced_secret,
         delete=broker.coreV1.delete_namespaced_secret,
       )
     )
-
-

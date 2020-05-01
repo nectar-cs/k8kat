@@ -1,12 +1,13 @@
+import re
 from typing import Optional, List
 
-from kubernetes.client import V1PodStatus, V1Pod, V1Container, V1ContainerStatus, V1ContainerState
+from kubernetes.client import V1PodStatus, V1Pod, V1Container, \
+  V1ContainerState
 from kubernetes.client.rest import ApiException
 from kubernetes import stream as k8s_streaming
 
 from k8_kat.auth.kube_broker import broker
 from k8_kat.res.pod import pod_utils
-from k8_kat.utils.main import res
 from k8_kat.res.base.kat_res import KatRes
 from k8_kat.utils.main import utils
 
@@ -128,10 +129,6 @@ class KatPod(KatRes):
   def has_succeeded(self):
     return self.body().status.phase == 'Succeeded'
 
-  def is_terminating(self):
-    print("IMPLEMENT ME")
-    raise NotImplementedError
-
   def raw_logs(self, seconds=60):
     return broker.coreV1.read_namespaced_pod_log(
       namespace=self.namespace,
@@ -143,7 +140,7 @@ class KatPod(KatRes):
     try:
       log_dump = self.raw_logs(seconds)
       log_lines = log_dump.split("\n")
-      return [res.try_clean_log_line(line) for line in log_lines]
+      return [try_clean_log_line(line) for line in log_lines]
     except ApiException:
       return None
 
@@ -169,7 +166,7 @@ class KatPod(KatRes):
 
   def replace_image(self, new_image_name):
     self.body().spec.containers[0].image = new_image_name
-    self._perform_patch_self()
+    self.patch()
 
   def wait_until_running(self):
     return self.wait_until(self.is_running)
@@ -209,6 +206,11 @@ def has_morbid_pending_reasons(states: List[V1ContainerState]):
 def filter_states(states: List[V1ContainerState], _type: str) -> List[V1ContainerState]:
   return [state for state in states if getattr(state, _type)]
 
+LOG_REGEX = r"(\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b) - - (.*)"
 
-
-
+def try_clean_log_line(line):
+  try:
+    match = re.search(LOG_REGEX, line)
+    return match.group(2) or line
+  except:
+    return line

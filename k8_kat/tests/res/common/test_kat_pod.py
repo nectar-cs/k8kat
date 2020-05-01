@@ -5,7 +5,6 @@ from kubernetes.client import V1Container, V1EnvVar, V1EnvVarSource, V1ConfigMap
 from k8_kat.auth.kube_broker import broker
 from k8_kat.res.pod.kat_pod import KatPod
 from k8_kat.tests.res.base.test_kat_res import Base
-from k8_kat.utils.main import utils
 from k8_kat.utils.testing import test_helper, simple_pod
 
 
@@ -17,10 +16,6 @@ class TestKatPod(Base.TestKatRes):
 
   def create_res(self, name, ns=None):
     return test_helper.create_pod(ns, name)
-
-  def setUp(self) -> None:
-    super().setUp()
-    self.pod_name = utils.rand_str()
 
   def pre_crash_assertions(self, pod):
     self.assertFalse(pod.is_running())
@@ -52,27 +47,27 @@ class TestKatPod(Base.TestKatRes):
     self.assertTrue(pod.has_settled())
 
   def test_states_crashing_pod(self):
-    pod = create_crasher(ns=self.pns, name=self.pod_name)
+    pod = create_crasher(ns=self.pns, name=self.res_name)
     self.pre_crash_assertions(pod)
     self.running_morbidly_assertions(pod)
 
   def test_states_image_pull_error(self):
-    pod = create_puller(ns=self.pns, name=self.pod_name)
+    pod = create_puller(ns=self.pns, name=self.res_name)
     self.pre_crash_assertions(pod)
     self.pending_morbidly_assertions(pod)
 
   def test_init_crasher(self):
-    pod = create_init_crasher(ns=self.pns, name=self.pod_name)
+    pod = create_init_crasher(ns=self.pns, name=self.res_name)
     self.pre_crash_assertions(pod)
     self.pending_morbidly_assertions(pod)
 
   def test_config_map_wisher(self):
-    pod = create_config_map_wisher(ns=self.pns, name=self.pod_name)
+    pod = create_config_map_wisher(ns=self.pns, name=self.res_name)
     self.pre_crash_assertions(pod)
     self.pending_morbidly_assertions(pod)
 
   def test_shell_exec(self):
-    pod = KatPod(test_helper.create_pod(self.pns, self.pod_name))
+    pod = KatPod(test_helper.create_pod(self.pns, self.res_name))
     pod.wait_until_running()
     self.assertEqual(pod.shell_exec("echo foo").strip(), "foo")
     self.assertEqual(pod.shell_exec("whoami").strip(), "root")

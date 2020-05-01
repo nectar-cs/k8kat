@@ -1,4 +1,5 @@
 import time
+from typing import Type
 
 from k8_kat.res.base.kat_res import KatRes
 from k8_kat.tests.res.base.cluster_test import ClusterTest
@@ -12,10 +13,20 @@ class Base:
     @classmethod
     def setUpClass(cls) -> None:
       super().setUpClass()
-      cls.pns, = ns_factory.request(1)
+      if cls.res_class().is_namespaced():
+        cls.pns, = ns_factory.request(1)
+      else:
+        cls.pns = None
 
     def setUp(self) -> None:
       self.res_name = utils.rand_str(8)
+
+    def tearDown(self) -> None:
+      super().tearDown()
+      if not self.res_class().is_namespaced():
+        instance = self.get_res()
+        if instance:
+          instance.delete(wait_until_gone=True)
 
     def test_init(self):
       body = self.create_res(self.res_name, self.pns)
@@ -40,10 +51,11 @@ class Base:
     def test_delete_without_wait(self):
       self.create_res(self.res_name, self.pns)
       res = self.get_res()
-      if hasattr(res.raw.status, 'phase'):
-        old_phase = res.raw.status.phase
-        self.get_res().delete()
-        self.assertIsNot(self.get_res(), old_phase)
+      if hasattr(res.raw, 'status'):
+        if hasattr(res.raw.status, 'phase'):
+          old_phase = res.raw.status.phase
+          self.get_res().delete(wait_until_gone=False)
+          self.assertIsNot(self.get_res(), old_phase)
 
     def test_delete_and_wait(self):
       self.create_res(self.res_name, self.pns)
@@ -68,5 +80,6 @@ class Base:
     def create_res(self, name, ns=None):
       raise NotImplementedError
 
-    def res_class(self):
+    @classmethod
+    def res_class(cls) -> Type[KatRes]:
       raise NotImplementedError

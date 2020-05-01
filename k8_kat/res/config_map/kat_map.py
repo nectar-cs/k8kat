@@ -1,4 +1,7 @@
+from typing import Optional, Dict
+
 import yaml
+from kubernetes.client import V1ConfigMap
 
 from k8_kat.auth.kube_broker import broker
 from k8_kat.res.base.kat_res import KatRes
@@ -10,50 +13,33 @@ class KatMap(KatRes):
   def kind(self):
     return "ConfigMap"
 
+  def body(self) -> V1ConfigMap:
+    return self.raw
+
   @property
   def data(self):
     return self.raw.data
 
-  def json(self, field_name):
-    raw_value = self.data.get(field_name)
-    if raw_value is not None:
-      return json.loads(raw_value)
-    else:
-      return None
+  def jget(self, key=None) -> Optional[Dict[str, any]]:
+    key = key or 'master'
+    raw_value = self.data.get(key)
+    return raw_value and json.loads(raw_value)
 
-  def yaml(self, field_name):
-    raw_value = self.data.get(field_name)
-    if raw_value is not None:
-      return yaml.load(raw_value, Loader=yaml.FullLoader)
-    else:
-      return None
+  def yget(self, key=None) -> Optional[Dict[str, any]]:
+    key = key or 'master'
+    raw_value = self.data.get(key)
+    return raw_value and yaml.load(raw_value, Loader=yaml.FullLoader)
 
-  def set_json(self, key, dictionary):
-    self.set_data({key: json.dumps(dictionary)})
-
-  def set_data(self, new_data):
-    self.raw.data = new_data
-    self.update()
-
-  def merge_data(self, **new_data):
-    self.raw.data = {**self.raw.data, **new_data}
-    self.update()
+  def jpatch(self, content: Dict, key: str=None, merge: bool=False):
+    key = key or 'master'
+    content = {**self.jget(key), **content} if merge else content
+    self.raw.data = ({key: json.dumps(content)})
+    return self.patch()
 
   @classmethod
   def _api_methods(cls):
     return dict(
       read=broker.coreV1.read_namespaced_config_map,
+      patch=broker.coreV1.patch_namespaced_config_map,
       delete=broker.coreV1.delete_namespaced_config_map
-    )
-
-  @classmethod
-  def _collection_class(cls):
-    from k8_kat.res.config_map.config_map_collection import ConfigMapCollection
-    return ConfigMapCollection
-
-  def _perform_patch_self(self):
-    broker.coreV1.patch_namespaced_config_map(
-      name=self.name,
-      namespace=self.namespace,
-      body=self.raw
     )

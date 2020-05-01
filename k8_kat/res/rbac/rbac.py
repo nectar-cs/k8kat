@@ -13,6 +13,7 @@ class KatRole(KatRes):
     return(
       dict(
         read=broker.rbacV1.read_namespaced_role,
+        patch=broker.rbacV1.patch_namespaced_role,
         delete=broker.rbacV1.delete_namespaced_role,
       )
     )
@@ -29,6 +30,7 @@ class KatRoleBinding(KatRes):
     return(
       dict(
         read=broker.rbacV1.read_namespaced_role_binding,
+        patch=broker.rbacV1.patch_namespaced_role_binding,
         delete=broker.rbacV1.delete_namespaced_role_binding,
       )
     )
@@ -49,6 +51,7 @@ class KatClusterRole(KatRes):
     return(
       dict(
         read=broker.rbacV1.read_cluster_role,
+        patch=broker.rbacV1.patch_cluster_role,
         delete=broker.rbacV1.delete_cluster_role,
       )
     )
@@ -69,6 +72,7 @@ class KatClusterRoleBinding(KatRes):
     return(
       dict(
         read=broker.rbacV1.read_cluster_role_binding,
+        patch=broker.rbacV1.patch_cluster_role_binding,
         delete=broker.rbacV1.delete_cluster_role_binding,
       )
     )
