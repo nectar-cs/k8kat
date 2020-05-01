@@ -6,6 +6,8 @@ def pod(**subs):
   default_labels = dict(app=subs['name'])
   labels = {**subs.get('labels', {}), **default_labels}
 
+  command = subs.get('cmd').split(' ') if subs.get('cmd') else None
+
   return broker.client.V1Pod(
     metadata=V1ObjectMeta(
       name=subs.get('name'),
@@ -16,7 +18,9 @@ def pod(**subs):
         V1Container(
           name=subs.get('container', 'primary'),
           image=subs.get('image', 'nginx'),
-          image_pull_policy="IfNotPresent"
+          image_pull_policy="IfNotPresent",
+          command=command,
+          args=subs.get('args', None)
         )
       ]
     )

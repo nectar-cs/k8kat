@@ -1,5 +1,5 @@
 import time
-from typing import List, Tuple, Dict
+from typing import Dict, Callable, Optional
 
 from kubernetes.client.rest import ApiException
 
@@ -13,58 +13,14 @@ class KatRes:
   def __init__(self, raw):
     self.is_dirty = False
     self.raw = raw
-    self._assoced_events = None
 
-  def __lt__(self, other):
-    return self.created_at < other.created_at
-
-  @classmethod
-  def q(cls):
-    delegate = cls._collection_class()
-    if delegate:
-      return delegate()
-
-  @classmethod
-  def is_namespaced(cls):
-    return True
-
-  @classmethod
-  def find(cls, ns, name):
-    try:
-      return cls(cls._find(ns, name))
-    except ApiException:
-      return None
-
-  @classmethod
-  def _find(cls, ns, name):
-    impl = cls._api_methods().get('read')
-    if impl:
-      if cls.is_namespaced():
-        return impl(name=name, namespace=ns)
-      else:
-        return impl(name=name)
-    else:
-      raise NotImplementedError
-
-  @classmethod
-  def delete_if_exists(cls, ns, name, wait_until_gone=False):
-    instance = cls.find(ns, name)
-    if instance:
-      instance.delete(wait_until_gone)
-
-  def find_myself(self):
-    return self._find(self.ns, self.name)
-
-  def update(self):
-    self._perform_patch_self()
-    self.reload()
-
-  def reload(self):
-    try:
-      self.raw = self.find_myself()
-      return True
-    except ApiException as e:
-      return False
+# --
+# --
+# --
+# -------------------------------PROPERTIES-------------------------------
+# --
+# --
+# --
 
   @property
   def uid(self):
@@ -72,21 +28,18 @@ class KatRes:
 
   @property
   def kind(self):
-    _kind = self.raw.kind
-    if not _kind:
-      raise NotImplementedError
-    return _kind
+    raise NotImplementedError
 
   @property
-  def name(self):
+  def name(self) -> str:
     return self.raw.metadata.name
 
   @property
-  def namespace(self):
+  def namespace(self) -> str:
     return self.raw.metadata.namespace
 
   @property
-  def ns(self):
+  def ns(self) -> str:
     return self.namespace
 
   @property
@@ -95,25 +48,32 @@ class KatRes:
     return utils.try_or(getter)
 
   @property
-  def labels(self):
+  def labels(self) -> Dict[str, str]:
     return self.raw.metadata.labels or {}
 
-  @property
-  def label_tups(self) -> List[Tuple[str, str]]:
-    return list(self.labels.items())
+# --
+# --
+# --
+# -------------------------------ACTION-------------------------------
+# --
+# --
+# --
 
-  def label(self, which):
-    return self.labels.get(which)
+  def reload(self) -> Optional['KatRes']:
+    self.raw = self.find_raw(self.name, self.ns)
+    return self if self.raw else None
 
-  @classmethod
-  def _collection_class(cls) -> any:
-    return None
+  def delete(self, wait_until_gone=False):
+    self._perform_delete_self()
+    if wait_until_gone:
+      while self.reload():
+        time.sleep(0.5)
 
-  @property
-  def pod_select_labels(self) -> Dict[str, str]:
-    return {}
+  def patch(self) -> Optional['KatRes']:
+    self._perform_patch_self()
+    return self.reload()
 
-  def wait_until(self, predicate, max_time_sec=None):
+  def wait_until(self, predicate, max_time_sec=None) -> bool:
     start_time = time.time()
     condition_met = False
     for attempts in range(0, 50):
@@ -128,54 +88,85 @@ class KatRes:
     return condition_met
 
   def events(self):
-    if self._assoced_events is None:
-      api = broker.coreV1
-      raw_list = api.list_namespaced_event(namespace=self.ns).items
-      kat_list = [KatEvent(raw_event) for raw_event in raw_list]
-      mine = [event for event in kat_list if event.is_for(self)]
-      self._assoced_events = mine
-    return self._assoced_events
+    api = broker.coreV1
+    raw_list = api.list_namespaced_event(namespace=self.ns).items
+    kat_list = [KatEvent(raw_event) for raw_event in raw_list]
+    return [event for event in kat_list if event.is_for(self)]
 
   def trigger(self):
     self.set_label(trigger=utils.rand_str())
 
-  def set_label(self, **labels):
+  def set_label(self, **labels: Dict[str, str]):
     new_label_dict = {**self.labels, **labels}
     self.raw.metadata.labels = new_label_dict
     self.patch()
 
-  def _perform_patch_self(self):
-    patch_method = self._api_methods().get('patch')
-    if patch_method:
-      patch_method(
-        name=self.name,
-        namespace=self.namespace,
-        body=self.raw
-      )
-    else:
-      raise NotImplementedError
+  def add_labels(self, **new_labels: Dict[str, str]):
+    existing = self.raw.metadata.labels
+    merged = {**existing, **new_labels}
+    self.raw.metadata.labels = merged
+    self.patch()
 
-  def patch(self):
-    self._perform_patch_self()
-    self.reload()
+# --
+# --
+# --
+# -------------------------------CLASS-------------------------------
+# --
+# --
+# --
 
   @classmethod
-  def _api_methods(cls):
+  def find_raw(cls, name, ns=None):
+    try:
+      fn: Callable = cls._api_methods().get('read')
+      is_ns: bool = cls.is_namespaced()
+      return fn(name=name, namespace=ns) if is_ns else fn(name=name)
+    except ApiException:
+      return None
+
+  @classmethod
+  def find(cls, name, ns=None):
+    raw_res = cls.find_raw(name, ns)
+    return cls(raw_res) if raw_res else None
+
+  @classmethod
+  def delete_if_exists(cls, ns, name, wait_until_gone=False):
+    instance = cls.find(name, ns)
+    if instance:
+      instance.delete(wait_until_gone)
+
+  @classmethod
+  def _api_methods(cls) -> Dict[str, Callable]:
     return dict()
 
-  def _delete(self):
-    impl = self._api_methods().get('delete')
-    if impl:
-      if self.is_namespaced():
-        impl(name=self.name, namespace=self.ns)
-      else:
-        impl(name=self.name)
+  @classmethod
+  def is_namespaced(cls) -> bool:
+    return True
 
-  def delete(self, wait_until_gone=False):
-    self._delete()
-    if wait_until_gone:
-      while self.reload():
-        time.sleep(0.5)
+# --
+# --
+# --
+# -------------------------------PLUMBING-------------------------------
+# --
+# --
+# --
+
+  def _perform_patch_self(self):
+    patch_method = self._api_methods().get('patch')
+    self.ns_agnostic_call(patch_method, body=self.raw)
+
+  def _perform_delete_self(self):
+    impl = self._api_methods().get('delete')
+    self.ns_agnostic_call(impl)
+
+  def __lt__(self, other):
+    return self.created_at < other.created_at
+
+  def ns_agnostic_call(self, impl: Callable, **kwargs) -> any:
+    if self.is_namespaced():
+      return impl(name=self.name, namespace=self.ns, **kwargs)
+    else:
+      return impl(name=self.name, **kwargs)
 
   def serialize(self, serializer):
     return serializer(self)

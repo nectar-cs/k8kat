@@ -35,7 +35,7 @@ def create(**subs):
     )
   )
 
-  broker.appsV1.create_namespaced_deployment(
+  result = broker.appsV1.create_namespaced_deployment(
     body=deployment,
     namespace=subs['ns']
   )
@@ -50,4 +50,4 @@ def create(**subs):
   while not len(pods()) == deployment.spec.replicas:
     time.sleep(1)
 
-  return deployment
+  return result
