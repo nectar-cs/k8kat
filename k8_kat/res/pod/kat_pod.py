@@ -1,14 +1,14 @@
-import re
-from typing import Optional, List
+from http.client import HTTPResponse
+from typing import List, Optional
 
-from kubernetes.client import V1PodStatus, V1Pod, V1Container, \
+from kubernetes import stream as k8s_streaming
+from kubernetes.client import V1Pod, V1Container, \
   V1ContainerState
 from kubernetes.client.rest import ApiException
-from kubernetes import stream as k8s_streaming
 
 from k8_kat.auth.kube_broker import broker
-from k8_kat.res.pod import pod_utils
 from k8_kat.res.base.kat_res import KatRes
+from k8_kat.res.pod import pod_utils
 from k8_kat.utils.main import utils
 
 
@@ -41,24 +41,8 @@ class KatPod(KatRes):
     return self.body().status.phase
 
   @property
-  def container(self) -> V1Container:
-    return self.body().spec.containers[0]
-
-  @property
-  def container_status(self) -> Optional[V1PodStatus]:
-    cont_statuses = self.body().status.container_statuses
-    if cont_statuses and len(cont_statuses):
-      return cont_statuses[0]
-    else:
-      return None
-
-  @property
   def ip(self) -> str:
     return utils.try_or(lambda: self.body().status.pod_ip)
-
-  @property
-  def image(self) -> str:
-    return self.container and self.container.image
 
   @property
   def updated_at(self):
@@ -74,6 +58,12 @@ class KatPod(KatRes):
 
   def body(self) -> V1Pod:
     return self.raw
+
+  def container(self, index=0) -> V1Container:
+    return self.body().spec.containers[index]
+
+  def image(self, index=0) -> str:
+    return self.container and self.container(index).image
 
   def main_container_states(self) -> List[V1ContainerState]:
     statuses = self.body().status.container_statuses or []
@@ -129,20 +119,22 @@ class KatPod(KatRes):
   def has_succeeded(self):
     return self.body().status.phase == 'Succeeded'
 
-  def raw_logs(self, seconds=60):
-    return broker.coreV1.read_namespaced_pod_log(
-      namespace=self.namespace,
-      name=self.name,
-      since_seconds=seconds
-    )
-
-  def logs(self, seconds=60):
+  def raw_logs(self, seconds=60) -> Optional[str]:
     try:
-      log_dump = self.raw_logs(seconds)
-      log_lines = log_dump.split("\n")
-      return [try_clean_log_line(line) for line in log_lines]
+      return broker.coreV1.read_namespaced_pod_log(
+        namespace=self.namespace,
+        name=self.name,
+        since_seconds=seconds
+      )
     except ApiException:
       return None
+
+  def log_lines(self, seconds=60) -> List[str]:
+    raw_log_str = self.raw_logs(seconds)
+    if raw_log_str:
+      return raw_log_str.strip("\n").split("\n")
+    else:
+      return []
 
 # --
 # --
@@ -152,8 +144,8 @@ class KatPod(KatRes):
 # --
 # --
 
-  def shell_exec(self, command):
-    return k8s_streaming.stream(
+  def shell_exec(self, command) -> Optional[str]:
+    result = k8s_streaming.stream(
       broker.coreV1.connect_get_namespaced_pod_exec,
       self.name,
       self.namespace,
@@ -164,22 +156,17 @@ class KatPod(KatRes):
       tty=False
     )
 
-  def replace_image(self, new_image_name):
-    self.body().spec.containers[0].image = new_image_name
+    return result.strip() if result else None
+
+  def replace_image(self, new_image_name, index=0):
+    self.body().spec.containers[index].image = new_image_name
     self.patch()
 
   def wait_until_running(self):
     return self.wait_until(self.is_running)
 
-  def wait_until_settled(self):
-    return self.wait_until(self.is_running)
-
-  def curl_to_other_pod(self, to_pod, **kwargs):
-    kwargs['url'] = to_pod.ip
-    return self.invoke_curl(**kwargs)
-
-  def invoke_curl(self, **kwargs):
-    fmt_command = pod_utils.build_curl_cmd(**kwargs)
+  def invoke_curl(self, **kwargs) -> HTTPResponse:
+    fmt_command = pod_utils.build_curl_cmd(**kwargs, with_command=True)
     result = self.shell_exec(fmt_command)
     if result is not None:
       result = pod_utils.parse_response(result)
@@ -193,9 +180,6 @@ class KatPod(KatRes):
       delete=broker.coreV1.delete_namespaced_pod
     )
 
-  def __repr__(self):
-    return f"\n{self.ns}:{self.name} | {self.image}"
-
 
 def has_morbid_pending_reasons(states: List[V1ContainerState]):
   reasons = set([state.waiting.reason for state in states])
@@ -205,12 +189,3 @@ def has_morbid_pending_reasons(states: List[V1ContainerState]):
 
 def filter_states(states: List[V1ContainerState], _type: str) -> List[V1ContainerState]:
   return [state for state in states if getattr(state, _type)]
-
-LOG_REGEX = r"(\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b) - - (.*)"
-
-def try_clean_log_line(line):
-  try:
-    match = re.search(LOG_REGEX, line)
-    return match.group(2) or line
-  except:
-    return line

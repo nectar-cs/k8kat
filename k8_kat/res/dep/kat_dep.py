@@ -8,11 +8,6 @@ from k8_kat.res.base.kat_res import KatRes
 COMMIT_KEYS = ['sha', 'branch', 'message', 'timestamp']
 
 class KatDep(KatRes):
-  def __init__(self, raw):
-    super().__init__(raw)
-    self.assoced_pods = None
-    self.assoced_svcs = None
-    self._am_dirty = raw is not None
 
   @property
   def kind(self):
@@ -70,7 +65,6 @@ class KatDep(KatRes):
     remember_replicas = self.desired_replicas
     self.scale(0)
     self.scale(remember_replicas)
-    self._am_dirty = True
 
   def scale(self, replicas):
     broker.appsV1.patch_namespaced_deployment_scale(
@@ -82,11 +76,6 @@ class KatDep(KatRes):
         )
       )
     )
-    self._am_dirty = True
-
-  def __repr__(self):
-    pod_ct = f"{3}/{self.desired_replicas}"
-    return f"\n{self.ns}:{self.name} | {pod_ct}"
 
   @classmethod
   def _api_methods(cls):
