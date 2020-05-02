@@ -1,11 +1,10 @@
 from typing import Dict
 
-from kubernetes.client import V1PodSpec, V1Container, V1Scale, V1ScaleSpec
+from kubernetes.client import V1PodSpec, V1Container, V1Scale, V1ScaleSpec, V1Deployment
 
 from k8_kat.auth.kube_broker import broker
 from k8_kat.res.base.kat_res import KatRes
 
-COMMIT_KEYS = ['sha', 'branch', 'message', 'timestamp']
 
 class KatDep(KatRes):
 
@@ -18,44 +17,51 @@ class KatDep(KatRes):
     return self.raw.spec.template.spec
 
   @property
-  def raw_container_spec(self) -> V1Container:
-    specs = self.pod_spec.containers
-    return specs[0] if len(specs) else None
-
-  @property
-  def image_name(self) -> str:
-    container_spec = self.raw_container_spec
-    return container_spec and container_spec.image
-
-  @property
-  def container_name(self) -> str:
-    container_spec = self.raw_container_spec
-    return container_spec and container_spec.name
-
-  @property
   def pod_select_labels(self) -> Dict[str, str]:
     return self.raw.spec.selector.match_labels or {}
 
   @property
-  def template_labels(self):
+  def template_labels(self) -> Dict[str, str]:
     return self.raw.spec.template.metadata.labels or {}
 
   @property
-  def desired_replicas(self):
+  def desired_replicas(self) -> int:
     return self.raw.spec.replicas
 
   @property
   def avail_replicas(self):
-    return self.desired_replicas - self.raw.status.unavailableReplicas
+    return self.raw.status.available_replicas
 
-  @property
-  def image_pull_policy(self):
-    cont_spec = self.raw_container_spec
+# --
+# --
+# --
+# -------------------------------ACTION-------------------------------
+# --
+# --
+# --
+
+  def body(self) -> V1Deployment:
+    return self.raw
+
+  def container_spec(self, index=0) -> V1Container:
+    specs = self.pod_spec.containers
+    return specs[index] if len(specs) else None
+
+  def image_name(self, index=0) -> str:
+    container_spec = self.container_spec(index)
+    return container_spec and container_spec.image
+
+  def container_name(self, index=0) -> str:
+    spec = self.container_spec(index)
+    return spec.name if spec else None
+
+  def image_pull_policy(self, index=0) -> str:
+    cont_spec = self.container_spec(index)
     return cont_spec and cont_spec.image_pull_policy
 
-  def is_running(self):
+  def is_running(self) -> bool:
     replicas = self.raw.status.ready_replicas
-    return type(replicas) == int and replicas > 0
+    return type(replicas) == int and replicas >= 1
 
   def replace_image(self, new_image_name):
     self.raw.spec.template.spec.containers[0].image = new_image_name
