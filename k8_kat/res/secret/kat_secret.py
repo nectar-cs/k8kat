@@ -14,11 +14,12 @@ class KatSecret(KatRes):
     return "Secret"
 
   @classmethod
-  def _api_methods(cls):
+  def k8s_verb_methods(cls):
     return(
       dict(
         read=broker.coreV1.read_namespaced_secret,
         patch=broker.coreV1.patch_namespaced_secret,
         delete=broker.coreV1.delete_namespaced_secret,
+        list=broker.coreV1.list_namespaced_secret,
       )
     )

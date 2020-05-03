@@ -4,6 +4,7 @@ from kubernetes.client import V1PodSpec, V1Container, V1Scale, V1ScaleSpec, V1De
 
 from k8_kat.auth.kube_broker import broker
 from k8_kat.res.base.kat_res import KatRes
+from k8_kat.res.relation.relation import Relation
 
 
 class KatDep(KatRes):
@@ -63,6 +64,9 @@ class KatDep(KatRes):
     replicas = self.raw.status.ready_replicas
     return type(replicas) == int and replicas >= 1
 
+  def has_settled(self):
+    return self.is_running()
+
   def replace_image(self, new_image_name):
     self.raw.spec.template.spec.containers[0].image = new_image_name
     self._perform_patch_self()
@@ -84,9 +88,28 @@ class KatDep(KatRes):
     )
 
   @classmethod
-  def _api_methods(cls):
+  def k8s_verb_methods(cls):
     return dict(
       read=broker.appsV1.read_namespaced_deployment,
       patch=broker.appsV1.patch_namespaced_deployment,
       delete=broker.appsV1.delete_namespaced_deployment,
+      list=broker.appsV1.list_namespaced_deployment
     )
+
+# --
+# --
+# --
+# -------------------------------RELATIONS-------------------------------
+# --
+# --
+# --
+
+  def pods(self, **query):
+    from k8_kat.res.pod.kat_pod import KatPod
+    return Relation[KatPod](
+      model_class=KatPod,
+      ns=self.ns,
+      labels=self.pod_select_labels,
+      **query
+    )
+

@@ -9,12 +9,13 @@ class KatRole(KatRes):
     return "Role"
 
   @classmethod
-  def _api_methods(cls):
+  def k8s_verb_methods(cls):
     return(
       dict(
         read=broker.rbacV1.read_namespaced_role,
         patch=broker.rbacV1.patch_namespaced_role,
         delete=broker.rbacV1.delete_namespaced_role,
+        list=broker.rbacV1.list_namespaced_role,
       )
     )
 
@@ -26,12 +27,13 @@ class KatRoleBinding(KatRes):
     return "RoleBinding"
 
   @classmethod
-  def _api_methods(cls):
+  def k8s_verb_methods(cls):
     return(
       dict(
         read=broker.rbacV1.read_namespaced_role_binding,
         patch=broker.rbacV1.patch_namespaced_role_binding,
         delete=broker.rbacV1.delete_namespaced_role_binding,
+        list=broker.rbacV1.list_namespaced_role_binding
       )
     )
 
@@ -47,7 +49,7 @@ class KatClusterRole(KatRes):
     return False
 
   @classmethod
-  def _api_methods(cls):
+  def k8s_verb_methods(cls):
     return(
       dict(
         read=broker.rbacV1.read_cluster_role,
@@ -68,7 +70,7 @@ class KatClusterRoleBinding(KatRes):
     return False
 
   @classmethod
-  def _api_methods(cls):
+  def k8s_verb_methods(cls):
     return(
       dict(
         read=broker.rbacV1.read_cluster_role_binding,

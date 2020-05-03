@@ -1,9 +1,9 @@
 import unittest
 from typing import Tuple
 
-from k8_kat.res.base.label_set_expressions import LabelLogic
+from k8_kat.res.base import label_set_expressions
 
-kls = LabelLogic
+kls = label_set_expressions
 
 class TestLabelLogic(unittest.TestCase):
 

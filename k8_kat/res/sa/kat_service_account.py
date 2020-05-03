@@ -16,12 +16,13 @@ class KatServiceAccount(KatRes):
     return self.raw
 
   @classmethod
-  def _api_methods(cls):
+  def k8s_verb_methods(cls):
     return(
       dict(
         read=broker.coreV1.read_namespaced_service_account,
         patch=broker.coreV1.patch_namespaced_service_account,
         delete=broker.coreV1.delete_namespaced_service_account,
+        list=broker.coreV1.list_namespaced_service_account,
       )
     )
 

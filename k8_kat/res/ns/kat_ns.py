@@ -2,6 +2,7 @@ from typing import Callable, Dict
 
 from k8_kat.auth.kube_broker import broker
 from k8_kat.res.base.kat_res import KatRes
+from k8_kat.res.relation.relation import Relation
 from k8_kat.res.sa.kat_service_account import KatServiceAccount
 
 
@@ -41,11 +42,9 @@ class KatNs(KatRes):
     return False
 
   @classmethod
-  def _api_methods(cls):
+  def k8s_verb_methods(cls):
     return dict(
       read=broker.coreV1.read_namespace,
       patch=broker.coreV1.patch_namespace,
       delete=broker.coreV1.delete_namespace
     )
-
-

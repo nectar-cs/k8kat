@@ -6,7 +6,9 @@ from k8_kat.tests.res.base.test_kat_res import Base
 
 
 class TestKatSa(Base.TestKatRes):
-  def create_res(self, name, ns=None):
+
+  @classmethod
+  def create_res(cls, name, ns=None):
     return broker.coreV1.create_namespaced_service_account(
       namespace=ns,
       body=V1ServiceAccount(
@@ -19,3 +21,11 @@ class TestKatSa(Base.TestKatRes):
   @classmethod
   def res_class(cls):
     return KatServiceAccount
+
+  def test_aaa_list_namespaced(self, expected=None):
+    super().test_aaa_list_namespaced(
+      [self.res_name, 'default']
+    )
+
+  def test_aaa_list_namespaced_filtered(self, expected=None):
+    pass

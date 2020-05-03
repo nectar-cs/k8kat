@@ -173,12 +173,30 @@ class KatPod(KatRes):
     return result
 
   @classmethod
-  def _api_methods(cls):
+  def k8s_verb_methods(cls):
     return dict(
       read=broker.coreV1.read_namespaced_pod,
       patch=broker.coreV1.patch_namespaced_pod,
-      delete=broker.coreV1.delete_namespaced_pod
+      delete=broker.coreV1.delete_namespaced_pod,
+      list=broker.coreV1.list_namespaced_pod
     )
+
+# --
+# --
+# --
+# -------------------------------RELATION-------------------------------
+# --
+# --
+# --
+
+
+# --
+# --
+# --
+# -------------------------------UTILS-------------------------------
+# --
+# --
+# --
 
 
 def has_morbid_pending_reasons(states: List[V1ContainerState]):
@@ -189,3 +207,4 @@ def has_morbid_pending_reasons(states: List[V1ContainerState]):
 
 def filter_states(states: List[V1ContainerState], _type: str) -> List[V1ContainerState]:
   return [state for state in states if getattr(state, _type)]
+

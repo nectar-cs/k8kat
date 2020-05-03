@@ -16,7 +16,7 @@ def create(**subs):
       annotations=subs.get('annotations', {})
     ),
     spec=V1DeploymentSpec(
-      replicas=subs.get('replicas', 0),
+      replicas=subs.get('replicas', 1),
       selector=V1LabelSelector(
         match_labels=match_labels
       ),

@@ -13,10 +13,9 @@ class Base:
     @classmethod
     def setUpClass(cls) -> None:
       super().setUpClass()
+      cls.pns, cls.pns2 = None, None
       if cls.res_class().is_namespaced():
-        cls.pns, = ns_factory.request(1)
-      else:
-        cls.pns = None
+        cls.pns, cls.pns2 = ns_factory.request(2)
 
     def setUp(self) -> None:
       self.res_name = utils.rand_str(8)
@@ -42,6 +41,32 @@ class Base:
       self.assertIsInstance(res, self.res_class())
       self.assertEqual(res.raw.metadata.name, self.res_name)
       self.assertEqual(res.raw.kind, res.kind)
+
+    def test_aaa_list_namespaced(self, expected=None):
+      if self.res_class().is_namespaced():
+        self.create_res(self.res_name, self.pns)
+        self.create_res(self.res_name, self.pns2)
+        names = lambda res_list: [r.name for r in res_list]
+        result = self.res_class().list(ns=self.pns)
+        expected = expected or [self.res_name]
+        self.assertEqual(sorted(names(result)), sorted(expected))
+
+    def test_aaa_list_namespaced_filtered(self, expected=None):
+      pass
+      # if self.res_class().is_namespaced():
+      #   self.create_res(self.res_name, self.pns)
+      #   other = self.create_res(utils.rand_str(), self.pns)
+      #
+      #   res, other_res = self.get_res(), self.res_class()(other)
+      #   res.wait_until(res.has_settled)
+      #   other_res.wait_until(res.has_settled)
+      #
+      #   res.set_label(foo='bar')
+      #   other_res.set_label(foo='baz')
+      #   names = lambda res_list: [r.name for r in res_list]
+      #   result = self.res_class().list(ns=self.pns, labels=dict(foo='bar'))
+      #   expected = expected or [self.res_name]
+      #   self.assertEqual(sorted(names(result)), sorted(expected))
 
     def test_reload_when_exists(self):
       self.create_res(self.res_name, self.pns)
@@ -77,7 +102,8 @@ class Base:
     def get_res(self) -> KatRes:
       return self.res_class().find(self.res_name, self.pns)
 
-    def create_res(self, name, ns=None):
+    @classmethod
+    def create_res(cls, name, ns=None):
       raise NotImplementedError
 
     @classmethod
