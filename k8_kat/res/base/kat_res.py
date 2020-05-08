@@ -63,6 +63,15 @@ class KatRes:
     self.raw = self.find_raw(self.name, self.ns)
     return self if self.raw else None
 
+  @classmethod
+  def list(cls, ns=None, **query):
+    from k8_kat.res.relation.relation import Relation
+    return Relation[cls](
+      model_class=cls,
+      ns=ns,
+      **query
+    )
+
   def delete(self, wait_until_gone=False):
     self._perform_delete_self()
     if wait_until_gone:
@@ -87,6 +96,9 @@ class KatRes:
         self.reload()
     return condition_met
 
+  def has_settled(self):
+    return True
+
   def events(self):
     api = broker.coreV1
     raw_list = api.list_namespaced_event(namespace=self.ns).items
@@ -96,7 +108,7 @@ class KatRes:
   def trigger(self):
     self.set_label(trigger=utils.rand_str())
 
-  def set_label(self, **labels: Dict[str, str]):
+  def set_label(self, **labels):
     new_label_dict = {**self.labels, **labels}
     self.raw.metadata.labels = new_label_dict
     self.patch()
@@ -118,7 +130,7 @@ class KatRes:
   @classmethod
   def find_raw(cls, name, ns=None):
     try:
-      fn: Callable = cls._api_methods().get('read')
+      fn: Callable = cls.k8s_verb_methods().get('read')
       is_ns: bool = cls.is_namespaced()
       return fn(name=name, namespace=ns) if is_ns else fn(name=name)
     except ApiException:
@@ -136,7 +148,7 @@ class KatRes:
       instance.delete(wait_until_gone)
 
   @classmethod
-  def _api_methods(cls) -> Dict[str, Callable]:
+  def k8s_verb_methods(cls) -> Dict[str, Callable]:
     return dict()
 
   @classmethod
@@ -152,11 +164,11 @@ class KatRes:
 # --
 
   def _perform_patch_self(self):
-    patch_method = self._api_methods().get('patch')
+    patch_method = self.k8s_verb_methods().get('patch')
     self.ns_agnostic_call(patch_method, body=self.raw)
 
   def _perform_delete_self(self):
-    impl = self._api_methods().get('delete')
+    impl = self.k8s_verb_methods().get('delete')
     self.ns_agnostic_call(impl)
 
   def __lt__(self, other):

@@ -66,16 +66,14 @@ class KatSvc(KatRes):
     return utils.flatten([per_sub(sub) for sub in raw_endpoints.subsets])
 
   @classmethod
-  def _api_methods(cls):
+  def k8s_verb_methods(cls):
     return dict(
       read=broker.coreV1.read_namespaced_service,
       patch=broker.coreV1.patch_namespaced_service,
-      delete=broker.coreV1.delete_namespaced_service
+      delete=broker.coreV1.delete_namespaced_service,
+      list=broker.coreV1.list_namespaced_service
     )
 
   @property
   def endpoint_ips(self):
     return [ep.ip for ep in self.flat_endpoints()]
-
-  def __repr__(self):
-    return f"\n{self.ns}:{self.name} | {self.type} | {self.internal_ip}"

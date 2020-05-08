@@ -15,7 +15,7 @@ def shell_exec(cmd) -> str:
     formatted_cmd,
     stdout=subprocess.PIPE
   )
-  return output.stdout
+  return output.stdout.decode()
 
 
 def jk_exec(cmd, **kwargs) -> Dict[str, any]:
@@ -82,14 +82,6 @@ def is_non_trivial(dict_array):
   return [e for e in dict_array if e]
 
 
-def is_either_hash_in_hash(big_hash, little_hashes):
-  little_tuples = [list(h.items())[0] for h in little_hashes]
-  for _tuple in (big_hash or {}).items():
-    if _tuple in little_tuples:
-      return True
-  return False
-
-
 # noinspection PyBroadException
 def try_or(lam, fallback=None):
   try:
@@ -98,43 +90,9 @@ def try_or(lam, fallback=None):
     return fallback
 
 
-def dict_to_eq_str(_dict):
-  return ",".join(
-    ["=".join([k, str(v)]) for k, v in _dict.items()]
-  )
-
-
-def parse_dict_array(_string):
-  parts = _string.split(',')
-  return [parse_dict(part) for part in parts]
-
-
-def parse_dict(encoded_dict):
-  result_dict = {}
-  for encoded_kv in encoded_dict.split(','):
-    key, value = encoded_kv.split(':')
-    result_dict[key] = value
-  return result_dict
-
-
 def rand_str(string_len=10):
   letters = string.ascii_lowercase
   return ''.join(random.choice(letters) for i in range(string_len))
-
-
-def fqcn(o):
-  module = o.__class__.__module__
-  if module is None or module == str.__class__.__module__:
-    return o.__class__.__name__
-  else:
-    return module + '.' + o.__class__.__name__
-
-
-def coerce_cmd_format(cmd):
-  if isinstance(cmd, str):
-    return cmd.split(" ")
-  else:
-    return cmd
 
 
 def flatten(nested_list):

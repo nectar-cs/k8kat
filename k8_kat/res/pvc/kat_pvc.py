@@ -9,9 +9,10 @@ class KatPvc(KatRes):
     return "PersistentVolumeClaim"
 
   @classmethod
-  def _api_methods(cls):
+  def k8s_verb_methods(cls):
     return dict(
       read=broker.coreV1.read_namespaced_persistent_volume_claim,
       patch=broker.coreV1.patch_namespaced_persistent_volume_claim,
-      delete=broker.coreV1.delete_namespaced_persistent_volume_claim
+      delete=broker.coreV1.delete_namespaced_persistent_volume_claim,
+      list=broker.coreV1.list_namespaced_persistent_volume_claim
     )

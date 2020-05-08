@@ -16,7 +16,7 @@ def create(**subs):
       annotations=subs.get('annotations', {})
     ),
     spec=V1DeploymentSpec(
-      replicas=subs.get('replicas', 0),
+      replicas=subs.get('replicas', 1),
       selector=V1LabelSelector(
         match_labels=match_labels
       ),
@@ -27,7 +27,7 @@ def create(**subs):
             V1Container(
               name=subs.get("container", "primary"),
               image=subs.get('image', 'nginx'),
-              image_pull_policy="IfNotPresent"
+              image_pull_policy=subs.get('ipp', 'IfNotPresent'),
             )
           ]
         )

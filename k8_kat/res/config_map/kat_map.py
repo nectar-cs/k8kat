@@ -30,16 +30,17 @@ class KatMap(KatRes):
     raw_value = self.data.get(key)
     return raw_value and yaml.load(raw_value, Loader=yaml.FullLoader)
 
-  def jpatch(self, content: Dict, key: str=None, merge: bool=False):
+  def jpatch(self, content: Dict, key: str = None, merge: bool = False):
     key = key or 'master'
     content = {**self.jget(key), **content} if merge else content
     self.raw.data = ({key: json.dumps(content)})
     return self.patch()
 
   @classmethod
-  def _api_methods(cls):
+  def k8s_verb_methods(cls):
     return dict(
       read=broker.coreV1.read_namespaced_config_map,
       patch=broker.coreV1.patch_namespaced_config_map,
-      delete=broker.coreV1.delete_namespaced_config_map
+      delete=broker.coreV1.delete_namespaced_config_map,
+      list=broker.coreV1.list_namespaced_config_map
     )

@@ -5,6 +5,7 @@ from kubernetes.client import V1Container, V1EnvVar, V1EnvVarSource, V1ConfigMap
 from k8_kat.auth.kube_broker import broker
 from k8_kat.res.pod.kat_pod import KatPod
 from k8_kat.tests.res.base.test_kat_res import Base
+from k8_kat.utils.main import utils
 from k8_kat.utils.testing import test_helper, simple_pod
 
 
@@ -14,7 +15,8 @@ class TestKatPod(Base.TestKatRes):
   def res_class(cls):
     return KatPod
 
-  def create_res(self, name, ns=None):
+  @classmethod
+  def create_res(cls, name, ns=None):
     return test_helper.create_pod(ns, name)
 
   def pre_crash_assertions(self, pod):
@@ -66,15 +68,47 @@ class TestKatPod(Base.TestKatRes):
     self.pre_crash_assertions(pod)
     self.pending_morbidly_assertions(pod)
 
+  def test_logs(self):
+    pod = KatPod(simple_pod.create(
+      ns=self.pns,
+      name=self.res_name,
+      image='busybox',
+      command=["/bin/sh", "-c"],
+      args=["echo one && echo two && exit 0"]
+    ))
+    pod.wait_until(pod.has_settled)
+    self.assertEqual(pod.raw_logs(), "one\ntwo\n")
+    self.assertEqual(pod.log_lines(), ['one', 'two'])
+
   def test_shell_exec(self):
     pod = KatPod(test_helper.create_pod(self.pns, self.res_name))
     pod.wait_until_running()
-    self.assertEqual(pod.shell_exec("echo foo").strip(), "foo")
-    self.assertEqual(pod.shell_exec("whoami").strip(), "root")
+    self.assertEqual(pod.shell_exec("echo foo"), "foo")
+    self.assertEqual(pod.shell_exec("whoami"), "root")
+    self.assertEqual(pod.shell_exec("bad-cmd"), None)
+
+  def test_curl_from(self):
+    receiver = KatPod(simple_pod.create(
+      ns=self.pns,
+      name=utils.rand_str(),
+      image="hashicorp/http-echo",
+      args=["-text", "pong"]
+    ))
+    sender = KatPod(simple_pod.create(
+      ns=self.pns,
+      name=self.res_name,
+      image="ewoutp/docker-nginx-curl"
+    ))
+    receiver.wait_until(receiver.has_settled)
+    sender.wait_until(sender.has_settled)
+    ping = sender.invoke_curl(url=f"{receiver.ip}:5678")
+    self.assertEqual(ping.status, 200)
+    self.assertEqual(ping.read(100).decode(), 'pong')
+
 
 def create_crasher(**kwargs) -> KatPod:
   return KatPod(simple_pod.create(
-    cmd="not-a-real-command",
+    command=["not-a-real-command"],
     **kwargs
   ))
 

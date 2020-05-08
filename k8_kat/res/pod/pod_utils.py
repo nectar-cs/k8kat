@@ -1,10 +1,15 @@
-import re
-from typing import List
+from http.client import HTTPResponse
+from io import BytesIO
+from typing import List, Optional
 
-from k8_kat.utils.main import utils
 
-HEADER_BODY_DELIM = "\r\n\r\n"
+# noinspection PyUnusedLocal
+class FakeSocket:
+  def __init__(self, response_bytes):
+    self._file = BytesIO(response_bytes)
 
+  def makefile(self, *args, **kwargs):
+    return self._file
 
 def coerce_cmd_format(cmd):
   if isinstance(cmd, str):
@@ -31,68 +36,13 @@ def build_curl_cmd(**params) -> List[str]:
   ]
   return [part for part in cmd if part is not None]
 
-def parse_status(header):
-  out = re.search('HTTP/(\d*)\.(\d*) (\d*) .*', header)
-  return out.group(3)
+def parse_response(response_str) -> Optional[HTTPResponse]:
+  if response_str:
+    source = FakeSocket(response_str.encode('ascii'))
+    # noinspection PyTypeChecker
+    response = HTTPResponse(source)
+    response.begin()
+    return response
 
-
-def parse_response(response):
-  if response:
-    parts = response.split(HEADER_BODY_DELIM)
-    headers = parts[0].split("\r\n")
-    body_parts = parts[1:len(parts)]
-    body = body_parts[0]
-
-    return dict(
-      raw=response,
-      headers=headers,
-      body=body,
-      status=parse_status(headers[0]),
-      finished=True
-    )
-  else:
-    return dict(
-      raw="N/A",
-      headers=["N/A"],
-      body="Could not connect",
-      status="N/A",
-      finished=False
-    )
-
-
-def container_err(cont_status):
-  term = utils.try_or(lambda: cont_status.state.terminated)
-  wait = utils.try_or(lambda: cont_status.state.waiting)
-  if term:
-    return term.reason
-  elif wait:
-    return wait.reason
   else:
     return None
-
-
-def easy_error(state, pod):
-  if state == 'Error' or state == 'Failed':
-    return container_err(pod)
-  else:
-    return None
-
-
-def true_pod_state(given_phase: str, cont_status, give_hard_error: bool):
-  error = utils.try_or(lambda: container_err(cont_status))
-
-  if given_phase == 'Running':
-    if not cont_status.ready:
-      if not error == 'Completed':
-        return (give_hard_error and error) or "Error"
-      else:
-        return 'Running'
-    else:
-      return given_phase
-  elif given_phase == 'Pending':
-    if error == 'ContainerCreating':
-      return 'Pending'
-    else:
-      return 'Error'
-  else:
-    return given_phase

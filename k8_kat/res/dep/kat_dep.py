@@ -1,18 +1,13 @@
 from typing import Dict
 
-from kubernetes.client import V1PodSpec, V1Container, V1Scale, V1ScaleSpec
+from kubernetes.client import V1PodSpec, V1Container, V1Scale, V1ScaleSpec, V1Deployment
 
 from k8_kat.auth.kube_broker import broker
 from k8_kat.res.base.kat_res import KatRes
+from k8_kat.res.relation.relation import Relation
 
-COMMIT_KEYS = ['sha', 'branch', 'message', 'timestamp']
 
 class KatDep(KatRes):
-  def __init__(self, raw):
-    super().__init__(raw)
-    self.assoced_pods = None
-    self.assoced_svcs = None
-    self._am_dirty = raw is not None
 
   @property
   def kind(self):
@@ -23,44 +18,54 @@ class KatDep(KatRes):
     return self.raw.spec.template.spec
 
   @property
-  def raw_container_spec(self) -> V1Container:
-    specs = self.pod_spec.containers
-    return specs[0] if len(specs) else None
-
-  @property
-  def image_name(self) -> str:
-    container_spec = self.raw_container_spec
-    return container_spec and container_spec.image
-
-  @property
-  def container_name(self) -> str:
-    container_spec = self.raw_container_spec
-    return container_spec and container_spec.name
-
-  @property
   def pod_select_labels(self) -> Dict[str, str]:
     return self.raw.spec.selector.match_labels or {}
 
   @property
-  def template_labels(self):
+  def template_labels(self) -> Dict[str, str]:
     return self.raw.spec.template.metadata.labels or {}
 
   @property
-  def desired_replicas(self):
+  def desired_replicas(self) -> int:
     return self.raw.spec.replicas
 
   @property
   def avail_replicas(self):
-    return self.desired_replicas - self.raw.status.unavailableReplicas
+    return self.raw.status.available_replicas
 
-  @property
-  def image_pull_policy(self):
-    cont_spec = self.raw_container_spec
+# --
+# --
+# --
+# -------------------------------ACTION-------------------------------
+# --
+# --
+# --
+
+  def body(self) -> V1Deployment:
+    return self.raw
+
+  def container_spec(self, index=0) -> V1Container:
+    specs = self.pod_spec.containers
+    return specs[index] if len(specs) else None
+
+  def image_name(self, index=0) -> str:
+    container_spec = self.container_spec(index)
+    return container_spec and container_spec.image
+
+  def container_name(self, index=0) -> str:
+    spec = self.container_spec(index)
+    return spec.name if spec else None
+
+  def image_pull_policy(self, index=0) -> str:
+    cont_spec = self.container_spec(index)
     return cont_spec and cont_spec.image_pull_policy
 
-  def is_running(self):
+  def is_running(self) -> bool:
     replicas = self.raw.status.ready_replicas
-    return type(replicas) == int and replicas > 0
+    return type(replicas) == int and replicas >= 1
+
+  def has_settled(self):
+    return self.is_running()
 
   def replace_image(self, new_image_name):
     self.raw.spec.template.spec.containers[0].image = new_image_name
@@ -70,7 +75,6 @@ class KatDep(KatRes):
     remember_replicas = self.desired_replicas
     self.scale(0)
     self.scale(remember_replicas)
-    self._am_dirty = True
 
   def scale(self, replicas):
     broker.appsV1.patch_namespaced_deployment_scale(
@@ -82,16 +86,30 @@ class KatDep(KatRes):
         )
       )
     )
-    self._am_dirty = True
-
-  def __repr__(self):
-    pod_ct = f"{3}/{self.desired_replicas}"
-    return f"\n{self.ns}:{self.name} | {pod_ct}"
 
   @classmethod
-  def _api_methods(cls):
+  def k8s_verb_methods(cls):
     return dict(
       read=broker.appsV1.read_namespaced_deployment,
       patch=broker.appsV1.patch_namespaced_deployment,
       delete=broker.appsV1.delete_namespaced_deployment,
+      list=broker.appsV1.list_namespaced_deployment
     )
+
+# --
+# --
+# --
+# -------------------------------RELATIONS-------------------------------
+# --
+# --
+# --
+
+  def pods(self, **query):
+    from k8_kat.res.pod.kat_pod import KatPod
+    return Relation[KatPod](
+      model_class=KatPod,
+      ns=self.ns,
+      labels=self.pod_select_labels,
+      **query
+    )
+

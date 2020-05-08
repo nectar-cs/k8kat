@@ -9,29 +9,27 @@ class TestKatSvc(Base.TestKatRes):
   def res_class(cls):
     return KatSvc
 
-  def create_res(self, name, ns=None):
+  @classmethod
+  def create_res(cls, name, ns=None):
     return test_helper.create_svc(ns, name)
 
-  # @classmethod
-  # def setUpClass(cls) -> None:
-  #   super(TestKatSvc, cls).setUpClass()
-  #   cls.n1, = ns_factory.request(1)
-  #   test_helper.create_svc(cls.n1, 's1')
-  #
-  # def setUp(self) -> None:
-  #   self.subject: KatSvc = KatSvc.find('s1', self.n1)
-  #
-  # def test_internal_ip(self):
-  #   self.assertIsNotNone(self.subject.internal_ip)
-  #
-  # def test_from_port(self):
-  #   self.assertEqual(self.subject.from_port, 80)
-  #
-  # def test_to_port(self):
-  #   self.assertEqual(self.subject.to_port, 80)
-  #
-  # def test_short_dns(self):
-  #   self.assertEqual(self.subject.short_dns, f's1.{self.n1}')
-  #
-  # def test_fqdn(self):
-  #   self.assertEqual(self.subject.fqdn, f's1.{self.n1}.svc.cluster.local')
+  def test_internal_ip(self):
+    subject = KatSvc(self.create_res(self.res_name, self.pns))
+    self.assertIsNotNone(subject.internal_ip)
+
+  def test_from_port(self):
+    subject = KatSvc(self.create_res(self.res_name, self.pns))
+    self.assertEqual(subject.from_port, 80)
+
+  def test_to_port(self):
+    subject = KatSvc(self.create_res(self.res_name, self.pns))
+    self.assertEqual(subject.to_port, 80)
+
+  def test_short_dns(self):
+    subject = KatSvc(self.create_res(self.res_name, self.pns))
+    self.assertEqual(subject.short_dns, f'{self.res_name}.{self.pns}')
+
+  def test_fqdn(self):
+    subject = KatSvc(self.create_res(self.res_name, self.pns))
+    expected = f'{self.res_name}.{self.pns}.svc.cluster.local'
+    self.assertEqual(subject.fqdn, expected)
