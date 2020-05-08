@@ -1,5 +1,6 @@
 import time
-from typing import Dict, Callable, Optional
+from datetime import datetime
+from typing import Dict, Callable, Optional, Type
 
 from kubernetes.client.rest import ApiException
 
@@ -44,11 +45,6 @@ class KatRes:
     return self.namespace
 
   @property
-  def created_at(self):
-    getter = lambda: self.raw.metadata.creation_timestamp
-    return utils.try_or(getter)
-
-  @property
   def labels(self) -> Dict[str, str]:
     return self.raw.metadata.labels or {}
 
@@ -56,6 +52,10 @@ class KatRes:
   def annotations(self) -> Dict[str, str]:
     return self.raw.metadata.annotations or {}
 
+  @property
+  def created_at(self) -> Optional[str]:
+    ts = self.raw.metadata.creation_timestamp
+    return ts.isoformat(' ', 'seconds') if ts else None
 
 # --
 # --
@@ -74,7 +74,12 @@ class KatRes:
   def has_settled(self):
     return True
 
+  def updated_at(self) -> str:
+    return self.annotations.get('updated_at') or \
+           self.created_at
 
+  def short_desc(self):
+    return self.annotations.get('short_desc')
 
 # --
 # --
@@ -130,10 +135,14 @@ class KatRes:
   def trigger(self):
     self.annotate(trigger=utils.rand_str())
 
-  def annotate(self, **annotations):
+  def touch(self, save=True):
+    self.annotate(save=save, updated_at=str(datetime.now()))
+
+  def annotate(self, save=True, **annotations):
     combined_annotations = {**self.annotations, **annotations}
     self.raw.metadata.annotations = combined_annotations
-    self.patch()
+    if save:
+      self.patch()
 
 # --
 # --
@@ -173,11 +182,16 @@ class KatRes:
 
   @classmethod
   def inflate(cls, raw) -> 'KatRes':
-    kind = raw.kind
+    host = cls.find_res_class(raw.kind)
+    return host(raw) if host else None
+
+  @classmethod
+  def find_res_class(cls, kind) -> Optional[Type['KatRes']]:
     subclasses = KatRes.__subclasses__()
     # noinspection PyUnresolvedReferences
     matches = [sc for sc in subclasses if sc.kind == kind]
-    return matches[0](raw) if len(matches) == 1 else None
+    return matches[0] if len(matches) == 1 else None
+
 
 # --
 # --

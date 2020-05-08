@@ -11,12 +11,13 @@ from k8_kat.tests.res.base.test_kat_res import Base
 class TestKatConfigMap(Base.TestKatRes):
 
   @classmethod
-  def create_res(cls, name, ns=None):
+  def create_res(cls, name, ns=None, data=None):
+    data = data if data else dict(foo='bar')
     return broker.coreV1.create_namespaced_config_map(
       namespace=ns,
       body=V1ConfigMap(
         metadata=V1ObjectMeta(name=name),
-        data=dict(foo='bar')
+        data=data
       )
     )
 

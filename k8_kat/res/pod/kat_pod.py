@@ -46,8 +46,9 @@ class KatPod(KatRes):
     return utils.try_or(lambda: self.body().status.pod_ip)
 
   @property
-  def updated_at(self):
-    return self.body().status.start_time
+  def has_parent (self) -> bool:
+    refs = self.raw.metadata.owner_references
+    return refs is not None and len(refs) > 0
 
 # --
 # --
