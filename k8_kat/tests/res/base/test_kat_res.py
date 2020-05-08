@@ -42,6 +42,13 @@ class Base:
       self.assertEqual(res.raw.metadata.name, self.res_name)
       self.assertEqual(res.raw.kind, res.kind)
 
+    def test_inflate(self):
+      raw_res = self.create_res(self.res_name, self.pns)
+      kat_instance = KatRes.inflate(raw_res)
+      self.assertIsNotNone(kat_instance)
+      self.assertIsInstance(kat_instance, self.res_class())
+
+
     def test_aaa_list_namespaced(self, expected=None):
       if self.res_class().is_namespaced():
         self.create_res(self.res_name, self.pns)
@@ -87,17 +94,16 @@ class Base:
       self.get_res().delete(wait_until_gone=True)
       self.assertIsNone(self.get_res())
 
-    def test_patch(self):
-      self.create_res(self.res_name, self.pns)
-      time.sleep(2)
-      res = self.get_res()
-      old_annotations = res.raw.metadata.annotations or {}
-      res.raw.metadata.annotations = dict(**old_annotations, foo='bar')
-      res.patch()
-      from_fresh = self.get_res().raw.metadata.annotations.items()
-      from_old = res.raw.metadata.annotations.items()
-      self.assertTrue(('foo', 'bar') in from_fresh)
-      self.assertTrue(('foo', 'bar') in from_old)
+    def test_annotate(self):
+      res = self.res_class()(self.create_res(self.res_name, self.pns))
+      res.wait_until(res.has_settled)
+      self.assertNotIn(('foo', 'bar'), res.annotations.items())
+      res.annotate(foo='bar')
+      self.assertIn(('foo', 'bar'), res.reload().annotations.items())
+
+    def test_ternary_state(self):
+      res = self.res_class()(self.create_res(self.res_name, self.pns))
+      self.assertEqual(res.ternary_status(), 'positive')
 
     def get_res(self) -> KatRes:
       return self.res_class().find(self.res_name, self.pns)

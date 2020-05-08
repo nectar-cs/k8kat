@@ -1,10 +1,11 @@
 from k8_kat.auth.kube_broker import broker
 from k8_kat.res.base.kat_res import KatRes
+from k8_kat.utils.main.class_property import classproperty
 
 
 class KatPvc(KatRes):
 
-  @property
+  @classproperty
   def kind(self):
     return "PersistentVolumeClaim"
 

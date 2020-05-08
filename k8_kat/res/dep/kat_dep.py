@@ -1,15 +1,16 @@
-from typing import Dict
+from typing import Dict, List
 
 from kubernetes.client import V1PodSpec, V1Container, V1Scale, V1ScaleSpec, V1Deployment
 
 from k8_kat.auth.kube_broker import broker
 from k8_kat.res.base.kat_res import KatRes
 from k8_kat.res.relation.relation import Relation
+from k8_kat.utils.main.class_property import classproperty
 
 
 class KatDep(KatRes):
 
-  @property
+  @classproperty
   def kind(self):
     return "Deployment"
 
@@ -26,12 +27,43 @@ class KatDep(KatRes):
     return self.raw.spec.template.metadata.labels or {}
 
   @property
-  def desired_replicas(self) -> int:
+  def desired_replicas(self):
     return self.raw.spec.replicas
 
   @property
-  def avail_replicas(self):
-    return self.raw.status.available_replicas
+  def ready_replicas(self):
+    return self.raw.status.ready_replicas
+
+
+# --
+# --
+# --
+# -------------------------------INTEL-------------------------------
+# --
+# --
+# --
+
+  def ternary_status(self):
+    if self.is_running_normally():
+      return 'positive'
+    elif self.has_broken_pod():
+      return 'negative'
+    else:
+      return 'pending'
+
+  def is_running_normally(self):
+    return self.ready_replicas == self.desired_replicas
+
+  def has_broken_pod(self) -> bool:
+    from k8_kat.res.pod.kat_pod import KatPod
+    pods: List[KatPod] = self.pods()
+    return len([p for p in pods if p.is_broken()]) > 0
+
+  def has_settled(self) -> bool:
+    from k8_kat.res.pod.kat_pod import KatPod
+    pods: List[KatPod] = self.pods()
+    pod_settle_states = [p.has_settled() for p in pods]
+    return len(pods) == 0 or set(pod_settle_states) == {True}
 
 # --
 # --
@@ -56,16 +88,9 @@ class KatDep(KatRes):
     spec = self.container_spec(index)
     return spec.name if spec else None
 
-  def image_pull_policy(self, index=0) -> str:
+  def ipp(self, index=0) -> str:
     cont_spec = self.container_spec(index)
     return cont_spec and cont_spec.image_pull_policy
-
-  def is_running(self) -> bool:
-    replicas = self.raw.status.ready_replicas
-    return type(replicas) == int and replicas >= 1
-
-  def has_settled(self):
-    return self.is_running()
 
   def replace_image(self, new_image_name):
     self.raw.spec.template.spec.containers[0].image = new_image_name

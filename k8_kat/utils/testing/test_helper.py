@@ -10,10 +10,6 @@ from k8_kat.utils.testing import simple_pod, simple_svc, simple_dep
 NAMESPACES = ['n1', 'n2', 'n3']
 
 
-def create_dep(ns: str, name: str, **subs):
-  return simple_dep.create(ns=ns, name=name, **subs)
-
-
 def create_svc(ns: str, name: str, **subs):
   return simple_svc.create(name=name, ns=ns, **subs)
 

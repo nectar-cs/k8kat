@@ -10,6 +10,7 @@ from k8_kat.auth.kube_broker import broker
 from k8_kat.res.base.kat_res import KatRes
 from k8_kat.res.pod import pod_utils
 from k8_kat.utils.main import utils
+from k8_kat.utils.main.class_property import classproperty
 
 
 class KatPod(KatRes):
@@ -26,7 +27,7 @@ class KatPod(KatRes):
 # --
 # --
 
-  @property
+  @classproperty
   def kind(self):
     return "Pod"
 
@@ -73,6 +74,14 @@ class KatPod(KatRes):
     statuses = self.body().status.init_container_statuses or []
     return [status.state for status in statuses]
 
+  def ternary_status(self) -> str:
+    if self.is_working():
+      return 'positive'
+    elif self.is_broken():
+      return 'negative'
+    else:
+      return 'pending'
+
   def is_running_normally(self):
     if self.is_running():
       main_states = self.main_container_states()
@@ -80,13 +89,21 @@ class KatPod(KatRes):
       return len(main_states) == len(runners)
 
   def is_pending_normally(self):
-    return self.is_pending() and not self.is_pending_morbidly()
+    return self.is_pending() and \
+           not self.is_pending_morbidly()
 
   def is_running_morbidly(self):
-    return self.is_running() and not self.is_running_normally()
+    return self.is_running() and \
+           not self.is_running_normally()
+
+  def is_working(self):
+    return self.is_running_normally() or \
+           self.has_succeeded()
 
   def is_broken(self) -> bool:
-    return self.is_pending_morbidly() or self.has_failed()
+    return self.is_pending_morbidly() or \
+           self.is_running_morbidly() or \
+           self.has_failed()
 
   def has_settled(self) -> bool:
     return not self.is_pending_normally()

@@ -27,6 +27,7 @@ class TestKatPod(Base.TestKatRes):
     self.assertFalse(pod.is_running_morbidly())
     self.assertFalse(pod.is_pending_morbidly())
     self.assertFalse(pod.has_settled())
+    self.assertEqual(pod.ternary_status(), "pending")
     time.sleep(10)
     pod.reload()
 
@@ -38,6 +39,7 @@ class TestKatPod(Base.TestKatRes):
     self.assertFalse(pod.is_running_normally())
     self.assertTrue(pod.is_running_morbidly())
     self.assertTrue(pod.has_settled())
+    self.assertEqual(pod.ternary_status(), "negative")
 
   def pending_morbidly_assertions(self, pod):
     self.assertFalse(pod.is_running())
@@ -47,6 +49,10 @@ class TestKatPod(Base.TestKatRes):
     self.assertFalse(pod.is_running_normally())
     self.assertFalse(pod.is_running_morbidly())
     self.assertTrue(pod.has_settled())
+    self.assertEqual(pod.ternary_status(), "negative")
+
+  def test_ternary_state(self):
+    pass
 
   def test_states_crashing_pod(self):
     pod = create_crasher(ns=self.pns, name=self.res_name)
@@ -67,6 +73,12 @@ class TestKatPod(Base.TestKatRes):
     pod = create_config_map_wisher(ns=self.pns, name=self.res_name)
     self.pre_crash_assertions(pod)
     self.pending_morbidly_assertions(pod)
+
+  def test_healthy_pod_states(self):
+    pod = KatPod(simple_pod.create(ns=self.pns, name=self.res_name))
+    self.pre_crash_assertions(pod)
+    pod.wait_until_running()
+    self.assertEqual(pod.ternary_status(), "positive")
 
   def test_logs(self):
     pod = KatPod(simple_pod.create(

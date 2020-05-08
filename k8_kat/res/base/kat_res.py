@@ -6,6 +6,7 @@ from kubernetes.client.rest import ApiException
 from k8_kat.auth.kube_broker import broker
 from k8_kat.res.events.kat_event import KatEvent
 from k8_kat.utils.main import utils
+from k8_kat.utils.main.class_property import classproperty
 
 
 class KatRes:
@@ -26,7 +27,7 @@ class KatRes:
   def uid(self):
     return self.raw.metadata.uid
 
-  @property
+  @classproperty
   def kind(self):
     raise NotImplementedError
 
@@ -50,6 +51,30 @@ class KatRes:
   @property
   def labels(self) -> Dict[str, str]:
     return self.raw.metadata.labels or {}
+
+  @property
+  def annotations(self) -> Dict[str, str]:
+    return self.raw.metadata.annotations or {}
+
+
+# --
+# --
+# --
+# -------------------------------INTEL-------------------------------
+# --
+# --
+# --
+
+  def ternary_status(self):
+    return 'positive'
+
+  def __lt__(self, other):
+    return self.created_at < other.created_at
+
+  def has_settled(self):
+    return True
+
+
 
 # --
 # --
@@ -96,9 +121,6 @@ class KatRes:
         self.reload()
     return condition_met
 
-  def has_settled(self):
-    return True
-
   def events(self):
     api = broker.coreV1
     raw_list = api.list_namespaced_event(namespace=self.ns).items
@@ -106,17 +128,11 @@ class KatRes:
     return [event for event in kat_list if event.is_for(self)]
 
   def trigger(self):
-    self.set_label(trigger=utils.rand_str())
+    self.annotate(trigger=utils.rand_str())
 
-  def set_label(self, **labels):
-    new_label_dict = {**self.labels, **labels}
-    self.raw.metadata.labels = new_label_dict
-    self.patch()
-
-  def add_labels(self, **new_labels: Dict[str, str]):
-    existing = self.raw.metadata.labels
-    merged = {**existing, **new_labels}
-    self.raw.metadata.labels = merged
+  def annotate(self, **annotations):
+    combined_annotations = {**self.annotations, **annotations}
+    self.raw.metadata.annotations = combined_annotations
     self.patch()
 
 # --
@@ -155,6 +171,14 @@ class KatRes:
   def is_namespaced(cls) -> bool:
     return True
 
+  @classmethod
+  def inflate(cls, raw) -> 'KatRes':
+    kind = raw.kind
+    subclasses = KatRes.__subclasses__()
+    # noinspection PyUnresolvedReferences
+    matches = [sc for sc in subclasses if sc.kind == kind]
+    return matches[0](raw) if len(matches) == 1 else None
+
 # --
 # --
 # --
@@ -170,9 +194,6 @@ class KatRes:
   def _perform_delete_self(self):
     impl = self.k8s_verb_methods().get('delete')
     self.ns_agnostic_call(impl)
-
-  def __lt__(self, other):
-    return self.created_at < other.created_at
 
   def ns_agnostic_call(self, impl: Callable, **kwargs) -> any:
     if self.is_namespaced():

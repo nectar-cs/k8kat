@@ -4,11 +4,12 @@ from kubernetes.client import V1ServiceAccount
 
 from k8_kat.auth.kube_broker import broker
 from k8_kat.res.base.kat_res import KatRes
+from k8_kat.utils.main.class_property import classproperty
 
 
 class KatServiceAccount(KatRes):
 
-  @property
+  @classproperty
   def kind(self):
     return "ServiceAccount"
 

@@ -7,9 +7,12 @@ from k8_kat.auth.kube_broker import broker
 from k8_kat.res.base.kat_res import KatRes
 import json
 
+from k8_kat.utils.main.class_property import classproperty
+
+
 class KatMap(KatRes):
 
-  @property
+  @classproperty
   def kind(self):
     return "ConfigMap"
 
