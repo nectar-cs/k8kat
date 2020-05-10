@@ -1,8 +1,10 @@
 import time
+from urllib.parse import quote
 
 from kubernetes.client import V1Container, V1EnvVar, V1EnvVarSource, V1ConfigMapKeySelector
 
 from k8_kat.auth.kube_broker import broker
+from k8_kat.res.pod import pod_utils
 from k8_kat.res.pod.kat_pod import KatPod
 from k8_kat.tests.res.base.test_kat_res import Base
 from k8_kat.utils.main import utils
@@ -91,6 +93,11 @@ class TestKatPod(Base.TestKatRes):
     pod.wait_until(pod.has_settled)
     self.assertEqual(pod.raw_logs(), "one\ntwo\n")
     self.assertEqual(pod.log_lines(), ['one', 'two'])
+
+  def test_fmt_command(self):
+    call = pod_utils.coerce_cmd_format
+    actual = call(f"one two {quote('three four')}")
+    self.assertEqual(actual, ["one", "two", "three four"])
 
   def test_shell_exec(self):
     pod = KatPod(test_helper.create_pod(self.pns, self.res_name))

@@ -1,3 +1,4 @@
+from urllib.parse import unquote_plus
 from http.client import HTTPResponse
 from io import BytesIO
 from typing import List, Optional
@@ -11,9 +12,12 @@ class FakeSocket:
   def makefile(self, *args, **kwargs):
     return self._file
 
-def coerce_cmd_format(cmd):
+def coerce_cmd_format(cmd) -> List[str]:
   if isinstance(cmd, str):
-    return cmd.split(" ")
+    parts = cmd.split(" ")
+    # parts = [part.replace("SPACE_CHAR", " ") for part in parts]
+    parts = [unquote_plus(part) for part in parts]
+    return parts
   else:
     return cmd
 

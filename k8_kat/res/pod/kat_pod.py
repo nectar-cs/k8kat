@@ -163,11 +163,12 @@ class KatPod(KatRes):
 # --
 
   def shell_exec(self, command) -> Optional[str]:
+    fmt_command = pod_utils.coerce_cmd_format(command)
     result = k8s_streaming.stream(
       broker.coreV1.connect_get_namespaced_pod_exec,
       self.name,
       self.namespace,
-      command=pod_utils.coerce_cmd_format(command),
+      command=fmt_command,
       stderr=True,
       stdin=False,
       stdout=True,
