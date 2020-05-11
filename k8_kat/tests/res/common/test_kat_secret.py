@@ -17,7 +17,7 @@ class TestKatSecret(Base.TestKatRes):
       )
     )
 
-  def test_aaa_list_namespaced(self, expected=None):
+  def test_list_namespaced(self, expected=None):
     pass
 
   def test_aaa_list_namespaced_filtered(self, expected=None):

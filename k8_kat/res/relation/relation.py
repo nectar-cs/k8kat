@@ -28,6 +28,7 @@ class Relation(List[KT]):
   def logical_to_k8s_query(self) -> Dict[str, str]:
     k8s_query = dict()
     k8s_query['label_selector'] = process_labels(self._query)
+    k8s_query['field_selector'] = process_fields(self._query)
     return k8s_query
 
   def query(self, **q):
@@ -44,6 +45,14 @@ class Relation(List[KT]):
 
 def process_labels(query) -> Optional[str]:
   with_l, without_l = query.get('labels', {}), query.get('not_labels', {})
+  if with_l or without_l:
+    return label_conditions_to_expr(with_l.items(), without_l.items())
+  else:
+    return ''
+
+
+def process_fields(query) -> Optional[str]:
+  with_l, without_l = query.get('fields', {}), query.get('not_fields', {})
   if with_l or without_l:
     return label_conditions_to_expr(with_l.items(), without_l.items())
   else:

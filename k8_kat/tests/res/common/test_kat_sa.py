@@ -22,8 +22,8 @@ class TestKatSa(Base.TestKatRes):
   def res_class(cls):
     return KatServiceAccount
 
-  def test_aaa_list_namespaced(self, expected=None):
-    super().test_aaa_list_namespaced(
+  def test_list_namespaced(self, expected=None):
+    super().test_list_namespaced(
       [self.res_name, 'default']
     )
 

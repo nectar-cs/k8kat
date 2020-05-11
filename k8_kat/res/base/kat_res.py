@@ -14,6 +14,8 @@ class KatRes:
 
   def __init__(self, raw):
     self.is_dirty = False
+    if type(raw) == dict:
+      raw = from_dict(raw)
     self.raw = raw
 
 # --
@@ -144,6 +146,12 @@ class KatRes:
     if save:
       self.patch()
 
+  def label(self, save=True, **labels):
+    combined_labels = {**self.labels, **labels}
+    self.raw.metadata.labels = combined_labels
+    if save:
+      self.patch()
+
 # --
 # --
 # --
@@ -187,7 +195,7 @@ class KatRes:
 
   @classmethod
   def find_res_class(cls, kind) -> Optional[Type['KatRes']]:
-    subclasses = KatRes.__subclasses__()
+    subclasses = cls.__subclasses__()
     # noinspection PyUnresolvedReferences
     matches = [sc for sc in subclasses if sc.kind == kind]
     return matches[0] if len(matches) == 1 else None
@@ -217,3 +225,17 @@ class KatRes:
 
   def serialize(self, serializer):
     return serializer(self)
+
+
+
+def from_dict(dict_repr: Dict):
+  api = broker.client.api_client
+  mocked_kube_http_resp = FakeKubeResponse(dict_repr)
+  kind = dict_repr['kind']
+  return api.deserialize(mocked_kube_http_resp, f"V1{kind}")
+
+
+class FakeKubeResponse:
+  def __init__(self, obj):
+    import json
+    self.data = json.dumps(obj)

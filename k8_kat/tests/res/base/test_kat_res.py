@@ -1,5 +1,5 @@
 import time
-from typing import Type
+from typing import Type, List
 
 from k8_kat.res.base.kat_res import KatRes
 from k8_kat.tests.res.base.cluster_test import ClusterTest
@@ -34,6 +34,17 @@ class Base:
       self.assertEqual(res.raw.metadata.name, self.res_name)
       self.assertEqual(res.raw.kind, res.kind)
 
+    # def test_init_with_dict(self):
+    #   body = self.create_res(self.res_name, self.pns)
+    #   res = self.res_class()(body)
+    #   dict_repr = res.raw.__dict__
+    #   from_dict = self.res_class()(dict_repr)
+    #   self.assertIsInstance(from_dict, self.res_class())
+    #   self.assertEqual(from_dict.raw.metadata.name, self.res_name)
+    #   self.assertEqual(from_dict.raw.kind, res.kind)
+
+
+
     def test_find(self):
       self.create_res(self.res_name, self.pns)
       res = self.get_res()
@@ -49,31 +60,39 @@ class Base:
       self.assertIsInstance(kat_instance, self.res_class())
 
 
-    def test_aaa_list_namespaced(self, expected=None):
+    def test_list_namespaced(self, expected=None):
       if self.res_class().is_namespaced():
+        ns, = ns_factory.request(1)
+        self.create_res(self.res_name, ns)
         self.create_res(self.res_name, self.pns)
-        self.create_res(self.res_name, self.pns2)
-        names = lambda res_list: [r.name for r in res_list]
-        result = self.res_class().list(ns=self.pns)
+        result = self.res_class().list(ns=ns)
         expected = expected or [self.res_name]
         self.assertEqual(sorted(names(result)), sorted(expected))
 
-    def test_aaa_list_namespaced_filtered(self, expected=None):
-      pass
-      # if self.res_class().is_namespaced():
-      #   self.create_res(self.res_name, self.pns)
-      #   other = self.create_res(utils.rand_str(), self.pns)
-      #
-      #   res, other_res = self.get_res(), self.res_class()(other)
-      #   res.wait_until(res.has_settled)
-      #   other_res.wait_until(res.has_settled)
-      #
-      #   res.set_label(foo='bar')
-      #   other_res.set_label(foo='baz')
-      #   names = lambda res_list: [r.name for r in res_list]
-      #   result = self.res_class().list(ns=self.pns, labels=dict(foo='bar'))
-      #   expected = expected or [self.res_name]
-      #   self.assertEqual(sorted(names(result)), sorted(expected))
+    def test_list_namespaced_label_filters(self):
+      if self.res_class().is_namespaced():
+        ns, = ns_factory.request(1)
+        right = self.res_class()(self.create_res(utils.rand_str(), ns))
+        wrong = self.res_class()(self.create_res(utils.rand_str(), ns))
+
+        right.wait_until(right.has_settled) and right.label(foo='bar')
+        wrong.wait_until(wrong.has_settled) and wrong.label(foo='baz')
+
+        result = self.res_class().list(ns=ns, labels=dict(foo='bar'))
+        self.assertEqual(sorted(names(result)), sorted([right.name]))
+
+    def test_list_namespaced_field_filters_easy(self):
+      if self.res_class().is_namespaced():
+        ns, = ns_factory.request(1)
+        right = self.res_class()(self.create_res(utils.rand_str(), ns))
+        wrong = self.res_class()(self.create_res(utils.rand_str(), ns))
+
+        right.wait_until(right.has_settled)
+        wrong.wait_until(wrong.has_settled)
+
+        field_query = {'metadata.name': right.name}
+        result = self.res_class().list(ns=ns, fields=field_query)
+        self.assertEqual(sorted(names(result)), sorted([right.name]))
 
     def test_reload_when_exists(self):
       self.create_res(self.res_name, self.pns)
@@ -115,3 +134,7 @@ class Base:
     @classmethod
     def res_class(cls) -> Type[KatRes]:
       raise NotImplementedError
+
+
+def names(res_list) -> List[str]:
+  return [r.name for r in res_list]
