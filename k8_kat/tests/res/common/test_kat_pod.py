@@ -18,8 +18,8 @@ class TestKatPod(Base.TestKatRes):
     return KatPod
 
   @classmethod
-  def create_res(cls, name, ns=None):
-    return test_helper.create_pod(ns, name)
+  def create_res(cls, name, ns=None, **subs):
+    return test_helper.create_pod(ns, name, **subs)
 
   def pre_crash_assertions(self, pod):
     self.assertFalse(pod.is_running())
