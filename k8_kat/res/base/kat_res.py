@@ -6,7 +6,7 @@ from kubernetes.client.rest import ApiException
 
 from k8_kat.auth.kube_broker import broker
 from k8_kat.res.events.kat_event import KatEvent
-from k8_kat.utils.main import utils
+from k8_kat.utils.main import utils, res_utils
 from k8_kat.utils.main.class_property import classproperty
 
 
@@ -195,8 +195,7 @@ class KatRes:
 
   @classmethod
   def find_res_class(cls, kind) -> Optional[Type['KatRes']]:
-    subclasses = cls.__subclasses__()
-    # noinspection PyUnresolvedReferences
+    subclasses = res_utils.kat_classes()
     matches = [sc for sc in subclasses if sc.kind == kind]
     return matches[0] if len(matches) == 1 else None
 
