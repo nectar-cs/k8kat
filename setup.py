@@ -7,7 +7,7 @@ setuptools.setup(
   name="k8-kat",
   version="0.0.129",
   author="Nectar Cloud Software",
-  author_email="xavier@codenectar.com",
+  author_email="xa1 vier@codenectar.com",
   description="Sugar for Kubernetes",
   long_description=long_description,
   long_description_content_type="text/markdown",
