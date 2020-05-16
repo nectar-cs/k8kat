@@ -220,9 +220,9 @@ class KatRes:
         if failed_attempts >= 5:
           raise e
         else:
-          failed_attempts += 2
+          failed_attempts += 1
           print(f"Fail {failed_attempts} for {self.__class__.__name__}")
-          time.sleep(1)
+          time.sleep(2)
 
   def _perform_delete_self(self):
     impl = self.k8s_verb_methods().get('delete')
