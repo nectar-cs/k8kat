@@ -2,6 +2,7 @@ import time
 from datetime import datetime
 from typing import Dict, Callable, Optional, Type
 
+import kubernetes
 from kubernetes.client.rest import ApiException
 
 from k8_kat.auth.kube_broker import broker
@@ -209,8 +210,18 @@ class KatRes:
 # --
 
   def _perform_patch_self(self):
-    patch_method = self.k8s_verb_methods().get('patch')
-    self.ns_agnostic_call(patch_method, body=self.raw)
+    failed_attempts = 0
+    while True:
+      try:
+        patch_method = self.k8s_verb_methods().get('patch')
+        self.ns_agnostic_call(patch_method, body=self.raw)
+        return
+      except kubernetes.client.rest.ApiException as e:
+        if failed_attempts >= 3:
+          raise e
+        else:
+          failed_attempts += 1
+          time.sleep(1)
 
   def _perform_delete_self(self):
     impl = self.k8s_verb_methods().get('delete')

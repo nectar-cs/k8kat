@@ -69,35 +69,35 @@ class Base:
         expected = expected or [self.res_name]
         self.assertEqual(sorted(names(result)), sorted(expected))
 
-    # def test_list_namespaced_label_filters(self):
-    #   if self.res_class().is_namespaced():
-    #     ns, = ns_factory.request(1)
-    #     right = self.res_class()(self.create_res(utils.rand_str(), ns))
-    #     wrong = self.res_class()(self.create_res(utils.rand_str(), ns))
-    #
-    #     right.wait_until(right.has_settled)
-    #     wrong.wait_until(wrong.has_settled)
-    #
-    #     time.sleep(2)
-    #
-    #     right.label(foo='bar')
-    #     wrong.label(foo='baz')
-    #
-    #     result = self.res_class().list(ns=ns, labels=dict(foo='bar'))
-    #     self.assertEqual(sorted(names(result)), sorted([right.name]))
-    #
-    # def test_list_namespaced_field_filters(self):
-    #   if self.res_class().is_namespaced():
-    #     ns, = ns_factory.request(1)
-    #     right = self.res_class()(self.create_res(utils.rand_str(), ns))
-    #     wrong = self.res_class()(self.create_res(utils.rand_str(), ns))
-    #
-    #     right.wait_until(right.has_settled)
-    #     wrong.wait_until(wrong.has_settled)
-    #
-    #     field_query = {'metadata.name': right.name}
-    #     result = self.res_class().list(ns=ns, fields=field_query)
-    #     self.assertEqual(sorted(names(result)), sorted([right.name]))
+    def test_list_namespaced_label_filters(self):
+      if self.res_class().is_namespaced():
+        ns, = ns_factory.request(1)
+        right = self.res_class()(self.create_res(utils.rand_str(), ns))
+        wrong = self.res_class()(self.create_res(utils.rand_str(), ns))
+
+        right.wait_until(right.has_settled)
+        wrong.wait_until(wrong.has_settled)
+
+        time.sleep(2)
+
+        right.label(foo='bar')
+        wrong.label(foo='baz')
+
+        result = self.res_class().list(ns=ns, labels=dict(foo='bar'))
+        self.assertEqual(sorted(names(result)), sorted([right.name]))
+
+    def test_list_namespaced_field_filters(self):
+      if self.res_class().is_namespaced():
+        ns, = ns_factory.request(1)
+        right = self.res_class()(self.create_res(utils.rand_str(), ns))
+        wrong = self.res_class()(self.create_res(utils.rand_str(), ns))
+
+        right.wait_until(right.has_settled)
+        wrong.wait_until(wrong.has_settled)
+
+        field_query = {'metadata.name': right.name}
+        result = self.res_class().list(ns=ns, fields=field_query)
+        self.assertEqual(sorted(names(result)), sorted([right.name]))
 
     def test_reload_when_exists(self):
       self.create_res(self.res_name, self.pns)
