@@ -81,7 +81,7 @@ class Base:
         result = self.res_class().list(ns=ns, labels=dict(foo='bar'))
         self.assertEqual(sorted(names(result)), sorted([right.name]))
 
-    def test_list_namespaced_field_filters_easy(self):
+    def test_list_namespaced_field_filters(self):
       if self.res_class().is_namespaced():
         ns, = ns_factory.request(1)
         right = self.res_class()(self.create_res(utils.rand_str(), ns))

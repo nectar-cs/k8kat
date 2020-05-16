@@ -27,5 +27,5 @@ class TestKatSa(Base.TestKatRes):
       [self.res_name, 'default']
     )
 
-  def test_aaa_list_namespaced_filtered(self, expected=None):
+  def test_list_namespaced_label_filters(self):
     pass

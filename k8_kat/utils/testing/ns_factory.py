@@ -10,7 +10,7 @@ from k8_kat.auth.kube_broker import broker
 from k8_kat.res.ns.kat_ns import KatNs
 
 config = dict(
-  max_ns=10
+  max_ns=15
 )
 
 def possible_names():
@@ -21,8 +21,7 @@ def max_ns() -> int:
   return config['max_ns']
 
 def update_max_ns(new_max_ns):
-  if new_max_ns < max_ns():
-    print("Warning! Setting lower max_ns can cause bugs!")
+  assert new_max_ns >= max_ns()
   config['max_ns'] = new_max_ns
 
 

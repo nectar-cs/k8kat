@@ -22,7 +22,7 @@ class TestKatRole(Base.TestKatRes):
     return KatRole
 
 
-class TestKatBinding(Base.TestKatRes):
+class TestKatRoleBinding(Base.TestKatRes):
   def create_res(self, name, ns=None):
     return broker.rbacV1.create_namespaced_role_binding(
       namespace=ns,
@@ -41,6 +41,14 @@ class TestKatBinding(Base.TestKatRes):
   def res_class(cls):
     return KatRoleBinding
 
+  def test_annotate(self):
+    pass
+
+  def test_list_namespaced_label_filters(self):
+    pass
+
+  def test_list_namespaced_field_filters(self):
+    pass
 
 class TestKatClusterRole(Base.TestKatRes):
   def create_res(self, name, ns=None):

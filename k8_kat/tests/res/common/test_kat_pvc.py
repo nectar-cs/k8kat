@@ -25,6 +25,15 @@ class TestKatPvc(Base.TestKatRes):
       )
     )
 
+  def test_annotate(self):
+    pass
+
+  def test_list_namespaced_label_filters(self):
+    pass
+
+  def test_list_namespaced_field_filters(self):
+    pass
+
   @classmethod
   def res_class(cls):
     return KatPvc
