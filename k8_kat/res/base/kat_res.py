@@ -111,8 +111,11 @@ class KatRes:
       while self.reload():
         time.sleep(0.5)
 
-  def patch(self) -> Optional['KatRes']:
-    self._perform_patch_self()
+  def patch(self, modifier=None) -> Optional['KatRes']:
+    if modifier is not None:
+      self._enter_patch_loop(modifier)
+    else:
+      self._perform_patch_self()
     return self.reload()
 
   def wait_until(self, predicate, max_time_sec=None) -> bool:
@@ -142,16 +145,20 @@ class KatRes:
     self.annotate(save=save, updated_at=str(datetime.now()))
 
   def annotate(self, save=True, **annotations):
-    combined_annotations = {**self.annotations, **annotations}
-    self.raw.metadata.annotations = combined_annotations
-    if save:
-      self.patch()
+    def perf(raw):
+      existing = raw.metadata.annotations or {}
+      combined = {**existing, **annotations}
+      raw.metadata.annotations = combined
+
+    self.patch(perf) if save else perf(self.raw)
 
   def label(self, save=True, **labels):
-    combined_labels = {**self.labels, **labels}
-    self.raw.metadata.labels = combined_labels
-    if save:
-      self.patch()
+    def perf(raw):
+      existing = raw.metadata.labels or {}
+      combined = {**existing, **labels}
+      raw.metadata.labels = combined
+
+    self.patch(perf) if save else perf(self.raw)
 
 # --
 # --
@@ -210,11 +217,15 @@ class KatRes:
 # --
 
   def _perform_patch_self(self):
+    patch_method = self.k8s_verb_methods().get('patch')
+    self.ns_agnostic_call(patch_method, body=self.raw)
+
+  def _enter_patch_loop(self, modification):
     failed_attempts = 0
     while True:
       try:
-        patch_method = self.k8s_verb_methods().get('patch')
-        self.ns_agnostic_call(patch_method, body=self.raw)
+        modification(self.raw)
+        self._perform_patch_self()
         return
       except kubernetes.client.rest.ApiException as e:
         if failed_attempts >= 5:
@@ -222,7 +233,8 @@ class KatRes:
         else:
           failed_attempts += 1
           print(f"Fail {failed_attempts} for {self.__class__.__name__}")
-          time.sleep(2)
+          time.sleep(1)
+          self.reload()
 
   def _perform_delete_self(self):
     impl = self.k8s_verb_methods().get('delete')
