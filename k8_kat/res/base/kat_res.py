@@ -217,7 +217,7 @@ class KatRes:
         self.ns_agnostic_call(patch_method, body=self.raw)
         return
       except kubernetes.client.rest.ApiException as e:
-        if failed_attempts >= 3:
+        if failed_attempts >= 5:
           raise e
         else:
           failed_attempts += 2
