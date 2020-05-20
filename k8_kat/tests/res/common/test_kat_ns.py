@@ -28,8 +28,8 @@ class TestKatNs(Base.TestKatRes):
 
   def tearDown(self) -> None:
     super().tearDown()
-    KatNs.delete_if_exists(None, 'nss1', False)
-    KatNs.delete_if_exists(None, 'nss2', False)
+    KatNs.delete_if_exists(None, 'nss1', True)
+    KatNs.delete_if_exists(None, 'nss2', True)
 
   def test_list(self):
     self.create_res('nss1')
