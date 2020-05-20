@@ -35,10 +35,9 @@ class TestKatConfigMap(Base.TestKatRes):
 
   def test_jpatch_no_merge(self):
     initial_content = dict(foo='bar')
-    kat_map = KatMap(create_ymap(self.res_name, self.pns, initial_content))
+    kat_map = KatMap(create_jmap(self.res_name, self.pns, initial_content))
     kat_map.jpatch(content=dict(foo='baz', bar='baz'))
     self.assertEqual(kat_map.jget(), dict(foo='baz', bar='baz'))
-
 
 def create_jmap(name, ns, contents, master_key=None) -> V1ConfigMap:
   master_key = master_key or 'master'

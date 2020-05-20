@@ -20,10 +20,16 @@ class Relation(List[KT]):
 
   def perform_in_ns(self):
     impl = self.namespaced_query_impl()
-    return impl(
-      namespace=self.ns,
-      **self.logical_to_k8s_query()
-    ).items
+    if self.model_class.is_namespaced():
+      return impl(
+        namespace=self.ns,
+        **self.logical_to_k8s_query()
+      ).items
+    else:
+      return impl(
+        **self.logical_to_k8s_query()
+      ).items
+
 
   def logical_to_k8s_query(self) -> Dict[str, str]:
     k8s_query = dict()

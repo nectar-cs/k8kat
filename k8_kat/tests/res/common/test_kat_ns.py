@@ -21,6 +21,24 @@ class TestKatNs(Base.TestKatRes):
       )
     )
 
+  def setUp(self) -> None:
+    super().setUp()
+    KatNs.delete_if_exists(None, 'nss1', True)
+    KatNs.delete_if_exists(None, 'nss2', True)
+
+  def tearDown(self) -> None:
+    super().tearDown()
+    KatNs.delete_if_exists(None, 'nss1', False)
+    KatNs.delete_if_exists(None, 'nss2', False)
+
+  def test_list(self):
+    self.create_res('nss1')
+    self.create_res('nss2')
+    result = KatNs.list()
+    result_names = [kns.name for kns in result]
+    self.assertIn('nss1', result_names)
+    self.assertIn('nss2', result_names)
+
   @classmethod
   def res_class(cls) -> Type[KatRes]:
     return KatNs

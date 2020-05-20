@@ -23,15 +23,17 @@ class KatMap(KatRes):
   def data(self):
     return self.raw.data
 
-  def jget(self, key=None) -> Optional[Dict[str, any]]:
+  def jget(self, key=None, backup=None) -> Optional[Dict[str, any]]:
     key = key or 'master'
     raw_value = self.data.get(key)
-    return raw_value and json.loads(raw_value)
+    obtained = raw_value and json.loads(raw_value)
+    return obtained or backup
 
-  def yget(self, key=None) -> Optional[Dict[str, any]]:
+  def yget(self, key=None, backup=None) -> Optional[Dict[str, any]]:
     key = key or 'master'
     raw_value = self.data.get(key)
-    return raw_value and yaml.load(raw_value, Loader=yaml.FullLoader)
+    obtained = raw_value and yaml.load(raw_value, Loader=yaml.FullLoader)
+    return obtained or backup
 
   def jpatch(self, content: Dict, key: str = None, merge: bool = False):
     key = key or 'master'

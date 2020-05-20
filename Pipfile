@@ -7,7 +7,7 @@ verify_ssl = true
 
 [packages]
 python-dotenv = "*"
-kubernetes = "~=10.0.1"
+kubernetes = "*"
 keyring = "*"
 twine = "*"
 keyrings-alt = "*"
