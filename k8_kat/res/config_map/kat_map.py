@@ -27,13 +27,13 @@ class KatMap(KatRes):
     key = key or 'master'
     raw_value = self.data.get(key)
     obtained = raw_value and json.loads(raw_value)
-    return obtained or backup
+    return obtained if obtained is not None else backup
 
   def yget(self, key=None, backup=None) -> Optional[Dict[str, any]]:
     key = key or 'master'
     raw_value = self.data.get(key)
     obtained = raw_value and yaml.load(raw_value, Loader=yaml.FullLoader)
-    return obtained or backup
+    return obtained if obtained is not None else backup
 
   def jpatch(self, content: Dict, key: str = None, merge: bool = False):
     key = key or 'master'
