@@ -21,6 +21,7 @@ class KubeBroker:
     self.coreV1 = None
     self.appsV1 = None
     self.client = None
+    self.extsV1 = None
 
   def connect(self):
     self.connect_config = default_config()
@@ -40,6 +41,7 @@ class KubeBroker:
     self.rbacV1 = client.RbacAuthorizationV1Api()
     self.coreV1 = client.CoreV1Api()
     self.appsV1 = client.AppsV1Api()
+    self.extsV1 = client.ExtensionsV1beta1Api()
 
   def connect_in_cluster(self):
     try:

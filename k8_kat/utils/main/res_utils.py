@@ -1,5 +1,4 @@
 
-
 def kat_classes():
 
   from k8_kat.res.config_map.kat_map import KatMap
@@ -11,6 +10,7 @@ def kat_classes():
   from k8_kat.res.sa.kat_service_account import KatServiceAccount
   from k8_kat.res.secret.kat_secret import KatSecret
   from k8_kat.res.svc.kat_svc import KatSvc
+  from k8_kat.res.ingress.kat_ingress import KatIngress
 
   return [
       KatRole,
@@ -24,6 +24,6 @@ def kat_classes():
       KatPvc,
       KatPod,
       KatDep,
-      KatSvc
+      KatSvc,
+      KatIngress
     ]
-
