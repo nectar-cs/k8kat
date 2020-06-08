@@ -1,5 +1,6 @@
 from http.client import HTTPResponse
 from typing import List, Optional
+import re
 
 from kubernetes import stream as k8s_streaming
 from kubernetes.client import V1Pod, V1Container, \
@@ -154,6 +155,67 @@ class KatPod(KatRes):
     else:
       return []
 
+  def cpu_usage(self) -> float:
+    """Returns real-time cpu usage of a pod in millicores."""
+    if self.is_running_normally():
+      containers = self.get_pod_metrics()['containers']
+      return sum(
+        [round(int(ctr['usage']['cpu'].strip('n'))/10**6, 1)
+         for ctr in containers])
+
+  def memory_usage(self) -> float:
+    """Returns real-time memory usage of a pod in Mb."""
+    if self.is_running_normally():
+      containers = self.get_pod_metrics()['containers']
+      return sum(
+        [round(int(ctr['usage']['memory'].strip('Ki'))/10**3, 1)
+         for ctr in containers])
+
+  def get_pod_metrics(self) -> Optional[object]:
+    """Returns pod's metrics using k8s metrics API. Only running pods."""
+    if self.is_running_normally():
+      return broker.custom.get_namespaced_custom_object(
+        group='metrics.k8s.io',
+        version='v1beta1',
+        namespace=self.namespace,
+        plural='pods',
+        name=self.name
+      )
+
+  def cpu_capacity(self) -> Optional[float]:
+    """Returns pod's cpu capacity (limit > request > None) in millicores."""
+    try:
+      return round(self.get_resource_capacity("cpu") * 1000, 1)
+    except TypeError:
+      return self.get_resource_capacity("cpu")
+
+  def memory_capacity(self) -> Optional[float]:
+    """Returns pod's memory capacity (limit > request > None) in Mb."""
+    try:
+      return round(self.get_resource_capacity("memory") / 10**6, 1)
+    except TypeError:
+      return self.get_resource_capacity("memory")
+
+  def get_resource_capacity(self, resource:str) -> Optional[float]:
+    """Returns pod's resource capacity (limit > request > None).
+    Requires all containers inside the pod to have the quantity defined,
+    otherwise returns None"""
+    containers = self.body().spec.containers
+    limits, requests = [], []
+    for ctr in containers:
+      res_limit = get_container_capacity(ctr, 'limits', resource)
+      res_request = get_container_capacity(ctr, 'requests', resource)
+      limits.append(res_limit)
+      requests.append(res_request)
+    try:
+      return sum(limits)
+    except TypeError:
+      try:
+        return sum(requests)
+      except TypeError:
+        return None
+
+
 # --
 # --
 # --
@@ -224,6 +286,29 @@ def has_morbid_pending_reasons(states: List[V1ContainerState]):
   bad_reasons = reasons - good_reasons
   return len(bad_reasons) > 0
 
+
 def filter_states(states: List[V1ContainerState], _type: str) -> List[V1ContainerState]:
   return [state for state in states if getattr(state, _type)]
 
+
+def get_container_capacity(container:object, capacity:str, resource:str) -> Optional[int]:
+  """Gets container capacity and returns in cores (cpu) / bytes (memory)."""
+  suffixes = ["Ei", "Pi", "Ti", "Gi", "Mi", "Ki", "m", "E", "P", "T", "G", "M", "K"]
+  multipliers = [2**60, 2**50, 2**40, 2**30, 2**20, 2**10,
+                 10**(-3), 10**18, 10**15, 10**12, 10**9, 10**6, 10**3]
+  try:
+    if capacity == "requests":
+      container_cap = container.resources.requests.get(resource, None)
+    elif capacity == "limits":
+      container_cap = container.resources.limits.get(resource, None)
+    else:
+      raise Exception("Please pass either requests or limits.")
+    for i, suffix in enumerate(suffixes):
+      if suffix in str(container_cap):
+        container_cap = float(container_cap.strip(suffix)) * multipliers[i]
+    else:
+      container_cap = float(container_cap)
+  except AttributeError:
+    container_cap = None
+  finally:
+    return container_cap

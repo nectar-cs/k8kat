@@ -40,6 +40,7 @@ class KubeBroker:
     self.rbacV1 = client.RbacAuthorizationV1Api()
     self.coreV1 = client.CoreV1Api()
     self.appsV1 = client.AppsV1Api()
+    self.custom = client.CustomObjectsApi()
 
   def connect_in_cluster(self):
     try:
