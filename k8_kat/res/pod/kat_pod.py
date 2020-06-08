@@ -1,6 +1,5 @@
 from http.client import HTTPResponse
 from typing import List, Optional
-import re
 
 from kubernetes import stream as k8s_streaming
 from kubernetes.client import V1Pod, V1Container, \
