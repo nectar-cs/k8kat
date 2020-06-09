@@ -94,6 +94,78 @@ class TestKatPod(Base.TestKatRes):
     self.assertEqual(pod.raw_logs(), "one\ntwo\n")
     self.assertEqual(pod.log_lines(), ['one', 'two'])
 
+  def test_cpu_usage(self):
+    pod = KatPod(simple_pod.create(
+      ns=self.pns,
+      name=self.res_name,
+      image='nginx'
+    ))
+    pod.wait_until(pod.has_settled)
+    time.sleep(60)  # metrics server slow, need a delay
+    self.assertIsNotNone(pod.cpu_usage())
+
+  def test_memory_usage(self):
+    pod = KatPod(simple_pod.create(
+      ns=self.pns,
+      name=self.res_name,
+      image='nginx'
+    ))
+    pod.wait_until(pod.has_settled)
+    time.sleep(60)  # metrics server slow, need a delay
+    self.assertIsNotNone(pod.memory_usage())
+
+  def test_cpu_limits(self):
+    from kubernetes.client import V1ResourceRequirements
+    pod = KatPod(simple_pod.create(
+      ns=self.pns,
+      name=self.res_name,
+      image='nginx',
+      resources=V1ResourceRequirements(
+        requests={"memory":"50Mi", "cpu":"100m"},
+        limits = {"memory":"2E", "cpu":"2"}
+    )))
+    pod.wait_until(pod.has_settled)
+    self.assertEqual(pod.cpu_limits(), 2000.0)
+
+  def test_cpu_requests(self):
+    from kubernetes.client import V1ResourceRequirements
+    pod = KatPod(simple_pod.create(
+      ns=self.pns,
+      name=self.res_name,
+      image='nginx',
+      resources=V1ResourceRequirements(
+        requests={"memory":"50Mi", "cpu":"100m"},
+        limits = {"memory":"2E", "cpu":"2"}
+    )))
+    pod.wait_until(pod.has_settled)
+    self.assertEqual(pod.cpu_requests(), 100.0)
+
+  def test_memory_limits(self):
+    from kubernetes.client import V1ResourceRequirements
+    pod = KatPod(simple_pod.create(
+      ns=self.pns,
+      name=self.res_name,
+      image='nginx',
+      resources=V1ResourceRequirements(
+        requests={"memory": "50Mi", "cpu": "100m"},
+        limits={"memory": "2E", "cpu": "2"}
+      )))
+    pod.wait_until(pod.has_settled)
+    self.assertEqual(pod.memory_limits(), 2*(10**12))
+
+  def test_memory_requests(self):
+    from kubernetes.client import V1ResourceRequirements
+    pod = KatPod(simple_pod.create(
+      ns=self.pns,
+      name=self.res_name,
+      image='nginx',
+      resources=V1ResourceRequirements(
+        requests={"memory": "50Mi", "cpu": "100m"},
+        limits={"memory": "2E", "cpu": "2"}
+      )))
+    pod.wait_until(pod.has_settled)
+    self.assertEqual(pod.memory_requests(), round(50*(2**20)/10**6,1))
+
   def test_fmt_command(self):
     call = pod_utils.coerce_cmd_format
     actual = call(f"one two {quote('three four')}")

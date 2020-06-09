@@ -28,6 +28,7 @@ def create(**subs):
               name=subs.get("container", "primary"),
               image=subs.get('image', 'nginx'),
               image_pull_policy=subs.get('ipp', 'IfNotPresent'),
+              resources=subs.get('resources', None)
             )
           ]
         )

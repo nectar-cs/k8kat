@@ -154,7 +154,7 @@ class KatPod(KatRes):
     else:
       return []
 
-  def cpu_usage(self) -> float:
+  def cpu_usage(self) -> Optional[float]:
     """Returns real-time cpu usage of a pod in millicores."""
     if self.is_running_normally():
       containers = self.get_pod_metrics()['containers']
@@ -162,7 +162,23 @@ class KatPod(KatRes):
         [round(int(ctr['usage']['cpu'].strip('n'))/10**6, 1)
          for ctr in containers])
 
-  def memory_usage(self) -> float:
+  def cpu_limits(self) -> Optional[float]:
+    """Returns pod's cpu limits in millicores."""
+    try:
+      return round(sum([get_container_capacity(ctr, 'limits', 'cpu')
+                  for ctr in self.body().spec.containers]) * 1000, 1)
+    except TypeError:
+      return None
+
+  def cpu_requests(self) -> Optional[float]:
+    """Returns pod's cpu requests in millicores."""
+    try:
+      return round(sum([get_container_capacity(ctr, 'requests', 'cpu')
+                  for ctr in self.body().spec.containers]) * 1000, 1)
+    except TypeError:
+      return None
+
+  def memory_usage(self) -> Optional[float]:
     """Returns real-time memory usage of a pod in Mb."""
     if self.is_running_normally():
       containers = self.get_pod_metrics()['containers']
@@ -170,8 +186,24 @@ class KatPod(KatRes):
         [round(int(ctr['usage']['memory'].strip('Ki'))/10**3, 1)
          for ctr in containers])
 
+  def memory_limits(self) -> Optional[float]:
+    """Returns pod's memory limits in Mb."""
+    try:
+      return round(sum([get_container_capacity(ctr, 'limits', 'memory')
+                  for ctr in self.body().spec.containers]) / 10**6, 1)
+    except TypeError:
+      return None
+
+  def memory_requests(self) -> Optional[float]:
+    """Returns pod's memory requests in Mb."""
+    try:
+      return round(sum([get_container_capacity(ctr, 'requests', 'memory')
+                  for ctr in self.body().spec.containers]) / 10**6, 1)
+    except TypeError:
+      return None
+
   def get_pod_metrics(self) -> Optional[object]:
-    """Returns pod's metrics using k8s metrics API. Only running pods."""
+    """Returns pod's metrics using k8s metrics API. Only for running pods."""
     if self.is_running_normally():
       return broker.custom.get_namespaced_custom_object(
         group='metrics.k8s.io',
@@ -180,40 +212,6 @@ class KatPod(KatRes):
         plural='pods',
         name=self.name
       )
-
-  def cpu_capacity(self) -> Optional[float]:
-    """Returns pod's cpu capacity (limit > request > None) in millicores."""
-    try:
-      return round(self.get_resource_capacity("cpu") * 1000, 1)
-    except TypeError:
-      return self.get_resource_capacity("cpu")
-
-  def memory_capacity(self) -> Optional[float]:
-    """Returns pod's memory capacity (limit > request > None) in Mb."""
-    try:
-      return round(self.get_resource_capacity("memory") / 10**6, 1)
-    except TypeError:
-      return self.get_resource_capacity("memory")
-
-  def get_resource_capacity(self, resource:str) -> Optional[float]:
-    """Returns pod's resource capacity (limit > request > None).
-    Requires all containers inside the pod to have the quantity defined,
-    otherwise returns None"""
-    containers = self.body().spec.containers
-    limits, requests = [], []
-    for ctr in containers:
-      res_limit = get_container_capacity(ctr, 'limits', resource)
-      res_request = get_container_capacity(ctr, 'requests', resource)
-      limits.append(res_limit)
-      requests.append(res_request)
-    try:
-      return sum(limits)
-    except TypeError:
-      try:
-        return sum(requests)
-      except TypeError:
-        return None
-
 
 # --
 # --
@@ -290,24 +288,24 @@ def filter_states(states: List[V1ContainerState], _type: str) -> List[V1Containe
   return [state for state in states if getattr(state, _type)]
 
 
-def get_container_capacity(container:object, capacity:str, resource:str) -> Optional[int]:
+def get_container_capacity(ctr:object, metric:str, resource_type:str) -> Optional[int]:
   """Gets container capacity and returns in cores (cpu) / bytes (memory)."""
   suffixes = ["Ei", "Pi", "Ti", "Gi", "Mi", "Ki", "m", "E", "P", "T", "G", "M", "K"]
   multipliers = [2**60, 2**50, 2**40, 2**30, 2**20, 2**10,
                  10**(-3), 10**18, 10**15, 10**12, 10**9, 10**6, 10**3]
   try:
-    if capacity == "requests":
-      container_cap = container.resources.requests.get(resource, None)
-    elif capacity == "limits":
-      container_cap = container.resources.limits.get(resource, None)
+    if metric == "requests":
+      ctr_cap = ctr.resources.requests.get(resource_type, None)
+    elif metric == "limits":
+      ctr_cap = ctr.resources.limits.get(resource_type, None)
     else:
       raise Exception("Please pass either requests or limits.")
     for i, suffix in enumerate(suffixes):
-      if suffix in str(container_cap):
-        container_cap = float(container_cap.strip(suffix)) * multipliers[i]
+      if suffix in str(ctr_cap):
+        ctr_cap = float(ctr_cap.strip(suffix)) * multipliers[i]
     else:
-      container_cap = float(container_cap)
+      ctr_cap = float(ctr_cap)
   except AttributeError:
-    container_cap = None
+    ctr_cap = None
   finally:
-    return container_cap
+    return ctr_cap
