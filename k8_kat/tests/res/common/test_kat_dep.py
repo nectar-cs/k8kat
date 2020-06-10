@@ -57,19 +57,19 @@ class TestKatDep(Base.TestKatRes):
     self.assertIn(d2.name, p1.name)
     self.assertIn(d2.name, p2.name)
 
-  def test_cpu_usage(self):
-    make = lambda: create(ns=self.pns, name=utils.rand_str(), replicas=2)
-    d1, d2 = KatDep(make()), KatDep(make())
-    time.sleep(60)  # usage doesn't show earlier
-    self.assertIsNotNone(d1.cpu_usage())
-    self.assertIsNotNone(d2.cpu_usage())
-
-  def test_memory_usage(self):
-    make = lambda: create(ns=self.pns, name=utils.rand_str(), replicas=2)
-    d1, d2 = KatDep(make()), KatDep(make())
-    time.sleep(60)  # usage doesn't show earlier
-    self.assertIsNotNone(d1.memory_usage())
-    self.assertIsNotNone(d2.memory_usage())
+  # def test_cpu_usage(self):
+  #   make = lambda: create(ns=self.pns, name=utils.rand_str(), replicas=2)
+  #   d1, d2 = KatDep(make()), KatDep(make())
+  #   time.sleep(60)  # usage doesn't show earlier
+  #   self.assertIsNotNone(d1.cpu_usage())
+  #   self.assertIsNotNone(d2.cpu_usage())
+  #
+  # def test_memory_usage(self):
+  #   make = lambda: create(ns=self.pns, name=utils.rand_str(), replicas=2)
+  #   d1, d2 = KatDep(make()), KatDep(make())
+  #   time.sleep(60)  # usage doesn't show earlier
+  #   self.assertIsNotNone(d1.memory_usage())
+  #   self.assertIsNotNone(d2.memory_usage())
 
   def test_cpu_limits(self):
     make = lambda: create(

@@ -94,15 +94,15 @@ class TestKatPod(Base.TestKatRes):
     self.assertEqual(pod.raw_logs(), "one\ntwo\n")
     self.assertEqual(pod.log_lines(), ['one', 'two'])
 
-  def test_cpu_usage(self):
-    pod = KatPod(simple_pod.create(
-      ns=self.pns,
-      name=self.res_name,
-      image='nginx'
-    ))
-    pod.wait_until(pod.has_settled)
-    time.sleep(60)  # metrics server slow, need a delay
-    self.assertIsNotNone(pod.cpu_usage())
+  # def test_cpu_usage(self):
+  #   pod = KatPod(simple_pod.create(
+  #     ns=self.pns,
+  #     name=self.res_name,
+  #     image='nginx'
+  #   ))
+  #   pod.wait_until(pod.has_settled)
+  #   time.sleep(60)  # metrics server slow, need a delay
+  #   self.assertIsNotNone(pod.cpu_usage())
 
   def test_memory_usage(self):
     pod = KatPod(simple_pod.create(
