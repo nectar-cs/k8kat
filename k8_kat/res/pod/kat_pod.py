@@ -154,6 +154,65 @@ class KatPod(KatRes):
     else:
       return []
 
+  def cpu_usage(self) -> Optional[float]:
+    """Returns real-time cpu usage of a pod in millicores."""
+    if self.is_running_normally():
+      containers = self.get_pod_metrics()['containers']
+      return sum(
+        [round(int(ctr['usage']['cpu'].strip('n'))/10**6, 1)
+         for ctr in containers])
+
+  def cpu_limits(self) -> Optional[float]:
+    """Returns pod's cpu limits in millicores."""
+    try:
+      return round(sum([get_container_capacity(ctr, 'limits', 'cpu')
+                  for ctr in self.body().spec.containers]) * 1000, 1)
+    except TypeError:
+      return None
+
+  def cpu_requests(self) -> Optional[float]:
+    """Returns pod's cpu requests in millicores."""
+    try:
+      return round(sum([get_container_capacity(ctr, 'requests', 'cpu')
+                  for ctr in self.body().spec.containers]) * 1000, 1)
+    except TypeError:
+      return None
+
+  def memory_usage(self) -> Optional[float]:
+    """Returns real-time memory usage of a pod in Mb."""
+    if self.is_running_normally():
+      containers = self.get_pod_metrics()['containers']
+      return sum(
+        [round(int(ctr['usage']['memory'].strip('Ki'))/10**3, 1)
+         for ctr in containers])
+
+  def memory_limits(self) -> Optional[float]:
+    """Returns pod's memory limits in Mb."""
+    try:
+      return round(sum([get_container_capacity(ctr, 'limits', 'memory')
+                  for ctr in self.body().spec.containers]) / 10**6, 1)
+    except TypeError:
+      return None
+
+  def memory_requests(self) -> Optional[float]:
+    """Returns pod's memory requests in Mb."""
+    try:
+      return round(sum([get_container_capacity(ctr, 'requests', 'memory')
+                  for ctr in self.body().spec.containers]) / 10**6, 1)
+    except TypeError:
+      return None
+
+  def get_pod_metrics(self) -> Optional[object]:
+    """Returns pod's metrics using k8s metrics API. Only for running pods."""
+    if self.is_running_normally():
+      return broker.custom.get_namespaced_custom_object(
+        group='metrics.k8s.io',
+        version='v1beta1',
+        namespace=self.namespace,
+        plural='pods',
+        name=self.name
+      )
+
 # --
 # --
 # --
@@ -224,6 +283,29 @@ def has_morbid_pending_reasons(states: List[V1ContainerState]):
   bad_reasons = reasons - good_reasons
   return len(bad_reasons) > 0
 
+
 def filter_states(states: List[V1ContainerState], _type: str) -> List[V1ContainerState]:
   return [state for state in states if getattr(state, _type)]
 
+
+def get_container_capacity(ctr:object, metric:str, resource_type:str) -> Optional[int]:
+  """Gets container capacity and returns in cores (cpu) / bytes (memory)."""
+  suffixes = ["Ei", "Pi", "Ti", "Gi", "Mi", "Ki", "m", "E", "P", "T", "G", "M", "K"]
+  multipliers = [2**60, 2**50, 2**40, 2**30, 2**20, 2**10,
+                 10**(-3), 10**18, 10**15, 10**12, 10**9, 10**6, 10**3]
+  try:
+    if metric == "requests":
+      ctr_cap = ctr.resources.requests.get(resource_type, None)
+    elif metric == "limits":
+      ctr_cap = ctr.resources.limits.get(resource_type, None)
+    else:
+      raise Exception("Please pass either requests or limits.")
+    for i, suffix in enumerate(suffixes):
+      if suffix in str(ctr_cap):
+        ctr_cap = float(ctr_cap.strip(suffix)) * multipliers[i]
+    else:
+      ctr_cap = float(ctr_cap)
+  except AttributeError:
+    ctr_cap = None
+  finally:
+    return ctr_cap

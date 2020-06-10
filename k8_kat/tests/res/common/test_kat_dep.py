@@ -1,3 +1,7 @@
+import time
+
+from kubernetes.client import V1ResourceRequirements
+
 from k8_kat.res.dep.kat_dep import KatDep
 from k8_kat.tests.res.base.test_kat_res import Base
 from k8_kat.utils.main import utils
@@ -52,3 +56,65 @@ class TestKatDep(Base.TestKatRes):
     p1, p2 = d2.pods()
     self.assertIn(d2.name, p1.name)
     self.assertIn(d2.name, p2.name)
+
+  def test_cpu_usage(self):
+    make = lambda: create(ns=self.pns, name=utils.rand_str(), replicas=2)
+    d1, d2 = KatDep(make()), KatDep(make())
+    time.sleep(60)  # usage doesn't show earlier
+    self.assertIsNotNone(d1.cpu_usage())
+    self.assertIsNotNone(d2.cpu_usage())
+
+  def test_memory_usage(self):
+    make = lambda: create(ns=self.pns, name=utils.rand_str(), replicas=2)
+    d1, d2 = KatDep(make()), KatDep(make())
+    time.sleep(60)  # usage doesn't show earlier
+    self.assertIsNotNone(d1.memory_usage())
+    self.assertIsNotNone(d2.memory_usage())
+
+  def test_cpu_limits(self):
+    make = lambda: create(
+      ns=self.pns,
+      name=utils.rand_str(),
+      replicas=2,
+      resources=V1ResourceRequirements(
+        requests={"memory": "50Mi", "cpu": "100m"},
+        limits={"memory": "2E", "cpu": "2"}
+      ))
+    d1, d2 = KatDep(make()), KatDep(make())
+    self.assertEqual(d1.cpu_limits(), 2000.0*2)
+
+  def test_cpu_requests(self):
+    make = lambda: create(
+      ns=self.pns,
+      name=utils.rand_str(),
+      replicas=2,
+      resources=V1ResourceRequirements(
+        requests={"memory": "50Mi", "cpu": "100m"},
+        limits={"memory": "2E", "cpu": "2"}
+      ))
+    d1, d2 = KatDep(make()), KatDep(make())
+    self.assertEqual(d1.cpu_requests(), 100.0*2)
+
+  def test_memory_limits(self):
+    make = lambda: create(
+      ns=self.pns,
+      name=utils.rand_str(),
+      replicas=2,
+      resources=V1ResourceRequirements(
+        requests={"memory": "50Mi", "cpu": "100m"},
+        limits={"memory": "2E", "cpu": "2"}
+      ))
+    d1, d2 = KatDep(make()), KatDep(make())
+    self.assertEqual(d1.memory_limits(), 2*(10**12)*2)
+
+  def test_memory_requests(self):
+    make = lambda: create(
+      ns=self.pns,
+      name=utils.rand_str(),
+      replicas=2,
+      resources=V1ResourceRequirements(
+        requests={"memory": "50Mi", "cpu": "100m"},
+        limits={"memory": "2E", "cpu": "2"}
+      ))
+    d1, d2 = KatDep(make()), KatDep(make())
+    self.assertEqual(d1.memory_requests(), round(50*(2**20)/10**6,1)*2)

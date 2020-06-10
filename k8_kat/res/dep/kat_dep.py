@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from kubernetes.client import V1PodSpec, V1Container, V1Scale, V1ScaleSpec, V1Deployment
 
@@ -64,6 +64,52 @@ class KatDep(KatRes):
     pods: List[KatPod] = self.pods()
     pod_settle_states = [p.has_settled() for p in pods]
     return len(pods) == 0 or set(pod_settle_states) == {True}
+
+  def cpu_usage(self) -> Optional[float]:
+    """Returns total real-time cpu usage of a deployment in millicores."""
+    try:
+      return round(sum([pod.cpu_usage() for pod in self.pods()]), 1)
+    except TypeError:
+      return None
+
+  def cpu_limits(self) -> Optional[float]:
+    """Returns total cpu limits per deployment in millicores.
+    Requires all pods to have limits defined, else returns None."""
+    try:
+      return round(sum([pod.cpu_limits() for pod in self.pods()]), 1)
+    except TypeError:
+      return None
+
+  def cpu_requests(self) -> Optional[float]:
+    """Returns total cpu requests per deployment in millicores.
+    Requires all pods to have requests defined, else returns None."""
+    try:
+      return round(sum([pod.cpu_requests() for pod in self.pods()]), 1)
+    except TypeError:
+      return None
+
+  def memory_usage(self) -> Optional[float]:
+    """Returns total real-time memory usage of a deployment in Mb."""
+    try:
+      return round(sum([pod.memory_usage() for pod in self.pods()]), 1)
+    except TypeError:
+      return None
+
+  def memory_limits(self) -> Optional[float]:
+    """Returns total memory limits per deployment in Mb.
+    Requires all pods to have limits defined, else returns None."""
+    try:
+      return round(sum([pod.memory_limits() for pod in self.pods()]), 1)
+    except TypeError:
+      return None
+
+  def memory_requests(self) -> Optional[float]:
+    """Returns total memory requests per deployment in Mb.
+    Requires all pods to have requests defined, else returns None."""
+    try:
+      return round(sum([pod.memory_requests() for pod in self.pods()]), 1)
+    except TypeError:
+      return None
 
 # --
 # --
