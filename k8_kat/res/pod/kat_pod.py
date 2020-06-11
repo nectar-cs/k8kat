@@ -221,6 +221,20 @@ class KatPod(KatRes):
 # --
 # --
 
+  @classmethod
+  def consume_runner(cls, name: str, ns: str, wait_until_gone=False) -> Optional[str]:
+    pod = cls.wait_until_exists(name, ns)
+    if pod:
+      pod.wait_until(pod.has_run)
+      logs = None
+      if pod.has_succeeded():
+        logs = pod.raw_logs()
+      pod.delete(wait_until_gone)
+      return logs
+    else:
+      return None
+
+
   def shell_exec(self, command) -> Optional[str]:
     fmt_command = pod_utils.coerce_cmd_format(command)
     result = k8s_streaming.stream(

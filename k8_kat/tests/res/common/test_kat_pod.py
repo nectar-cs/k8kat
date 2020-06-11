@@ -94,6 +94,34 @@ class TestKatPod(Base.TestKatRes):
     self.assertEqual(pod.raw_logs(), "one\ntwo\n")
     self.assertEqual(pod.log_lines(), ['one', 'two'])
 
+  def test_consume_runner_good_cmd(self):
+    simple_pod.create(
+      ns=self.pns,
+      name=self.res_name,
+      restart='Never',
+      image='busybox',
+      command=["/bin/sh", "-c"],
+      args=["echo one && exit 0"]
+    )
+
+    result = KatPod.consume_runner(self.res_name, self.pns, True)
+    self.assertEqual("one\n", result)
+    self.assertIsNone(KatPod.find(self.res_name, self.pns))
+
+  def test_consume_runner_bad_cmd(self):
+    simple_pod.create(
+      ns=self.pns,
+      name=self.res_name,
+      restart='Never',
+      image='busybox',
+      command=["/bin/sh", "-c"],
+      args=["echo one && exit 1"]
+    )
+
+    result = KatPod.consume_runner(self.res_name, self.pns, True)
+    self.assertIsNone(result)
+    self.assertIsNone(KatPod.find(self.res_name, self.pns))
+
   # def test_cpu_usage(self):
   #   pod = KatPod(simple_pod.create(
   #     ns=self.pns,
@@ -103,16 +131,16 @@ class TestKatPod(Base.TestKatRes):
   #   pod.wait_until(pod.has_settled)
   #   time.sleep(60)  # metrics server slow, need a delay
   #   self.assertIsNotNone(pod.cpu_usage())
-
-  def test_memory_usage(self):
-    pod = KatPod(simple_pod.create(
-      ns=self.pns,
-      name=self.res_name,
-      image='nginx'
-    ))
-    pod.wait_until(pod.has_settled)
-    time.sleep(60)  # metrics server slow, need a delay
-    self.assertIsNotNone(pod.memory_usage())
+  #
+  # def test_memory_usage(self):
+  #   pod = KatPod(simple_pod.create(
+  #     ns=self.pns,
+  #     name=self.res_name,
+  #     image='nginx'
+  #   ))
+  #   pod.wait_until(pod.has_settled)
+  #   time.sleep(60)  # metrics server slow, need a delay
+  #   self.assertIsNotNone(pod.memory_usage())
 
   def test_cpu_limits(self):
     from kubernetes.client import V1ResourceRequirements

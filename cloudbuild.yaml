@@ -1,6 +1,8 @@
 images:
   - "gcr.io/nectar-bazaar/k8-kat:latest"
 
+timeout: 1200s
+
 steps:
 
   - id: "Fetch Secrets"

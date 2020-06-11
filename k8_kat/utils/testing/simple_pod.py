@@ -12,6 +12,7 @@ def pod(**subs):
       labels=labels
     ),
     spec=V1PodSpec(
+      restart_policy=subs.get('restart', 'Always'),
       containers=[
         V1Container(
           name=subs.get('container', 'primary'),

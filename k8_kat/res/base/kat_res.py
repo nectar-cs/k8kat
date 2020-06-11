@@ -105,6 +105,18 @@ class KatRes:
       **query
     )
 
+  @classmethod
+  def wait_until_exists(cls, name: str, ns: str=None):
+    res = None
+    for attempts in range(0, 20):
+      res = cls.find(name, ns)
+      if res:
+        break
+      else:
+        time.sleep(1)
+    return res
+
+
   def delete(self, wait_until_gone=False):
     self._perform_delete_self()
     if wait_until_gone:
