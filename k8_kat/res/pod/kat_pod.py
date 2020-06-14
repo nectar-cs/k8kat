@@ -1,5 +1,5 @@
 from http.client import HTTPResponse
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 from kubernetes import stream as k8s_streaming
 from kubernetes.client import V1Pod, V1Container, \
@@ -9,7 +9,7 @@ from kubernetes.client.rest import ApiException
 from k8_kat.auth.kube_broker import broker
 from k8_kat.res.base.kat_res import KatRes
 from k8_kat.res.pod import pod_utils
-from k8_kat.utils.main import utils
+from k8_kat.utils.main import utils, units
 from k8_kat.utils.main.class_property import classproperty
 
 
@@ -292,9 +292,9 @@ class KatPod(KatRes):
 
 
 def has_morbid_pending_reasons(states: List[V1ContainerState]):
-  reasons = set([state.waiting.reason for state in states])
+  stated_reasons = set([state.waiting.reason for state in states])
   good_reasons = {'ContainerCreating', 'PullingImage'}
-  bad_reasons = reasons - good_reasons
+  bad_reasons = stated_reasons - good_reasons
   return len(bad_reasons) > 0
 
 
@@ -302,24 +302,8 @@ def filter_states(states: List[V1ContainerState], _type: str) -> List[V1Containe
   return [state for state in states if getattr(state, _type)]
 
 
-def get_container_capacity(ctr:object, metric:str, resource_type:str) -> Optional[int]:
+def get_container_capacity(ctr, metrics_src: str, resource_type: str) -> Optional[float]:
   """Gets container capacity and returns in cores (cpu) / bytes (memory)."""
-  suffixes = ["Ei", "Pi", "Ti", "Gi", "Mi", "Ki", "m", "E", "P", "T", "G", "M", "K"]
-  multipliers = [2**60, 2**50, 2**40, 2**30, 2**20, 2**10,
-                 10**(-3), 10**18, 10**15, 10**12, 10**9, 10**6, 10**3]
-  try:
-    if metric == "requests":
-      ctr_cap = ctr.resources.requests.get(resource_type, None)
-    elif metric == "limits":
-      ctr_cap = ctr.resources.limits.get(resource_type, None)
-    else:
-      raise Exception("Please pass either requests or limits.")
-    for i, suffix in enumerate(suffixes):
-      if suffix in str(ctr_cap):
-        ctr_cap = float(ctr_cap.strip(suffix)) * multipliers[i]
-    else:
-      ctr_cap = float(ctr_cap)
-  except AttributeError:
-    ctr_cap = None
-  finally:
-    return ctr_cap
+  metrics_dict: Dict = getattr(ctr.resources, metrics_src, {})
+  capacity_expr = metrics_dict.get(resource_type, '')
+  return units.quant_expr_to_bytes(capacity_expr)

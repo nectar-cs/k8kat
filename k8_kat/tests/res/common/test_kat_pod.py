@@ -131,7 +131,7 @@ class TestKatPod(Base.TestKatRes):
   #   pod.wait_until(pod.has_settled)
   #   time.sleep(60)  # metrics server slow, need a delay
   #   self.assertIsNotNone(pod.cpu_usage())
-  #
+
   # def test_memory_usage(self):
   #   pod = KatPod(simple_pod.create(
   #     ns=self.pns,
@@ -149,9 +149,10 @@ class TestKatPod(Base.TestKatRes):
       name=self.res_name,
       image='nginx',
       resources=V1ResourceRequirements(
-        requests={"memory":"50Mi", "cpu":"100m"},
-        limits = {"memory":"2E", "cpu":"2"}
-    )))
+        requests=dict(memory="50Mi", cpu="100m"),
+        limits=dict(memory="2E", cpu="2")
+      )
+    ))
     pod.wait_until(pod.has_settled)
     self.assertEqual(pod.cpu_limits(), 2000.0)
 
@@ -162,9 +163,10 @@ class TestKatPod(Base.TestKatRes):
       name=self.res_name,
       image='nginx',
       resources=V1ResourceRequirements(
-        requests={"memory":"50Mi", "cpu":"100m"},
-        limits = {"memory":"2E", "cpu":"2"}
-    )))
+        requests=dict(memory="50Mi", cpu="100m"),
+        limits=dict(memory="2E", cpu="2")
+      )
+    ))
     pod.wait_until(pod.has_settled)
     self.assertEqual(pod.cpu_requests(), 100.0)
 

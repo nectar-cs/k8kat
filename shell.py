@@ -8,6 +8,7 @@ from k8_kat.res.rbac.rbac import KatClusterRole, KatClusterRoleBinding, KatRole,
 from k8_kat.res.sa.kat_service_account import KatServiceAccount
 from k8_kat.res.svc.kat_svc import KatSvc
 from k8_kat.utils.main import utils
+from k8_kat.utils.testing import ci_perms
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--env', '-e', help=f"Set the env: {utils.legal_envs}")
@@ -18,12 +19,12 @@ def coerce_env():
   if args.env:
     utils.set_run_env(args.env)
 
+
 def main():
   coerce_env()
   print(f"Running shell in {utils.run_env()}")
+  ci_perms.apply_perms()
   broker.connect()
-  if args.env:
-    utils.set_run_env(args.env)
 
 
 if __name__ == '__main__':
