@@ -11,19 +11,21 @@ def kat_classes():
   from k8_kat.res.secret.kat_secret import KatSecret
   from k8_kat.res.svc.kat_svc import KatSvc
   from k8_kat.res.ingress.kat_ingress import KatIngress
+  from k8_kat.res.quotas.kat_quota import KatQuota
 
   return [
-      KatRole,
-      KatRoleBinding,
-      KatClusterRole,
-      KatClusterRoleBinding,
-      KatServiceAccount,
-      KatNs,
-      KatMap,
-      KatSecret,
-      KatPvc,
-      KatPod,
-      KatDep,
-      KatSvc,
-      KatIngress
-    ]
+    KatRole,
+    KatRoleBinding,
+    KatClusterRole,
+    KatClusterRoleBinding,
+    KatServiceAccount,
+    KatNs,
+    KatMap,
+    KatSecret,
+    KatPvc,
+    KatPod,
+    KatDep,
+    KatSvc,
+    KatIngress,
+    KatQuota
+  ]
