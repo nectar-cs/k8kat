@@ -293,7 +293,7 @@ class KatPod(KatRes):
 
 def has_morbid_pending_reasons(states: List[V1ContainerState]):
   stated_reasons = set([state.waiting.reason for state in states])
-  good_reasons = {'ContainerCreating', 'PullingImage'}
+  good_reasons = {'ContainerCreating', 'PullingImage', 'PodInitializing'}
   bad_reasons = stated_reasons - good_reasons
   return len(bad_reasons) > 0
 

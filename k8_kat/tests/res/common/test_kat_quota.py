@@ -1,4 +1,3 @@
-import time
 from typing import Type
 
 from kubernetes.client import V1ResourceQuota, V1ObjectMeta, V1ResourceQuotaSpec
@@ -25,17 +24,24 @@ class TestKatQuota(Base.TestKatRes):
   def test_cpu_and_mem_limits(self):
     quota = KatQuota(create(self.res_name, self.pns))
     self.assertEqual(quota.cpu_limit(), 1.5)
-    self.assertEqual(quota.mem_limit(), 2000000)
+    self.assertEqual(quota.mem_limit(), 200_000_000)
 
   def test_cpu_and_mem_usage(self):
-    pod = KatPod(simple_pod.create(ns=self.pns, name=utils.rand_str()))
-    quota = KatQuota(create(self.res_name, self.pns, memory='100M'))
+    pod = KatPod(simple_pod.create(
+      ns=self.pns,
+      name=utils.rand_str(),
+      resources=dict(
+        requests=dict(cpu=0.5, memory='150M'),
+        limits=dict(cpu=1, memory='300Mi')
+      )
+    ))
+    quota = KatQuota(create(self.res_name, self.pns))
 
     self.assertEqual([None, None], [quota.cpu_used(), quota.mem_used()])
-    pod.wait_until_running()
+    pod.wait_until(pod.has_settled)
     quota.reload()
 
-    # unpredictable state in Kind CI, so just ensure not crashing
+    # unpredictable behavior in Kind CI, so just ensure not crashing
     quota.cpu_used()
     quota.mem_used()
 
@@ -50,7 +56,7 @@ def create(name, ns, **kwargs) -> V1ResourceQuota:
       spec=V1ResourceQuotaSpec(
         hard=dict(
           cpu=kwargs.get('cpu', '1.5'),
-          memory=kwargs.get('memory', '2M')
+          memory=kwargs.get('memory', '200M')
         )
       )
     )

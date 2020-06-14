@@ -1,10 +1,15 @@
-from kubernetes.client import V1ObjectMeta, V1PodSpec, V1Container
+from kubernetes.client import V1ObjectMeta, V1PodSpec, V1Container, V1ResourceRequirements
 
 from k8_kat.auth.kube_broker import broker
 
 def pod(**subs):
   default_labels = dict(app=subs['name'])
   labels = {**subs.get('labels', {}), **default_labels}
+
+  resource_reqs = None
+  container_resources = subs.get('resources', None)
+  if container_resources:
+    resource_reqs = V1ResourceRequirements(**container_resources)
 
   return broker.client.V1Pod(
     metadata=V1ObjectMeta(
@@ -20,7 +25,7 @@ def pod(**subs):
           image_pull_policy="IfNotPresent",
           command=subs.get('command'),
           args=subs.get('args'),
-          resources=subs.get('resources', None)
+          resources=resource_reqs
         )
       ]
     )

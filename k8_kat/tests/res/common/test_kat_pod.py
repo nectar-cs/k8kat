@@ -143,12 +143,11 @@ class TestKatPod(Base.TestKatRes):
   #   self.assertIsNotNone(pod.memory_usage())
 
   def test_cpu_limits(self):
-    from kubernetes.client import V1ResourceRequirements
     pod = KatPod(simple_pod.create(
       ns=self.pns,
       name=self.res_name,
       image='nginx',
-      resources=V1ResourceRequirements(
+      resources=dict(
         requests=dict(memory="50Mi", cpu="100m"),
         limits=dict(memory="2E", cpu="2")
       )
@@ -157,12 +156,11 @@ class TestKatPod(Base.TestKatRes):
     self.assertEqual(pod.cpu_limits(), 2000.0)
 
   def test_cpu_requests(self):
-    from kubernetes.client import V1ResourceRequirements
     pod = KatPod(simple_pod.create(
       ns=self.pns,
       name=self.res_name,
       image='nginx',
-      resources=V1ResourceRequirements(
+      resources=dict(
         requests=dict(memory="50Mi", cpu="100m"),
         limits=dict(memory="2E", cpu="2")
       )
@@ -171,27 +169,25 @@ class TestKatPod(Base.TestKatRes):
     self.assertEqual(pod.cpu_requests(), 100.0)
 
   def test_memory_limits(self):
-    from kubernetes.client import V1ResourceRequirements
     pod = KatPod(simple_pod.create(
       ns=self.pns,
       name=self.res_name,
       image='nginx',
-      resources=V1ResourceRequirements(
-        requests={"memory": "50Mi", "cpu": "100m"},
-        limits={"memory": "2E", "cpu": "2"}
+      resources=dict(
+        requests=dict(memory="50Mi", cpu="100m"),
+        limits=dict(memory="2E", cpu="2")
       )))
     pod.wait_until(pod.has_settled)
     self.assertEqual(pod.memory_limits(), 2*(10**12))
 
   def test_memory_requests(self):
-    from kubernetes.client import V1ResourceRequirements
     pod = KatPod(simple_pod.create(
       ns=self.pns,
       name=self.res_name,
       image='nginx',
-      resources=V1ResourceRequirements(
-        requests={"memory": "50Mi", "cpu": "100m"},
-        limits={"memory": "2E", "cpu": "2"}
+      resources=dict(
+        requests=dict(memory="50Mi", cpu="100m"),
+        limits=dict(memory="2E", cpu="2")
       )))
     pod.wait_until(pod.has_settled)
     self.assertEqual(pod.memory_requests(), round(50*(2**20)/10**6,1))
