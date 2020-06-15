@@ -1,5 +1,6 @@
 from http.client import HTTPResponse
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, TypeVar
+from functools import lru_cache, wraps
 
 from kubernetes import stream as k8s_streaming
 from kubernetes.client import V1Pod, V1Container, \
@@ -12,6 +13,8 @@ from k8_kat.res.pod import pod_utils
 from k8_kat.utils.main import utils, units
 from k8_kat.utils.main.class_property import classproperty
 
+
+Metric = TypeVar('Metric', bound=KatRes)
 
 class KatPod(KatRes):
   def __init__(self, raw, wait_until_running=False):
@@ -26,6 +29,17 @@ class KatPod(KatRes):
 # --
 # --
 # --
+
+  def running_normally(func):
+    """Note: needs to be defined at top of class."""
+    @wraps(func)
+    def running_normally_func(self, *args, **kwargs):
+      if self.is_running_normally():
+        return func(self, *args, **kwargs)
+      else:
+        return None
+
+    return running_normally_func
 
   @classproperty
   def kind(self):
@@ -147,6 +161,7 @@ class KatPod(KatRes):
     except ApiException:
       return None
 
+  @running_normally
   def log_lines(self, seconds=60) -> List[str]:
     raw_log_str = self.raw_logs(seconds)
     if raw_log_str:
@@ -154,64 +169,66 @@ class KatPod(KatRes):
     else:
       return []
 
+  @running_normally
   def cpu_usage(self) -> Optional[float]:
-    """Returns real-time cpu usage of a pod in millicores."""
-    if self.is_running_normally():
-      containers = self.get_pod_metrics()['containers']
-      return sum(
-        [round(int(ctr['usage']['cpu'].strip('n'))/10**6, 1)
-         for ctr in containers])
+    """Returns pod's total CPU usage in cores."""
+    containers = self.get_pod_metrics()['containers']
+    cpu_quant = [units.change_units(ctr['usage']['cpu']) for ctr in containers]
+    try:
+      return round(sum(cpu_quant), 3)
+    except TypeError:
+      return None
 
+  @lru_cache(maxsize=128)
   def cpu_limits(self) -> Optional[float]:
-    """Returns pod's cpu limits in millicores."""
-    try:
-      return round(sum([get_container_capacity(ctr, 'limits', 'cpu')
-                  for ctr in self.body().spec.containers]) * 1000, 1)
-    except TypeError:
-      return None
+    """Returns pod's total CPU limits in cores."""
+    return self.get_pod_capacity('limits', 'cpu')
 
+  @lru_cache(maxsize=128)
   def cpu_requests(self) -> Optional[float]:
-    """Returns pod's cpu requests in millicores."""
-    try:
-      return round(sum([get_container_capacity(ctr, 'requests', 'cpu')
-                  for ctr in self.body().spec.containers]) * 1000, 1)
-    except TypeError:
-      return None
+    """Returns pod's total CPU requests in cores."""
+    return self.get_pod_capacity('requests', 'cpu')
 
+  @running_normally
   def memory_usage(self) -> Optional[float]:
-    """Returns real-time memory usage of a pod in Mb."""
-    if self.is_running_normally():
-      containers = self.get_pod_metrics()['containers']
-      return sum(
-        [round(int(ctr['usage']['memory'].strip('Ki'))/10**3, 1)
-         for ctr in containers])
+    """Returns pod's total memory usage in bytes."""
+    containers = self.get_pod_metrics()['containers']
+    memory_quant = [units.change_units(ctr['usage']['memory']) for ctr in containers]
+    try:
+      return round(sum(memory_quant), 3)
+    except TypeError:
+      return None
 
+  @lru_cache(maxsize=128)
   def memory_limits(self) -> Optional[float]:
-    """Returns pod's memory limits in Mb."""
-    try:
-      return round(sum([get_container_capacity(ctr, 'limits', 'memory')
-                  for ctr in self.body().spec.containers]) / 10**6, 1)
-    except TypeError:
-      return None
+    """Returns pod's total memory limits in bytes."""
+    return self.get_pod_capacity('limits', 'memory')
 
+  @lru_cache(maxsize=128)
   def memory_requests(self) -> Optional[float]:
-    """Returns pod's memory requests in Mb."""
+    """Returns pod's total memory requests in bytes."""
+    return self.get_pod_capacity('requests', 'memory')
+
+  @running_normally
+  def get_pod_metrics(self) -> Optional[Metric]:
+    """Returns pod's metrics using k8s metrics API. Only for running pods."""
+    return broker.custom.get_namespaced_custom_object(
+      group='metrics.k8s.io',
+      version='v1beta1',
+      namespace=self.namespace,
+      plural='pods',
+      name=self.name
+    )
+
+  def get_pod_capacity(self, metrics_src: str, resource_type: str) -> Optional[float]:
+    """Gets pod capacity and returns in cores (cpu) / bytes (memory)."""
+    container_capacity = [
+      get_container_capacity(ctr, metrics_src, resource_type)
+      for ctr in self.body().spec.containers]
     try:
-      return round(sum([get_container_capacity(ctr, 'requests', 'memory')
-                  for ctr in self.body().spec.containers]) / 10**6, 1)
+      return round(sum(container_capacity), 3)
     except TypeError:
       return None
-
-  def get_pod_metrics(self) -> Optional[object]:
-    """Returns pod's metrics using k8s metrics API. Only for running pods."""
-    if self.is_running_normally():
-      return broker.custom.get_namespaced_custom_object(
-        group='metrics.k8s.io',
-        version='v1beta1',
-        namespace=self.namespace,
-        plural='pods',
-        name=self.name
-      )
 
 # --
 # --
@@ -234,7 +251,7 @@ class KatPod(KatRes):
     else:
       return None
 
-
+  @running_normally
   def shell_exec(self, command) -> Optional[str]:
     fmt_command = pod_utils.coerce_cmd_format(command)
     result = k8s_streaming.stream(
@@ -273,6 +290,13 @@ class KatPod(KatRes):
       list=broker.coreV1.list_namespaced_pod
     )
 
+  def reload(self) -> Optional['KatRes']:
+    self.cpu_limits.cache_clear()
+    self.cpu_requests.cache_clear()
+    self.memory_limits.cache_clear()
+    self.memory_requests.cache_clear()
+    return super().reload()
+
 # --
 # --
 # --
@@ -306,4 +330,4 @@ def get_container_capacity(ctr, metrics_src: str, resource_type: str) -> Optiona
   """Gets container capacity and returns in cores (cpu) / bytes (memory)."""
   metrics_dict: Dict = getattr(ctr.resources, metrics_src, {})
   capacity_expr = metrics_dict.get(resource_type, '')
-  return units.quant_expr_to_bytes(capacity_expr)
+  return units.change_units(capacity_expr)
