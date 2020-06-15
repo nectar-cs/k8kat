@@ -7,7 +7,7 @@ class TestUnits(unittest.TestCase):
 
   def test_humanize_cpu_quant(self):
     self.assertEqual("1.0", units.humanize_cpu_quant(1))
-    self.assertEqual("1.1 Millicores", units.humanize_cpu_quant(1.123, True))
+    self.assertEqual("1.1 Cores", units.humanize_cpu_quant(1.123, True))
 
   def test_humanize_mem_quant(self):
     self.assertEqual('15Kb', units.humanize_mem_quant(15_000))

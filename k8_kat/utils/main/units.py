@@ -23,7 +23,7 @@ def quant_expr_to_bytes(expr: str) -> Optional[float]:
 
 def humanize_cpu_quant(millicores: float, with_unit: bool = False) -> str:
   base = "{:.1f}".format(millicores)
-  return f"{base} {'Millicores' if with_unit else ''}".strip(' ')
+  return f"{base} {'Cores' if with_unit else ''}".strip(' ')
 
 
 def humanize_mem_quant(byte_value: float) -> str:

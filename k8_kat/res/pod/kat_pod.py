@@ -154,13 +154,15 @@ class KatPod(KatRes):
     else:
       return []
 
-  def cpu_usage(self) -> Optional[float]:
+  def metrics_bundle(self):
+    raw_metrics = self.load_metrics()
+    all_cont_metrics: List[any] = raw_metrics['containers']
+
+  def cpu_used(self, metrics_cache=None) -> Optional[float]:
     """Returns real-time cpu usage of a pod in millicores."""
     if self.is_running_normally():
-      containers = self.get_pod_metrics()['containers']
-      return sum(
-        [round(int(ctr['usage']['cpu'].strip('n'))/10**6, 1)
-         for ctr in containers])
+      metrics = metrics_cache or self.load_metrics()['containers']
+      return sum_container_metric(metrics, 'usage', 'cpu')
 
   def cpu_limits(self) -> Optional[float]:
     """Returns pod's cpu limits in millicores."""
@@ -181,7 +183,7 @@ class KatPod(KatRes):
   def memory_usage(self) -> Optional[float]:
     """Returns real-time memory usage of a pod in Mb."""
     if self.is_running_normally():
-      containers = self.get_pod_metrics()['containers']
+      containers = self.load_metrics()['containers']
       return sum(
         [round(int(ctr['usage']['memory'].strip('Ki'))/10**3, 1)
          for ctr in containers])
@@ -202,7 +204,7 @@ class KatPod(KatRes):
     except TypeError:
       return None
 
-  def get_pod_metrics(self) -> Optional[object]:
+  def load_metrics(self) -> Optional[any]:
     """Returns pod's metrics using k8s metrics API. Only for running pods."""
     if self.is_running_normally():
       return broker.custom.get_namespaced_custom_object(
@@ -300,6 +302,15 @@ def has_morbid_pending_reasons(states: List[V1ContainerState]):
 
 def filter_states(states: List[V1ContainerState], _type: str) -> List[V1ContainerState]:
   return [state for state in states if getattr(state, _type)]
+
+
+def sum_container_metric(all_container_metrics, metric_type, res_type):
+  per_container_results = []
+  for container_metrics in all_container_metrics:
+    raw_val_for_cont = container_metrics[metric_type][res_type]
+    byte_value_for_container = units.quant_expr_to_bytes(raw_val_for_cont)
+    per_container_results.append(byte_value_for_container)
+  return sum(per_container_results)
 
 
 def get_container_capacity(ctr, metrics_src: str, resource_type: str) -> Optional[float]:
