@@ -1,5 +1,5 @@
 from http.client import HTTPResponse
-from typing import List, Optional, Dict, TypeVar
+from typing import List, Optional, Dict
 from functools import lru_cache, wraps
 
 from kubernetes import stream as k8s_streaming
@@ -216,9 +216,9 @@ class KatPod(KatRes):
     except TypeError:
       return None
 
-
-  def fetch_pod_usage_EXPERIMENTAL(self):
-    return self.metrics.fetch_pod_usage_from_metrics(self.name, self.namespace, 'cpu')
+  # IGNORE FOR NOW
+  # def fetch_pod_usage_EXPERIMENTAL(self):
+  #   return self.metrics.fetch_pod_usage_from_metrics(self.name, self.namespace, 'cpu')
 
 
   def fetch_pod_capacity(self, metrics_src: str, resource_type: str) -> Optional[float]:
