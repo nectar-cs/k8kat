@@ -2,15 +2,16 @@ from typing import Optional, Tuple, Dict
 
 
 def find_multiplier_mapping(expr: str) -> Optional[Tuple[str, int]]:
+  """Finds the correct multiplier for unit conversion."""
   for candidate, multiplier in unit_map.items():
     if expr.endswith(candidate):
       return candidate, multiplier
   return None
 
 
-def change_units(src_expr: str, target: str = '') -> Optional[float]:
-  """Converts from source units to target units.
-  Default target = no multiplier."""
+def parse_quant_expr(src_expr: str, target: str = '') -> Optional[float]:
+  """Parses the source expression into standard units
+  or target units (if specified)."""
   src_mapping = find_multiplier_mapping(src_expr)
   target_mapping = find_multiplier_mapping(target)
   if not src_mapping or not target_mapping:
@@ -25,16 +26,15 @@ def change_units(src_expr: str, target: str = '') -> Optional[float]:
     return None
 
 
-def humanize_cpu_quant(millicores: float, with_unit: bool = False) -> str:
-  """Returns cpu quantity rounded to single decimal."""
-  base = "{:.1f}".format(millicores)
-  return f"{base} {'Millicores' if with_unit else ''}".strip(' ')
+def humanize_cpu_quant(cores: float, with_unit: bool = False) -> str:
+  """Returns CPU quantity in cores rounded to single decimal."""
+  base = "{:.1f}".format(cores)
+  return f"{base} {'Cores' if with_unit else ''}".strip(' ')
 
 
 def humanize_mem_quant(byte_value: float) -> str:
   """ Returns memory quantity converted from bytes to higher level units.
   Automatically picks the right units for friendliest display."""
-  # todo the outputs of the two functions seem inconsistent
   unit_map_items = list(unit_map.items())
   sorted_items = sorted(unit_map_items, key=lambda item: item[1])
   unit, bytes_in_unit = None, None
@@ -59,6 +59,7 @@ unit_map: Dict[str, int] = {
   'G'    : 10 ** 9,
   'M'    : 10 ** 6,
   'K'    : 10 ** 3,
+  'k'    : 10 ** 3,  # k8s uses both K and k for "kilo"
   'm'    : 10 ** -3,
   'micro': 10 ** -6,
   'n'    : 10 ** -9,

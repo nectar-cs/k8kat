@@ -3,6 +3,7 @@ import os
 import random
 import string
 import subprocess
+from functools import reduce
 from pathlib import Path
 from typing import Dict
 
@@ -97,3 +98,7 @@ def rand_str(string_len=10):
 
 def flatten(nested_list):
   return [item for sublist in nested_list for item in sublist]
+
+
+def deep_get(dictionary, *keys):
+  return reduce(lambda d, key: d.get(key) if d else None, keys, dictionary)
