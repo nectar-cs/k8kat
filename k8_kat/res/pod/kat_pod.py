@@ -1,5 +1,5 @@
 from http.client import HTTPResponse
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Callable, TypeVar, Any
 from functools import lru_cache, wraps
 
 from kubernetes import stream as k8s_streaming
@@ -13,6 +13,7 @@ from k8_kat.res.pod import pod_utils
 from k8_kat.utils.main import utils, units
 from k8_kat.utils.main.class_property import classproperty
 
+Fn = TypeVar('Fn', bound=Callable[..., Any])
 
 class KatPod(KatRes):
   def __init__(self, raw, wait_until_running=False):
@@ -27,8 +28,7 @@ class KatPod(KatRes):
 # --
 # --
 # --
-
-  def running_normally(func):
+  def running_normally(func: Fn) -> Callable:
     """Note: needs to be defined at top of class."""
     @wraps(func)
     def running_normally_func(self, *args, **kwargs):

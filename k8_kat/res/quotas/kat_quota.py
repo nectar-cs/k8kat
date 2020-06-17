@@ -1,3 +1,5 @@
+from typing import Optional
+
 from kubernetes.client import V1ResourceQuota
 
 from k8_kat.auth.kube_broker import broker
@@ -15,19 +17,19 @@ class KatQuota(KatRes):
   def body(self) -> V1ResourceQuota:
     return self.raw
 
-  def mem_limit(self) -> float:
+  def mem_limit(self) -> Optional[float]:
     expr = self.extract_value('spec', 'hard', 'memory')
     return units.parse_quant_expr(expr)
 
-  def mem_used(self) -> float:
+  def mem_used(self) -> Optional[float]:
     expr = self.extract_value('status', 'used', 'memory')
     return units.parse_quant_expr(expr)
 
-  def cpu_limit(self) -> float:
+  def cpu_limit(self) -> Optional[float]:
     expr = self.extract_value('spec', 'hard', 'cpu')
     return units.parse_quant_expr(expr)
 
-  def cpu_used(self) -> float:
+  def cpu_used(self) -> Optional[float]:
     expr = self.extract_value('status', 'used', 'cpu')
     return units.parse_quant_expr(expr)
 

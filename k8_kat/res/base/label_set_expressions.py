@@ -12,10 +12,10 @@ def or_set_to_exp(_tuple: Tuple[str, List[str]], sign: bool) -> str:
   eq_op = 'in' if sign else 'notin'
   return f"{_tuple[0]} {eq_op} ({csv})"
 
-def ands_to_exps(ands: List[Tuple[str, str]], sign: bool) -> [str]:
+def ands_to_exps(ands: List[Tuple[str, str]], sign: bool) -> List[str]:
   return [and_to_exp(and_dict, sign) for and_dict in ands]
 
-def ors_to_exp(ors: List[Tuple[str, str]], sign: bool) -> [str]:
+def ors_to_exp(ors: List[Tuple[str, str]], sign: bool) -> List[str]:
   all_keys = [or_tup[0] for or_tup in ors]
 
   def agg(whole, key) -> Tuple[str, List[str]]:

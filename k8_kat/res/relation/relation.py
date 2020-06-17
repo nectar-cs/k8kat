@@ -6,7 +6,7 @@ from k8_kat.res.base.label_set_expressions import label_conditions_to_expr
 KT = TypeVar('KT', bound=KatRes)
 class Relation(List[KT]):
 
-  def __init__(self, model_class: [KT], ns=None, **query):
+  def __init__(self, model_class: KT, ns=None, **query):
     if not model_class:
       raise RuntimeError("Cannot compute relation without model_class")
 
@@ -31,7 +31,7 @@ class Relation(List[KT]):
       ).items
 
 
-  def logical_to_k8s_query(self) -> Dict[str, str]:
+  def logical_to_k8s_query(self) -> Dict[str, Optional[str]]:
     k8s_query = dict()
     k8s_query['label_selector'] = process_labels(self._query)
     k8s_query['field_selector'] = process_fields(self._query)

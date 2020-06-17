@@ -1,7 +1,7 @@
-from typing import Optional, Tuple, Dict
+from typing import Optional, Tuple, Dict, Union
 
 
-def find_multiplier_mapping(expr: str) -> Optional[Tuple[str, int]]:
+def find_multiplier_mapping(expr: str) -> Optional[Tuple[str, Union[int,float]]]:
   """Finds the correct multiplier for unit conversion."""
   for candidate, multiplier in unit_map.items():
     if expr.endswith(candidate):
@@ -32,7 +32,7 @@ def humanize_cpu_quant(cores: float, with_unit: bool = False) -> str:
   return f"{base} {'Cores' if with_unit else ''}".strip(' ')
 
 
-def humanize_mem_quant(byte_value: float) -> str:
+def humanize_mem_quant(byte_value: float) -> Optional[str]:
   """ Returns memory quantity converted from bytes to higher level units.
   Automatically picks the right units for friendliest display."""
   unit_map_items = list(unit_map.items())
@@ -46,7 +46,7 @@ def humanize_mem_quant(byte_value: float) -> str:
   return f"{int(bytes_in_unit)}{unit}b" if bytes_in_unit else None
 
 
-unit_map: Dict[str, int] = {
+unit_map: Dict[str, Union[int, float]] = {
   'Ei'   : 2  ** 60,
   'Pi'   : 2  ** 50,
   'Ti'   : 2  ** 40,

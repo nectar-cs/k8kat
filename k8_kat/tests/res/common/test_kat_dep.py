@@ -9,7 +9,6 @@ from k8_kat.utils.main import utils, units
 from k8_kat.utils.testing import simple_dep
 from k8_kat.utils.testing.simple_dep import create
 
-
 class TestKatDep(Base.TestKatRes):
 
   @classmethod
@@ -58,53 +57,53 @@ class TestKatDep(Base.TestKatRes):
     self.assertIn(d2.name, p1.name)
     self.assertIn(d2.name, p2.name)
 
-  def test_good_cpu_usage(self):
+  def test_cpu_usage(self):
     make = lambda: create(
       ns=self.pns,
       name=utils.rand_str(),
       replicas=2
     )
     d1, d2 = KatDep(make()), KatDep(make())
-    with patch("k8_kat.res.dep.kat_dep.KatPod.cpu_usage") as mocked_get:
+    with patch(f"{KatDep.__module__}.KatPod.cpu_usage") as mocked_get:
       mocked_get.return_value = 5
       self.assertEqual(d1.cpu_usage(), 10)
       self.assertEqual(d2.cpu_usage(), 10)
       self.assertEqual(mocked_get.call_count, 4)
 
-  def test_bad_cpu_usage(self):
+  def test_cpu_usage_with_undefined(self):
     make = lambda: create(
       ns=self.pns,
       name=utils.rand_str(),
       replicas=2
     )
     d1, d2 = KatDep(make()), KatDep(make())
-    with patch("k8_kat.res.dep.kat_dep.KatPod.cpu_usage") as mocked_get:
+    with patch(f"{KatDep.__module__}.KatPod.cpu_usage") as mocked_get:
       mocked_get.return_value = None
       self.assertEqual(d1.cpu_usage(), None)
       self.assertEqual(d2.cpu_usage(), None)
       self.assertEqual(mocked_get.call_count, 4)
 
-  def test_good_memory_usage(self):
+  def test_memory_usage(self):
     make = lambda: create(
       ns=self.pns,
       name=utils.rand_str(),
       replicas=2
     )
     d1, d2 = KatDep(make()), KatDep(make())
-    with patch("k8_kat.res.dep.kat_dep.KatPod.memory_usage") as mocked_get:
+    with patch(f"{KatDep.__module__}.KatPod.memory_usage") as mocked_get:
       mocked_get.return_value = 5
       self.assertEqual(d1.memory_usage(), 10)
       self.assertEqual(d2.memory_usage(), 10)
       self.assertEqual(mocked_get.call_count, 4)
 
-  def test_bad_memory_usage(self):
+  def test_memory_usage_with_undefined(self):
     make = lambda: create(
       ns=self.pns,
       name=utils.rand_str(),
       replicas=2
     )
     d1, d2 = KatDep(make()), KatDep(make())
-    with patch("k8_kat.res.dep.kat_dep.KatPod.memory_usage") as mocked_get:
+    with patch(f"{KatDep.__module__}.KatPod.memory_usage") as mocked_get:
       mocked_get.return_value = None
       self.assertEqual(d1.memory_usage(), None)
       self.assertEqual(d2.memory_usage(), None)
