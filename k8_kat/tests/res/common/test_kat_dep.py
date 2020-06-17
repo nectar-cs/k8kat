@@ -9,6 +9,7 @@ from k8_kat.utils.main import utils, units
 from k8_kat.utils.testing import simple_dep
 from k8_kat.utils.testing.simple_dep import create
 
+
 class TestKatDep(Base.TestKatRes):
 
   @classmethod
