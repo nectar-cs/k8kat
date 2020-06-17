@@ -18,11 +18,11 @@ class KatNode(KatRes):
     return self.raw
 
   def cpu_capacity(self) -> float:
-    value = self.body().status.capacity.cpu
+    value = self.body().status.capacity.get('cpu')
     return units.parse_quant_expr(value)
 
   def mem_capacity(self) -> float:
-    value = self.body().status.capacity.cpu
+    value = self.body().status.capacity.get('memory')
     return units.parse_quant_expr(value)
 
   @classmethod

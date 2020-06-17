@@ -1,4 +1,4 @@
-from typing import Callable, Dict, Optional
+from typing import Callable
 
 from k8_kat.auth.kube_broker import broker
 from k8_kat.res.base.kat_res import KatRes
@@ -35,7 +35,7 @@ class KatNs(KatRes):
 
   def cpu_used(self):
     from k8_kat.res.pod.kat_pod import KatPod
-    return self.aggregate_usage(KatPod.memory_usage)
+    return self.aggregate_usage(KatPod.cpu_usage)
 
   def aggregate_usage(self, fn: Callable) -> float:
     return sum([(fn(pod) or 0) for pod in self.pods()])
