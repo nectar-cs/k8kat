@@ -1,4 +1,4 @@
-from typing import Callable, Dict
+from typing import Callable, Dict, Optional
 
 from k8_kat.auth.kube_broker import broker
 from k8_kat.res.base.kat_res import KatRes
@@ -28,6 +28,22 @@ class KatNs(KatRes):
         if len(default_sa.secrets()) == 1:
           return None not in default_sa.secrets()
     return False
+
+  def mem_used(self):
+    from k8_kat.res.pod.kat_pod import KatPod
+    return self.aggregate_usage(KatPod.memory_usage)
+
+  def cpu_used(self):
+    from k8_kat.res.pod.kat_pod import KatPod
+    return self.aggregate_usage(KatPod.memory_usage)
+
+  def aggregate_usage(self, fn: Callable) -> float:
+    return sum([(fn(pod) or 0) for pod in self.pods()])
+
+  def pods(self):
+    from k8_kat.res.pod.kat_pod import KatPod
+    return KatPod.list(ns=self.name)
+
 
 # --
 # --

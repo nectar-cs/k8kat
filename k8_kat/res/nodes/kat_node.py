@@ -19,11 +19,11 @@ class KatNode(KatRes):
 
   def cpu_capacity(self) -> float:
     value = self.body().status.capacity.cpu
-    return units.quant_expr_to_bytes(value)
+    return units.parse_quant_expr(value)
 
   def mem_capacity(self) -> float:
     value = self.body().status.capacity.cpu
-    return units.quant_expr_to_bytes(value)
+    return units.parse_quant_expr(value)
 
   @classmethod
   def k8s_verb_methods(cls):
@@ -31,11 +31,3 @@ class KatNode(KatRes):
       read=broker.coreV1.read_node,
       list=broker.coreV1.list_node
     )
-
-  @classmethod
-  def cluster_cpu_capacity(cls) -> float:
-    return sum([n.cpu_capacity for n in cls.list()])
-
-  @classmethod
-  def cluster_mem_capacity(cls) -> float:
-    return sum([n.mem_capacity for n in cls.list()])

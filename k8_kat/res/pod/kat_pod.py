@@ -199,7 +199,7 @@ class KatPod(KatRes):
     """Fetches pod's total usage for either CPU (cores) or memory (bytes).
     Requires the pod to be up and running for at least a minute."""
     try:
-      containter_quant_exprs = broker.custom.get_namespaced_custom_object(
+      container_quant_exprs = broker.custom.get_namespaced_custom_object(
         group='metrics.k8s.io',
         version='v1beta1',
         namespace=self.namespace,
@@ -208,7 +208,7 @@ class KatPod(KatRes):
       )['containers']
       container_quant_vals = [units.parse_quant_expr(
                               utils.deep_get(expr, 'usage', resource_type))
-                              for expr in containter_quant_exprs]
+                              for expr in container_quant_exprs]
       return round(sum(container_quant_vals), 3)
     except TypeError:
       return None
