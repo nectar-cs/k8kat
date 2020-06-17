@@ -10,7 +10,6 @@ from kubernetes.client.rest import ApiException
 from k8_kat.auth.kube_broker import broker
 from k8_kat.res.base.kat_res import KatRes
 from k8_kat.res.pod import pod_utils
-from k8_kat.res.pod.kat_pod_metrics import KatPodMetrics
 from k8_kat.utils.main import utils, units
 from k8_kat.utils.main.class_property import classproperty
 
@@ -18,7 +17,6 @@ from k8_kat.utils.main.class_property import classproperty
 class KatPod(KatRes):
   def __init__(self, raw, wait_until_running=False):
     super().__init__(raw)
-    # self.metrics = KatPodMetrics() #IGNORE FOR NOW
     if wait_until_running:
       self.wait_until_running()
 
@@ -161,7 +159,6 @@ class KatPod(KatRes):
     except ApiException:
       return None
 
-  @running_normally
   def log_lines(self, seconds=60) -> List[str]:
     raw_log_str = self.raw_logs(seconds)
     if raw_log_str:
@@ -170,7 +167,7 @@ class KatPod(KatRes):
       return []
 
   def cpu_usage(self) -> Optional[float]:
-    """Returns pod's total CPU usage in bytes."""
+    """Returns pod's total CPU usage in cores."""
     return self.fetch_pod_usage('cpu')
 
   @lru_cache(maxsize=128)
@@ -215,11 +212,6 @@ class KatPod(KatRes):
       return round(sum(container_quant_vals), 3)
     except TypeError:
       return None
-
-  # IGNORE FOR NOW
-  # def fetch_pod_usage_EXPERIMENTAL(self):
-  #   return self.metrics.fetch_pod_usage_from_metrics(self.name, self.namespace, 'cpu')
-
 
   def fetch_pod_capacity(self, metrics_src: str, resource_type: str) -> Optional[float]:
     """Fetches pod's total resource capacity (either limits or requests)

@@ -1,9 +1,10 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Callable
 
 from kubernetes.client import V1PodSpec, V1Container, V1Scale, V1ScaleSpec, V1Deployment
 
 from k8_kat.auth.kube_broker import broker
 from k8_kat.res.base.kat_res import KatRes
+from k8_kat.res.pod.kat_pod import KatPod
 from k8_kat.res.relation.relation import Relation
 from k8_kat.utils.main.class_property import classproperty
 
@@ -66,51 +67,35 @@ class KatDep(KatRes):
     return len(pods) == 0 or set(pod_settle_states) == {True}
 
   def cpu_usage(self) -> Optional[float]:
-    """Returns total real-time cpu usage of a deployment in millicores."""
-    try:
-      return round(sum([pod.cpu_usage() for pod in self.pods()]), 1)
-    except TypeError:
-      return None
+    """Returns deployments's total CPU usage in cores."""
+    return self.aggregate_usage(KatPod.cpu_usage)
 
   def cpu_limits(self) -> Optional[float]:
-    """Returns total cpu limits per deployment in millicores.
-    Requires all pods to have limits defined, else returns None."""
-    try:
-      return round(sum([pod.cpu_limits() for pod in self.pods()]), 1)
-    except TypeError:
-      return None
+    """Returns deployments's total CPU limits in cores."""
+    return self.aggregate_usage(KatPod.cpu_limits)
 
   def cpu_requests(self) -> Optional[float]:
-    """Returns total cpu requests per deployment in millicores.
-    Requires all pods to have requests defined, else returns None."""
-    try:
-      return round(sum([pod.cpu_requests() for pod in self.pods()]), 1)
-    except TypeError:
-      return None
+    """Returns deployments's total CPU requests in cores."""
+    return self.aggregate_usage(KatPod.cpu_requests)
 
   def memory_usage(self) -> Optional[float]:
-    """Returns total real-time memory usage of a deployment in Mb."""
-    try:
-      return round(sum([pod.memory_usage() for pod in self.pods()]), 1)
-    except TypeError:
-      return None
+    """Returns deployments's total memory usage in bytes."""
+    return self.aggregate_usage(KatPod.memory_usage)
 
   def memory_limits(self) -> Optional[float]:
-    """Returns total memory limits per deployment in Mb.
-    Requires all pods to have limits defined, else returns None."""
-    try:
-      return round(sum([pod.memory_limits() for pod in self.pods()]), 1)
-    except TypeError:
-      return None
+    """Returns deployments's total memory limits in bytes."""
+    return self.aggregate_usage(KatPod.memory_limits)
 
   def memory_requests(self) -> Optional[float]:
-    """Returns total memory requests per deployment in Mb.
-    Requires all pods to have requests defined, else returns None."""
+    """Returns deployments's total memory requests in bytes."""
+    return self.aggregate_usage(KatPod.memory_requests)
+
+  def aggregate_usage(self, fn: Callable) -> Optional[float]:
+    """Aggregates usage from individual pods. All most must return non-None."""
     try:
-      return round(sum([pod.memory_requests() for pod in self.pods()]), 1)
+      return round(sum([fn(pod) for pod in self.pods()]), 3)
     except TypeError:
       return None
-
 # --
 # --
 # --
