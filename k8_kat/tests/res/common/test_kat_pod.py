@@ -1,4 +1,5 @@
 import time
+from unittest.mock import patch
 from urllib.parse import quote
 
 from kubernetes.client import V1Container, V1EnvVar, V1EnvVarSource, V1ConfigMapKeySelector
@@ -7,7 +8,7 @@ from k8_kat.auth.kube_broker import broker
 from k8_kat.res.pod import pod_utils
 from k8_kat.res.pod.kat_pod import KatPod
 from k8_kat.tests.res.base.test_kat_res import Base
-from k8_kat.utils.main import utils
+from k8_kat.utils.main import utils, units
 from k8_kat.utils.testing import test_helper, simple_pod
 
 
@@ -122,75 +123,166 @@ class TestKatPod(Base.TestKatRes):
     self.assertIsNone(result)
     self.assertIsNone(KatPod.find(self.res_name, self.pns))
 
-  # def test_cpu_usage(self):
-  #   pod = KatPod(simple_pod.create(
-  #     ns=self.pns,
-  #     name=self.res_name,
-  #     image='nginx'
-  #   ))
-  #   pod.wait_until(pod.has_settled)
-  #   time.sleep(60)  # metrics server slow, need a delay
-  #   self.assertIsNotNone(pod.cpu_usage())
-
-  # def test_memory_usage(self):
-  #   pod = KatPod(simple_pod.create(
-  #     ns=self.pns,
-  #     name=self.res_name,
-  #     image='nginx'
-  #   ))
-  #   pod.wait_until(pod.has_settled)
-  #   time.sleep(60)  # metrics server slow, need a delay
-  #   self.assertIsNotNone(pod.memory_usage())
-
-  def test_cpu_limits(self):
+  def test_good_fetch_pod_usage(self):
     pod = KatPod(simple_pod.create(
       ns=self.pns,
       name=self.res_name,
+      image='nginx'
+    ))
+    pod.wait_until(pod.has_settled)
+    with patch("k8_kat.res.pod.kat_pod.broker.custom.get_namespaced_custom_object") as mocked_get:
+      mocked_get.return_value = dict(containers=[
+        {'name': 'pod_name', 'usage': {'cpu': '3910299n', 'memory': '17604Ki'}}])
+      self.assertEqual(pod.fetch_pod_usage('cpu'),
+                       round(units.parse_quant_expr('3910299n'), 3))
+      self.assertEqual(pod.fetch_pod_usage('memory'),
+                       round(units.parse_quant_expr('17604Ki'), 3))
+      self.assertEqual(mocked_get.call_count, 2)
+
+  def test_bad_fetch_pod_usage(self):
+    pod = KatPod(simple_pod.create(
+      ns=self.pns,
+      name=self.res_name,
+      image='nginx'
+    ))
+    pod.wait_until(pod.has_settled)
+    with patch("k8_kat.res.pod.kat_pod.broker.custom.get_namespaced_custom_object") as mocked_get:
+      mocked_get.return_value = None
+      self.assertEqual(pod.fetch_pod_usage('cpu'), None)
+      self.assertEqual(pod.fetch_pod_usage('memory'), None)
+      self.assertEqual(mocked_get.call_count, 2)
+
+  def test_good_cpu_limits(self):
+    p1 = KatPod(simple_pod.create(
+      ns=self.pns,
+      name=utils.rand_str(),
       image='nginx',
       resources=dict(
         requests=dict(memory="50Mi", cpu="100m"),
+        limits=dict(memory="2E", cpu="2000m")
+      )
+    ))
+    p2 = KatPod(simple_pod.create(
+      ns=self.pns,
+      name=utils.rand_str(),
+      image='nginx',
+      resources=dict(
+        requests=dict(memory="50Mi", cpu="100m"),
+        limits=dict(memory="2E", cpu="0.1238")
+      )
+    ))
+    p1.wait_until(p1.has_settled)
+    p2.wait_until(p2.has_settled)
+    self.assertEqual(p1.cpu_limits(), 2.0)
+    self.assertEqual(p2.cpu_limits(), 0.124)
+
+  def test_bad_cpu_limits(self):
+    p1 = KatPod(simple_pod.create(
+      ns=self.pns,
+      name=utils.rand_str(),
+      image='nginx'
+    ))
+    p1.wait_until(p1.has_settled)
+    self.assertEqual(p1.cpu_limits(), None)
+
+  def test_good_cpu_requests(self):
+    p1 = KatPod(simple_pod.create(
+      ns=self.pns,
+      name=utils.rand_str(),
+      image='nginx',
+      resources=dict(
+        requests=dict(memory="50Mi", cpu="100m"),
+        limits=dict(memory="2E", cpu="2000m")
+      )
+    ))
+    p2 = KatPod(simple_pod.create(
+      ns=self.pns,
+      name=utils.rand_str(),
+      image='nginx',
+      resources=dict(
+        requests=dict(memory="50Mi", cpu="1.1333"),
         limits=dict(memory="2E", cpu="2")
       )
     ))
-    pod.wait_until(pod.has_settled)
-    self.assertEqual(pod.cpu_limits(), 2000.0)
+    p1.wait_until(p1.has_settled)
+    p2.wait_until(p2.has_settled)
+    self.assertEqual(p1.cpu_requests(), 0.1)
+    self.assertEqual(p2.cpu_requests(), 1.134)
 
-  def test_cpu_requests(self):
-    pod = KatPod(simple_pod.create(
+  def test_bad_cpu_requests(self):
+    p1 = KatPod(simple_pod.create(
       ns=self.pns,
-      name=self.res_name,
+      name=utils.rand_str(),
+      image='nginx'
+    ))
+    p1.wait_until(p1.has_settled)
+    self.assertEqual(p1.cpu_requests(), None)
+
+  def test_good_memory_limits(self):
+    p1 = KatPod(simple_pod.create(
+      ns=self.pns,
+      name=utils.rand_str(),
+      image='nginx',
+      resources=dict(
+        requests=dict(memory="0.2", cpu="100m"),
+        limits=dict(memory="2", cpu="2000m")
+      )
+    ))
+    p2 = KatPod(simple_pod.create(
+      ns=self.pns,
+      name=utils.rand_str(),
       image='nginx',
       resources=dict(
         requests=dict(memory="50Mi", cpu="100m"),
+        limits=dict(memory="2E", cpu="0.1238")
+      )
+    ))
+    p1.wait_until(p1.has_settled)
+    p2.wait_until(p2.has_settled)
+    self.assertEqual(p1.memory_limits(), 2.0)
+    self.assertEqual(p2.memory_limits(), units.parse_quant_expr('2E'))
+
+  def test_bad_memory_limits(self):
+    p1 = KatPod(simple_pod.create(
+      ns=self.pns,
+      name=utils.rand_str(),
+      image='nginx'
+    ))
+    p1.wait_until(p1.has_settled)
+    self.assertEqual(p1.memory_limits(), None)
+
+  def test_good_memory_requests(self):
+    p1 = KatPod(simple_pod.create(
+      ns=self.pns,
+      name=utils.rand_str(),
+      image='nginx',
+      resources=dict(
+        requests=dict(memory="0.5M", cpu="100m"),
+        limits=dict(memory="2E", cpu="2000m")
+      )
+    ))
+    p2 = KatPod(simple_pod.create(
+      ns=self.pns,
+      name=utils.rand_str(),
+      image='nginx',
+      resources=dict(
+        requests=dict(memory="50Mi", cpu="1.1333"),
         limits=dict(memory="2E", cpu="2")
       )
     ))
-    pod.wait_until(pod.has_settled)
-    self.assertEqual(pod.cpu_requests(), 100.0)
+    p1.wait_until(p1.has_settled)
+    p2.wait_until(p2.has_settled)
+    self.assertEqual(p1.memory_requests(), units.parse_quant_expr("0.5M"))
+    self.assertEqual(p2.memory_requests(), units.parse_quant_expr("50Mi"))
 
-  def test_memory_limits(self):
-    pod = KatPod(simple_pod.create(
+  def test_bad_memory_requests(self):
+    p1 = KatPod(simple_pod.create(
       ns=self.pns,
-      name=self.res_name,
-      image='nginx',
-      resources=dict(
-        requests=dict(memory="50Mi", cpu="100m"),
-        limits=dict(memory="2E", cpu="2")
-      )))
-    pod.wait_until(pod.has_settled)
-    self.assertEqual(pod.memory_limits(), 2*(10**12))
-
-  def test_memory_requests(self):
-    pod = KatPod(simple_pod.create(
-      ns=self.pns,
-      name=self.res_name,
-      image='nginx',
-      resources=dict(
-        requests=dict(memory="50Mi", cpu="100m"),
-        limits=dict(memory="2E", cpu="2")
-      )))
-    pod.wait_until(pod.has_settled)
-    self.assertEqual(pod.memory_requests(), round(50*(2**20)/10**6,1))
+      name=utils.rand_str(),
+      image='nginx'
+    ))
+    p1.wait_until(p1.has_settled)
+    self.assertEqual(p1.memory_requests(), None)
 
   def test_fmt_command(self):
     call = pod_utils.coerce_cmd_format

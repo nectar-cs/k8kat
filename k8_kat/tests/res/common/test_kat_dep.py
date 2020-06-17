@@ -1,10 +1,11 @@
 import time
+from unittest.mock import patch
 
 from kubernetes.client import V1ResourceRequirements
 
 from k8_kat.res.dep.kat_dep import KatDep
 from k8_kat.tests.res.base.test_kat_res import Base
-from k8_kat.utils.main import utils
+from k8_kat.utils.main import utils, units
 from k8_kat.utils.testing import simple_dep
 from k8_kat.utils.testing.simple_dep import create
 
@@ -57,19 +58,57 @@ class TestKatDep(Base.TestKatRes):
     self.assertIn(d2.name, p1.name)
     self.assertIn(d2.name, p2.name)
 
-  # def test_cpu_usage(self):
-  #   make = lambda: create(ns=self.pns, name=utils.rand_str(), replicas=2)
-  #   d1, d2 = KatDep(make()), KatDep(make())
-  #   time.sleep(60)  # usage doesn't show earlier
-  #   self.assertIsNotNone(d1.cpu_usage())
-  #   self.assertIsNotNone(d2.cpu_usage())
-  #
-  # def test_memory_usage(self):
-  #   make = lambda: create(ns=self.pns, name=utils.rand_str(), replicas=2)
-  #   d1, d2 = KatDep(make()), KatDep(make())
-  #   time.sleep(60)  # usage doesn't show earlier
-  #   self.assertIsNotNone(d1.memory_usage())
-  #   self.assertIsNotNone(d2.memory_usage())
+  def test_good_cpu_usage(self):
+    make = lambda: create(
+      ns=self.pns,
+      name=utils.rand_str(),
+      replicas=2
+    )
+    d1, d2 = KatDep(make()), KatDep(make())
+    with patch("k8_kat.res.dep.kat_dep.KatPod.cpu_usage") as mocked_get:
+      mocked_get.return_value = 5
+      self.assertEqual(d1.cpu_usage(), 10)
+      self.assertEqual(d2.cpu_usage(), 10)
+      self.assertEqual(mocked_get.call_count, 4)
+
+  def test_bad_cpu_usage(self):
+    make = lambda: create(
+      ns=self.pns,
+      name=utils.rand_str(),
+      replicas=2
+    )
+    d1, d2 = KatDep(make()), KatDep(make())
+    with patch("k8_kat.res.dep.kat_dep.KatPod.cpu_usage") as mocked_get:
+      mocked_get.return_value = None
+      self.assertEqual(d1.cpu_usage(), None)
+      self.assertEqual(d2.cpu_usage(), None)
+      self.assertEqual(mocked_get.call_count, 4)
+
+  def test_good_memory_usage(self):
+    make = lambda: create(
+      ns=self.pns,
+      name=utils.rand_str(),
+      replicas=2
+    )
+    d1, d2 = KatDep(make()), KatDep(make())
+    with patch("k8_kat.res.dep.kat_dep.KatPod.memory_usage") as mocked_get:
+      mocked_get.return_value = 5
+      self.assertEqual(d1.memory_usage(), 10)
+      self.assertEqual(d2.memory_usage(), 10)
+      self.assertEqual(mocked_get.call_count, 4)
+
+  def test_bad_memory_usage(self):
+    make = lambda: create(
+      ns=self.pns,
+      name=utils.rand_str(),
+      replicas=2
+    )
+    d1, d2 = KatDep(make()), KatDep(make())
+    with patch("k8_kat.res.dep.kat_dep.KatPod.memory_usage") as mocked_get:
+      mocked_get.return_value = None
+      self.assertEqual(d1.memory_usage(), None)
+      self.assertEqual(d2.memory_usage(), None)
+      self.assertEqual(mocked_get.call_count, 4)
 
   def test_cpu_limits(self):
     make = lambda: create(
@@ -81,7 +120,7 @@ class TestKatDep(Base.TestKatRes):
         limits={"memory": "2E", "cpu": "2"}
       ))
     d1, d2 = KatDep(make()), KatDep(make())
-    self.assertEqual(d1.cpu_limits(), 2000.0*2)
+    self.assertEqual(d1.cpu_limits(), 4.0)
 
   def test_cpu_requests(self):
     make = lambda: create(
@@ -93,7 +132,7 @@ class TestKatDep(Base.TestKatRes):
         limits={"memory": "2E", "cpu": "2"}
       ))
     d1, d2 = KatDep(make()), KatDep(make())
-    self.assertEqual(d1.cpu_requests(), 100.0*2)
+    self.assertEqual(d1.cpu_requests(), 0.2)
 
   def test_memory_limits(self):
     make = lambda: create(
@@ -105,7 +144,7 @@ class TestKatDep(Base.TestKatRes):
         limits={"memory": "2E", "cpu": "2"}
       ))
     d1, d2 = KatDep(make()), KatDep(make())
-    self.assertEqual(d1.memory_limits(), 2*(10**12)*2)
+    self.assertEqual(d1.memory_limits(), 2*units.parse_quant_expr("2E"))
 
   def test_memory_requests(self):
     make = lambda: create(
@@ -117,4 +156,4 @@ class TestKatDep(Base.TestKatRes):
         limits={"memory": "2E", "cpu": "2"}
       ))
     d1, d2 = KatDep(make()), KatDep(make())
-    self.assertEqual(d1.memory_requests(), round(50*(2**20)/10**6,1)*2)
+    self.assertEqual(d1.memory_requests(), 2*units.parse_quant_expr("50Mi"))

@@ -14,18 +14,18 @@ class TestUnits(unittest.TestCase):
     self.assertEqual('15Mb', units.humanize_mem_quant(15_000_000))
 
   def test_valid_cpu_expr_to_millicores(self):
-    self.assertEqual(1.5, units.quant_expr_to_bytes("1.5"))
-    self.assertEqual(1.5, units.quant_expr_to_bytes("15e2m"))
-    self.assertEqual(1.5, units.quant_expr_to_bytes("1500m"))
+    self.assertEqual(1.5, units.parse_quant_expr("1.5"))
+    self.assertEqual(1.5, units.parse_quant_expr("15e2m"))
+    self.assertEqual(1.5, units.parse_quant_expr("1500m"))
 
   def test_valid_mem_expr_to_bytes(self):
-    self.assertEqual(128_974_848, units.quant_expr_to_bytes("123Mi"))
-    self.assertEqual(129_000_000, units.quant_expr_to_bytes("129M"))
-    self.assertEqual(1, units.quant_expr_to_bytes("1e3m"))
-    self.assertEqual(129_000_000, units.quant_expr_to_bytes("129e6"))
-    self.assertEqual(1000, units.quant_expr_to_bytes("1000.0"))
+    self.assertEqual(128_974_848, units.parse_quant_expr("123Mi"))
+    self.assertEqual(129_000_000, units.parse_quant_expr("129M"))
+    self.assertEqual(1, units.parse_quant_expr("1e3m"))
+    self.assertEqual(129_000_000, units.parse_quant_expr("129e6"))
+    self.assertEqual(1000, units.parse_quant_expr("1000.0"))
 
   def test_invalid_expr_to_bytes(self):
-    self.assertEqual(None, units.quant_expr_to_bytes("123MI"))
-    self.assertEqual(None, units.quant_expr_to_bytes(""))
-    self.assertEqual(None, units.quant_expr_to_bytes("str"))
+    self.assertEqual(None, units.parse_quant_expr("123MI"))
+    self.assertEqual(None, units.parse_quant_expr(""))
+    self.assertEqual(None, units.parse_quant_expr("str"))
