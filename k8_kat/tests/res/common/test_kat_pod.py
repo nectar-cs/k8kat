@@ -123,14 +123,14 @@ class TestKatPod(Base.TestKatRes):
     self.assertIsNone(result)
     self.assertIsNone(KatPod.find(self.res_name, self.pns))
 
-  def test_good_fetch_pod_usage(self):
+  def test_fetch_pod_usage(self):
     pod = KatPod(simple_pod.create(
       ns=self.pns,
       name=self.res_name,
       image='nginx'
     ))
     pod.wait_until(pod.has_settled)
-    with patch("k8_kat.res.pod.kat_pod.broker.custom.get_namespaced_custom_object") as mocked_get:
+    with patch(f"{KatPod.__module__}.broker.custom.get_namespaced_custom_object") as mocked_get:
       mocked_get.return_value = dict(containers=[
         {'name': 'pod_name', 'usage': {'cpu': '3910299n', 'memory': '17604Ki'}}])
       self.assertEqual(pod.fetch_pod_usage('cpu'),
@@ -139,20 +139,20 @@ class TestKatPod(Base.TestKatRes):
                        round(units.parse_quant_expr('17604Ki'), 3))
       self.assertEqual(mocked_get.call_count, 2)
 
-  def test_bad_fetch_pod_usage(self):
+  def test_fetch_pod_usage_with_undefined(self):
     pod = KatPod(simple_pod.create(
       ns=self.pns,
       name=self.res_name,
       image='nginx'
     ))
     pod.wait_until(pod.has_settled)
-    with patch("k8_kat.res.pod.kat_pod.broker.custom.get_namespaced_custom_object") as mocked_get:
+    with patch(f"{KatPod.__module__}.broker.custom.get_namespaced_custom_object") as mocked_get:
       mocked_get.return_value = None
       self.assertEqual(pod.fetch_pod_usage('cpu'), None)
       self.assertEqual(pod.fetch_pod_usage('memory'), None)
       self.assertEqual(mocked_get.call_count, 2)
 
-  def test_good_cpu_limits(self):
+  def test_cpu_limits(self):
     p1 = KatPod(simple_pod.create(
       ns=self.pns,
       name=utils.rand_str(),
@@ -176,16 +176,17 @@ class TestKatPod(Base.TestKatRes):
     self.assertEqual(p1.cpu_limits(), 2.0)
     self.assertEqual(p2.cpu_limits(), 0.124)
 
-  def test_bad_cpu_limits(self):
+  def test_cpu_limits_with_undefined(self):
     p1 = KatPod(simple_pod.create(
       ns=self.pns,
       name=utils.rand_str(),
-      image='nginx'
+      image='nginx',
+      resources=None
     ))
     p1.wait_until(p1.has_settled)
     self.assertEqual(p1.cpu_limits(), None)
 
-  def test_good_cpu_requests(self):
+  def test_cpu_requests(self):
     p1 = KatPod(simple_pod.create(
       ns=self.pns,
       name=utils.rand_str(),
@@ -209,16 +210,17 @@ class TestKatPod(Base.TestKatRes):
     self.assertEqual(p1.cpu_requests(), 0.1)
     self.assertEqual(p2.cpu_requests(), 1.134)
 
-  def test_bad_cpu_requests(self):
+  def test_cpu_requests_with_undefined(self):
     p1 = KatPod(simple_pod.create(
       ns=self.pns,
       name=utils.rand_str(),
-      image='nginx'
+      image='nginx',
+      resources=None
     ))
     p1.wait_until(p1.has_settled)
     self.assertEqual(p1.cpu_requests(), None)
 
-  def test_good_memory_limits(self):
+  def test_memory_limits(self):
     p1 = KatPod(simple_pod.create(
       ns=self.pns,
       name=utils.rand_str(),
@@ -242,16 +244,17 @@ class TestKatPod(Base.TestKatRes):
     self.assertEqual(p1.memory_limits(), 2.0)
     self.assertEqual(p2.memory_limits(), units.parse_quant_expr('2E'))
 
-  def test_bad_memory_limits(self):
+  def test_memory_limits_with_undefined(self):
     p1 = KatPod(simple_pod.create(
       ns=self.pns,
       name=utils.rand_str(),
-      image='nginx'
+      image='nginx',
+      resources=None
     ))
     p1.wait_until(p1.has_settled)
     self.assertEqual(p1.memory_limits(), None)
 
-  def test_good_memory_requests(self):
+  def test_memory_requests(self):
     p1 = KatPod(simple_pod.create(
       ns=self.pns,
       name=utils.rand_str(),
@@ -275,11 +278,12 @@ class TestKatPod(Base.TestKatRes):
     self.assertEqual(p1.memory_requests(), units.parse_quant_expr("0.5M"))
     self.assertEqual(p2.memory_requests(), units.parse_quant_expr("50Mi"))
 
-  def test_bad_memory_requests(self):
+  def test_memory_requests_with_undefined(self):
     p1 = KatPod(simple_pod.create(
       ns=self.pns,
       name=utils.rand_str(),
-      image='nginx'
+      image='nginx',
+      resources=None
     ))
     p1.wait_until(p1.has_settled)
     self.assertEqual(p1.memory_requests(), None)
