@@ -166,10 +166,6 @@ class KatPod(KatRes):
     else:
       return []
 
-  def cpu_usage(self) -> Optional[float]:
-    """Returns pod's total CPU usage in cores."""
-    return self.fetch_pod_usage('cpu')
-
   @lru_cache(maxsize=128)
   def cpu_limits(self) -> Optional[float]:
     """Returns pod's total CPU limits in cores."""
@@ -180,38 +176,26 @@ class KatPod(KatRes):
     """Returns pod's total CPU requests in cores."""
     return self.fetch_pod_capacity('requests', 'cpu')
 
-  def memory_usage(self) -> Optional[float]:
-    """Returns pod's total memory usage in bytes."""
-    return self.fetch_pod_usage('memory')
-
   @lru_cache(maxsize=128)
   def memory_limits(self) -> Optional[float]:
     """Returns pod's total memory limits in bytes."""
     return self.fetch_pod_capacity('limits', 'memory')
 
+  # todo chat about cache
   @lru_cache(maxsize=128)
   def memory_requests(self) -> Optional[float]:
     """Returns pod's total memory requests in bytes."""
     return self.fetch_pod_capacity('requests', 'memory')
 
   @running_normally
-  def fetch_pod_usage(self, resource_type: str) -> Optional[float]:
-    """Fetches pod's total usage for either CPU (cores) or memory (bytes).
-    Requires the pod to be up and running for at least a minute."""
-    try:
-      container_quant_exprs = broker.custom.get_namespaced_custom_object(
-        group='metrics.k8s.io',
-        version='v1beta1',
-        namespace=self.namespace,
-        plural='pods',
-        name=self.name
-      )['containers']
-      container_quant_vals = [units.parse_quant_expr(
-                              utils.deep_get(expr, 'usage', resource_type))
-                              for expr in container_quant_exprs]
-      return round(sum(container_quant_vals), 3)
-    except TypeError:
-      return None
+  def load_metrics(self):
+    return [broker.custom.get_namespaced_custom_object(
+      group='metrics.k8s.io',
+      version='v1beta1',
+      namespace=self.namespace,
+      plural='pods',
+      name=self.name
+    )]
 
   def fetch_pod_capacity(self, metrics_src: str, resource_type: str) -> Optional[float]:
     """Fetches pod's total resource capacity (either limits or requests)

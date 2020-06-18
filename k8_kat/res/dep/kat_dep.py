@@ -4,6 +4,7 @@ from kubernetes.client import V1PodSpec, V1Container, V1Scale, V1ScaleSpec, V1De
 
 from k8_kat.auth.kube_broker import broker
 from k8_kat.res.base.kat_res import KatRes
+from k8_kat.res.base.label_set_expressions import label_conditions_to_expr
 from k8_kat.res.pod.kat_pod import KatPod
 from k8_kat.res.relation.relation import Relation
 from k8_kat.utils.main.class_property import classproperty
@@ -66,10 +67,6 @@ class KatDep(KatRes):
     pod_settle_states = [p.has_settled() for p in pods]
     return len(pods) == 0 or set(pod_settle_states) == {True}
 
-  def cpu_usage(self) -> Optional[float]:
-    """Returns deployments's total CPU usage in cores."""
-    return self.aggregate_usage(KatPod.cpu_usage)
-
   def cpu_limits(self) -> Optional[float]:
     """Returns deployments's total CPU limits in cores."""
     return self.aggregate_usage(KatPod.cpu_limits)
@@ -77,10 +74,6 @@ class KatDep(KatRes):
   def cpu_requests(self) -> Optional[float]:
     """Returns deployments's total CPU requests in cores."""
     return self.aggregate_usage(KatPod.cpu_requests)
-
-  def memory_usage(self) -> Optional[float]:
-    """Returns deployments's total memory usage in bytes."""
-    return self.aggregate_usage(KatPod.memory_usage)
 
   def memory_limits(self) -> Optional[float]:
     """Returns deployments's total memory limits in bytes."""
@@ -96,6 +89,17 @@ class KatDep(KatRes):
       return round(sum([fn(pod) for pod in self.pods()]), 3)
     except TypeError:
       return None
+
+  # todo interesting challenge - how do we add the running_normally decorator here?
+  def load_metrics(self):
+    return broker.custom.list_namespaced_custom_object(
+      group='metrics.k8s.io',
+      version='v1beta1',
+      namespace=self.namespace,
+      label_selector=label_conditions_to_expr(self.pod_select_labels.items(), []),
+      plural='pods'
+    )['items']
+
 # --
 # --
 # --

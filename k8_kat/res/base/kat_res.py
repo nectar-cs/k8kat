@@ -1,15 +1,17 @@
 import time
 from datetime import datetime
-from typing import Dict, Callable, Optional, Type
+from typing import Dict, Callable, Optional, Type, TypeVar, List
 
 import kubernetes
 from kubernetes.client.rest import ApiException
 
 from k8_kat.auth.kube_broker import broker
 from k8_kat.res.events.kat_event import KatEvent
-from k8_kat.utils.main import utils, res_utils
+from k8_kat.utils.main import utils, res_utils, units
 from k8_kat.utils.main.class_property import classproperty
 
+
+MetricsDict = TypeVar('MetricsDict')
 
 class KatRes:
 
@@ -83,6 +85,29 @@ class KatRes:
 
   def short_desc(self):
     return self.annotations.get('short_desc')
+
+  def load_metrics(self) -> List[MetricsDict]:
+    raise NotImplementedError
+
+  def cpu_usage(self) -> Optional[float]:
+    """Returns resource's total CPU usage in cores, if available."""
+    return self.fetch_usage('cpu')
+
+  def memory_usage(self) -> Optional[float]:
+    """Returns resource's total memory usage in bytes, if available."""
+    return self.fetch_usage('memory')
+
+  def fetch_usage(self, resource_type: str) -> Optional[float]:
+    """Fetches resources's total usage for either CPU (cores) or memory (bytes).
+    """
+    raw_metrics_dict: List[MetricsDict] = self.load_metrics()
+    total = 0
+    for i in raw_metrics_dict:
+      containers = i['containers']
+      for c in containers:
+        # todo discuss how we handle Nones
+        total += units.parse_quant_expr(utils.deep_get(c, 'usage', resource_type)) or 0
+    return round(total, 3)
 
 # --
 # --

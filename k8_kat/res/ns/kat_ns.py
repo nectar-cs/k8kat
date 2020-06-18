@@ -29,20 +29,29 @@ class KatNs(KatRes):
           return None not in default_sa.secrets()
     return False
 
-  def mem_used(self):
-    from k8_kat.res.pod.kat_pod import KatPod
-    return self.aggregate_usage(KatPod.memory_usage)
+  # todo should I delete the below?
+  # def mem_used(self):
+  #   from k8_kat.res.pod.kat_pod import KatPod
+  #   return self.aggregate_usage(KatPod.memory_usage)
+  #
+  # def cpu_used(self):
+  #   from k8_kat.res.pod.kat_pod import KatPod
+  #   return self.aggregate_usage(KatPod.cpu_usage)
+  #
+  # def aggregate_usage(self, fn: Callable) -> float:
+  #   return sum([(fn(pod) or 0) for pod in self.pods()])
+  #
+  # def pods(self):
+  #   from k8_kat.res.pod.kat_pod import KatPod
+  #   return KatPod.list(ns=self.name)
 
-  def cpu_used(self):
-    from k8_kat.res.pod.kat_pod import KatPod
-    return self.aggregate_usage(KatPod.cpu_usage)
-
-  def aggregate_usage(self, fn: Callable) -> float:
-    return sum([(fn(pod) or 0) for pod in self.pods()])
-
-  def pods(self):
-    from k8_kat.res.pod.kat_pod import KatPod
-    return KatPod.list(ns=self.name)
+  def load_metrics(self):
+    return broker.custom.list_namespaced_custom_object(
+      group='metrics.k8s.io',
+      version='v1beta1',
+      namespace=self.name,
+      plural='pods'
+    )['items']
 
 
 # --
