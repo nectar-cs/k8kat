@@ -13,6 +13,8 @@ def kat_classes():
   from k8_kat.res.ingress.kat_ingress import KatIngress
   from k8_kat.res.quotas.kat_quota import KatQuota
   from k8_kat.res.nodes.kat_node import KatNode
+  from k8_kat.res.job.kat_job import KatJob
+  from k8_kat.res.rs.kat_rs import KatRs
 
   return [
     KatRole,
@@ -29,5 +31,7 @@ def kat_classes():
     KatDep,
     KatSvc,
     KatIngress,
-    KatQuota
+    KatQuota,
+    KatJob,
+    KatRs
   ]

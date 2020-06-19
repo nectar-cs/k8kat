@@ -43,6 +43,7 @@ class KubeBroker:
     self.appsV1 = client.AppsV1Api()
     self.custom = client.CustomObjectsApi()
     self.extsV1 = client.ExtensionsV1beta1Api()
+    self.batchV1 = client.BatchV1Api()
 
   def connect_in_cluster(self):
     try:

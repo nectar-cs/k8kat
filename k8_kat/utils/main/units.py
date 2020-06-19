@@ -3,11 +3,12 @@ from typing import Optional, Tuple, Dict, Union
 
 def find_multiplier_mapping(expr: str) -> Optional[Tuple[str, Union[int,float]]]:
   """Finds the correct multiplier for unit conversion."""
+  if expr is None:
+    return None
   for candidate, multiplier in unit_map.items():
     if expr.endswith(candidate):
       return candidate, multiplier
   return None
-
 
 def parse_quant_expr(src_expr: str, target: str = '') -> Optional[float]:
   """Parses the source expression into standard units
