@@ -1,11 +1,12 @@
-from typing import Dict, List, Optional, Callable
+from functools import lru_cache
+from typing import Dict, List
 
 from kubernetes.client import V1PodSpec, V1Container, V1Scale, V1ScaleSpec, V1Deployment
 
 from k8_kat.auth.kube_broker import broker
-from k8_kat.res.base.kat_res import KatRes
+from k8_kat.res.base.kat_res import KatRes, MetricsDict
 from k8_kat.res.base.label_set_expressions import label_conditions_to_expr
-from k8_kat.res.pod.kat_pod import KatPod
+from k8_kat.res.pod.kat_pod import KP
 from k8_kat.res.relation.relation import Relation
 from k8_kat.utils.main.class_property import classproperty
 
@@ -67,31 +68,9 @@ class KatDep(KatRes):
     pod_settle_states = [p.has_settled() for p in pods]
     return len(pods) == 0 or set(pod_settle_states) == {True}
 
-  def cpu_limits(self) -> Optional[float]:
-    """Returns deployments's total CPU limits in cores."""
-    return self.aggregate_usage(KatPod.cpu_limits)
-
-  def cpu_requests(self) -> Optional[float]:
-    """Returns deployments's total CPU requests in cores."""
-    return self.aggregate_usage(KatPod.cpu_requests)
-
-  def memory_limits(self) -> Optional[float]:
-    """Returns deployments's total memory limits in bytes."""
-    return self.aggregate_usage(KatPod.memory_limits)
-
-  def memory_requests(self) -> Optional[float]:
-    """Returns deployments's total memory requests in bytes."""
-    return self.aggregate_usage(KatPod.memory_requests)
-
-  def aggregate_usage(self, fn: Callable) -> Optional[float]:
-    """Aggregates usage from individual pods. All most must return non-None."""
-    try:
-      return round(sum([fn(pod) for pod in self.pods()]), 3)
-    except TypeError:
-      return None
-
-  # todo interesting challenge - how do we add the running_normally decorator here?
-  def load_metrics(self):
+  @lru_cache(maxsize=128)
+  def load_metrics(self) -> List[MetricsDict]:
+    """Loads the appropriate metrics dict from k8s metrics API."""
     return broker.custom.list_namespaced_custom_object(
       group='metrics.k8s.io',
       version='v1beta1',
@@ -164,7 +143,8 @@ class KatDep(KatRes):
 # --
 # --
 
-  def pods(self, **query):
+  def pods(self, **query) -> List[KP]:
+    """Selects and returns pods associated with the deployment."""
     from k8_kat.res.pod.kat_pod import KatPod
     return Relation[KatPod](
       model_class=KatPod,

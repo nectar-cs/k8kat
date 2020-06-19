@@ -8,12 +8,13 @@ from kubernetes.client import V1Pod, V1Container, \
 from kubernetes.client.rest import ApiException
 
 from k8_kat.auth.kube_broker import broker
-from k8_kat.res.base.kat_res import KatRes
+from k8_kat.res.base.kat_res import KatRes, MetricsDict
 from k8_kat.res.pod import pod_utils
 from k8_kat.utils.main import utils, units
 from k8_kat.utils.main.class_property import classproperty
 
 Fn = TypeVar('Fn', bound=Callable[..., Any])
+KP = TypeVar('KP')
 
 class KatPod(KatRes):
   def __init__(self, raw, wait_until_running=False):
@@ -166,29 +167,34 @@ class KatPod(KatRes):
     else:
       return []
 
-  @lru_cache(maxsize=128)
   def cpu_limits(self) -> Optional[float]:
     """Returns pod's total CPU limits in cores."""
     return self.fetch_pod_capacity('limits', 'cpu')
 
-  @lru_cache(maxsize=128)
   def cpu_requests(self) -> Optional[float]:
     """Returns pod's total CPU requests in cores."""
     return self.fetch_pod_capacity('requests', 'cpu')
 
-  @lru_cache(maxsize=128)
   def memory_limits(self) -> Optional[float]:
     """Returns pod's total memory limits in bytes."""
     return self.fetch_pod_capacity('limits', 'memory')
 
-  # todo chat about cache
-  @lru_cache(maxsize=128)
   def memory_requests(self) -> Optional[float]:
     """Returns pod's total memory requests in bytes."""
     return self.fetch_pod_capacity('requests', 'memory')
 
+  def ephemeral_storage_limits(self) -> Optional[float]:
+    """Returns pod's total ephemeral storage limits in bytes."""
+    return self.fetch_pod_capacity('limits', 'ephemeral-storage')
+
+  def ephemeral_storage_requests(self) -> Optional[float]:
+    """Returns pod's total ephemeral storage requests in bytes."""
+    return self.fetch_pod_capacity('requests', 'ephemeral-storage')
+
   @running_normally
-  def load_metrics(self):
+  @lru_cache(maxsize=128)
+  def load_metrics(self) -> Optional[List[MetricsDict]]:
+    """Loads the appropriate metrics dict from k8s metrics API."""
     return [broker.custom.get_namespaced_custom_object(
       group='metrics.k8s.io',
       version='v1beta1',
@@ -269,10 +275,6 @@ class KatPod(KatRes):
     )
 
   def reload(self) -> Optional['KatRes']:
-    self.cpu_limits.cache_clear()
-    self.cpu_requests.cache_clear()
-    self.memory_limits.cache_clear()
-    self.memory_requests.cache_clear()
     return super().reload()
 
 # --
@@ -303,7 +305,7 @@ def has_morbid_pending_reasons(states: List[V1ContainerState]):
 def filter_states(states: List[V1ContainerState], _type: str) -> List[V1ContainerState]:
   return [state for state in states if getattr(state, _type)]
 
-
+@lru_cache(maxsize=128)
 def fetch_container_capacity(ctr, metrics_src: str, resource_type: str) -> Optional[float]:
   """Gets container capacity and returns in cores (cpu) / bytes (memory)."""
   metrics_dict: Dict = getattr(ctr.resources, metrics_src, {})

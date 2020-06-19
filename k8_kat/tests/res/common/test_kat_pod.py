@@ -123,34 +123,17 @@ class TestKatPod(Base.TestKatRes):
     self.assertIsNone(result)
     self.assertIsNone(KatPod.find(self.res_name, self.pns))
 
-  def test_fetch_pod_usage(self):
+  def test_load_metrics(self):
     pod = KatPod(simple_pod.create(
-      ns=self.pns,
-      name=self.res_name,
-      image='nginx'
-    ))
+        ns=self.pns,
+        name=self.res_name,
+        image='nginx'
+      ))
     pod.wait_until(pod.has_settled)
     with patch(f"{KatPod.__module__}.broker.custom.get_namespaced_custom_object") as mocked_get:
-      mocked_get.return_value = dict(containers=[
-        {'name': 'pod_name', 'usage': {'cpu': '3910299n', 'memory': '17604Ki'}}])
-      self.assertEqual(pod.fetch_pod_usage('cpu'),
-                       round(units.parse_quant_expr('3910299n'), 3))
-      self.assertEqual(pod.fetch_pod_usage('memory'),
-                       round(units.parse_quant_expr('17604Ki'), 3))
-      self.assertEqual(mocked_get.call_count, 2)
-
-  def test_fetch_pod_usage_with_undefined(self):
-    pod = KatPod(simple_pod.create(
-      ns=self.pns,
-      name=self.res_name,
-      image='nginx'
-    ))
-    pod.wait_until(pod.has_settled)
-    with patch(f"{KatPod.__module__}.broker.custom.get_namespaced_custom_object") as mocked_get:
-      mocked_get.return_value = None
-      self.assertEqual(pod.fetch_pod_usage('cpu'), None)
-      self.assertEqual(pod.fetch_pod_usage('memory'), None)
-      self.assertEqual(mocked_get.call_count, 2)
+      mocked_get.return_value = "test value"
+      self.assertEqual(pod.load_metrics(), ["test value"])
+      self.assertEqual(mocked_get.call_count, 1)
 
   def test_cpu_limits(self):
     p1 = KatPod(simple_pod.create(
@@ -287,6 +270,40 @@ class TestKatPod(Base.TestKatRes):
     ))
     p1.wait_until(p1.has_settled)
     self.assertEqual(p1.memory_requests(), None)
+
+  def test_ephemeral_storage_requests(self):
+    p1 = KatPod(simple_pod.create(
+      ns=self.pns,
+      name=utils.rand_str(),
+      image='nginx',
+      resources=dict(
+        requests={"ephemeral-storage": "125M", "cpu": "100m"},
+        limits={"ephemeral-storage": "0.4G", "cpu": "2000m"}
+      )
+    ))
+    p2 = KatPod(simple_pod.create(
+      ns=self.pns,
+      name=utils.rand_str(),
+      image='nginx',
+      resources=dict(
+        requests={"ephemeral-storage": "1234", "cpu": "100m"},
+        limits={"ephemeral-storage": "50Mi", "cpu": "2000m"}
+      )
+    ))
+    p1.wait_until(p1.has_settled)
+    p2.wait_until(p2.has_settled)
+    self.assertEqual(p1.ephemeral_storage_requests(), units.parse_quant_expr("125M"))
+    self.assertEqual(p2.ephemeral_storage_requests(), units.parse_quant_expr("1234"))
+
+  def test_ephemeral_storage_requests_with_undefined(self):
+    p1 = KatPod(simple_pod.create(
+      ns=self.pns,
+      name=utils.rand_str(),
+      image='nginx',
+      resources=None
+    ))
+    p1.wait_until(p1.has_settled)
+    self.assertEqual(p1.ephemeral_storage_requests(), None)
 
   def test_fmt_command(self):
     call = pod_utils.coerce_cmd_format
