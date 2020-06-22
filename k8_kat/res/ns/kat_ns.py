@@ -1,11 +1,11 @@
 from functools import lru_cache
-from typing import Callable, List, Dict, Optional
+from typing import List
 
 from kubernetes.client import V1Namespace
 
 from k8_kat.auth.kube_broker import broker
 from k8_kat.res.base.kat_res import KatRes, MetricsDict
-from k8_kat.res.pod.kat_pod import KatPod, KP
+from k8_kat.res.pod.kat_pod import KP
 from k8_kat.res.relation.relation import Relation
 from k8_kat.res.sa.kat_service_account import KatServiceAccount
 from k8_kat.utils.main.class_property import classproperty
@@ -17,13 +17,13 @@ class KatNs(KatRes):
   def kind(self):
     return "Namespace"
 
-  # --
-  # --
-  # --
-  # -------------------------------INTEL-------------------------------
-  # --
-  # --
-  # --
+# --
+# --
+# --
+# -------------------------------INTEL-------------------------------
+# --
+# --
+# --
 
   def _perform_delete_self(self):
     broker.coreV1.delete_namespace(self.name)
@@ -52,7 +52,6 @@ class KatNs(KatRes):
       plural='pods'
     )['items']
 
-
 # --
 # --
 # --
@@ -60,6 +59,7 @@ class KatNs(KatRes):
 # --
 # --
 # --
+
   def body(self) -> V1Namespace:
     return self.raw
 

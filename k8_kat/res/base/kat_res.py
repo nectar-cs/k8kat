@@ -14,6 +14,7 @@ from k8_kat.utils.main.class_property import classproperty
 MetricsDict = TypeVar('MetricsDict')
 KR = TypeVar('KR')
 
+
 class KatRes:
 
   def __init__(self, raw):
@@ -49,6 +50,10 @@ class KatRes:
   @property
   def ns(self) -> str:
     return self.namespace
+
+  @property
+  def metrics_component(self):
+    return None
 
   @property
   def labels(self) -> Dict[str, str]:
@@ -87,79 +92,6 @@ class KatRes:
   def short_desc(self):
     return self.annotations.get('short_desc')
 
-  def cpu_usage(self) -> float:
-    """Returns resource's total CPU usage in cores
-    If not available pods are assigned a usage of 0."""
-    return self.fetch_usage('cpu')
-
-  def cpu_limits(self) -> Optional[float]:
-    """Returns resource's total CPU limits in cores.
-    All pods must have non-None values, else returns None."""
-    from k8_kat.res.pod.kat_pod import KatPod
-    return self.aggregate_usage(KatPod.cpu_limits)
-
-  def cpu_requests(self) -> Optional[float]:
-    """Returns resource's total CPU requests in cores.
-    All pods must have non-None values, else returns None."""
-    from k8_kat.res.pod.kat_pod import KatPod
-    return self.aggregate_usage(KatPod.cpu_requests)
-
-  def memory_usage(self) -> float:
-    """Returns resource's total memory usage in bytes.
-    If not available pods are assigned a usage of 0."""
-    return self.fetch_usage('memory')
-
-  def memory_limits(self) -> Optional[float]:
-    """Returns resource's total memory limits in bytes.
-    All pods must have non-None values, else returns None."""
-    from k8_kat.res.pod.kat_pod import KatPod
-    return self.aggregate_usage(KatPod.memory_limits)
-
-  def memory_requests(self) -> Optional[float]:
-    """Returns resource's total memory requests in bytes.
-    All pods must have non-None values, else returns None."""
-    from k8_kat.res.pod.kat_pod import KatPod
-    return self.aggregate_usage(KatPod.memory_requests)
-
-  def ephemeral_storage_limits(self) -> Optional[float]:
-    """Returns resource's total ephemeral storage limits in bytes.
-    All pods must have non-None values, else returns None."""
-    from k8_kat.res.pod.kat_pod import KatPod
-    return self.aggregate_usage(KatPod.ephemeral_storage_limits)
-
-  def ephemeral_storage_requests(self) -> Optional[float]:
-    """Returns resource's total ephemeral storage requests in bytes.
-    All pods must have non-None values, else returns None."""
-    from k8_kat.res.pod.kat_pod import KatPod
-    return self.aggregate_usage(KatPod.ephemeral_storage_requests)
-
-  def load_metrics(self) -> List[MetricsDict]:
-    """Loads the appropriate metrics dict from k8s metrics API."""
-    raise NotImplementedError
-
-  def aggregate_usage(self, fn: Callable) -> Optional[float]:
-    """Aggregates usage from individual pods. All most must return non-None."""
-    try:
-      return round(sum([fn(pod) for pod in self.pods()]), 3)
-    except TypeError:
-      return None
-
-  def fetch_usage(self, resource_type: str) -> Optional[float]:
-    """Fetches resources's total usage for either CPU (cores) or memory (bytes).
-    """
-    raw_metrics_dict: List[MetricsDict] = self.load_metrics()
-    if raw_metrics_dict is None:
-      return None
-    total = 0
-    for i in raw_metrics_dict:
-      containers = i['containers']
-      for c in containers:
-        total += units.parse_quant_expr(utils.deep_get(c, 'usage', resource_type)) or 0
-    return round(total, 3)
-
-  def pods(self, **query) -> List[KR]:
-    """Selects and returns pods associated with the object."""
-    raise NotImplementedError
 
 # --
 # --
@@ -183,7 +115,7 @@ class KatRes:
     )
 
   @classmethod
-  def wait_until_exists(cls, name: str, ns: str=None):
+  def wait_until_exists(cls, name: str, ns: str = None):
     res = None
     for attempts in range(0, 20):
       res = cls.find(name, ns)
@@ -192,7 +124,6 @@ class KatRes:
       else:
         time.sleep(1)
     return res
-
 
   def delete(self, wait_until_gone=False):
     self._perform_delete_self()
@@ -296,7 +227,6 @@ class KatRes:
     matches = [sc for sc in subclasses if sc.kind == kind]
     return matches[0] if len(matches) == 1 else None
 
-
 # --
 # --
 # --
@@ -337,7 +267,6 @@ class KatRes:
 
   def serialize(self, serializer):
     return serializer(self)
-
 
 
 def from_dict(dict_repr: Dict):

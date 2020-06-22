@@ -6,12 +6,13 @@ from kubernetes.client import V1PodSpec, V1Container, V1Scale, V1ScaleSpec, V1De
 from k8_kat.auth.kube_broker import broker
 from k8_kat.res.base.kat_res import KatRes, MetricsDict
 from k8_kat.res.base.label_set_expressions import label_conditions_to_expr
+from k8_kat.res.base.workload_host import WorkloadHost
 from k8_kat.res.pod.kat_pod import KP
 from k8_kat.res.relation.relation import Relation
 from k8_kat.utils.main.class_property import classproperty
 
 
-class KatDep(KatRes):
+class KatDep(KatRes, WorkloadHost):
 
   @classproperty
   def kind(self):
@@ -36,7 +37,6 @@ class KatDep(KatRes):
   @property
   def ready_replicas(self):
     return self.raw.status.ready_replicas
-
 
 # --
 # --
@@ -152,4 +152,3 @@ class KatDep(KatRes):
       labels=self.pod_select_labels,
       **query
     )
-

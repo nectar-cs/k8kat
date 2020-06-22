@@ -9,6 +9,7 @@ from kubernetes.client.rest import ApiException
 
 from k8_kat.auth.kube_broker import broker
 from k8_kat.res.base.kat_res import KatRes, MetricsDict
+from k8_kat.res.base.workload_host import WorkloadHost
 from k8_kat.res.pod import pod_utils
 from k8_kat.utils.main import utils, units
 from k8_kat.utils.main.class_property import classproperty
@@ -16,7 +17,7 @@ from k8_kat.utils.main.class_property import classproperty
 Fn = TypeVar('Fn', bound=Callable[..., Any])
 KP = TypeVar('KP')
 
-class KatPod(KatRes):
+class KatPod(KatRes, WorkloadHost):
   def __init__(self, raw, wait_until_running=False):
     super().__init__(raw)
     if wait_until_running:

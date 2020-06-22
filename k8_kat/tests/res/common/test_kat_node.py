@@ -70,9 +70,9 @@ class TestKatNode(Base.TestKatRes):
         f"{KatNode.__module__}.{KatNode.__name__}.load_metrics") as mocked_metrics:
       mocked_metrics.return_value = {'usage': {'cpu': '3910299n', 'memory': '17604Ki'}}
 
-      self.assertEqual(n1.fetch_usage('cpu'),
+      self.assertEqual(n1.resource_usage('cpu'),
                        round(units.parse_quant_expr('3910299n'), 3))
-      self.assertEqual(n1.fetch_usage('memory'),
+      self.assertEqual(n1.resource_usage('memory'),
                        round(units.parse_quant_expr('17604Ki'), 3))
 
       self.assertEqual(mocked_metrics.call_count, 2)
@@ -83,7 +83,7 @@ class TestKatNode(Base.TestKatRes):
         f"{KatNode.__module__}.{KatNode.__name__}.load_metrics") as mocked_metrics:
       mocked_metrics.return_value = None
 
-      self.assertEqual(n1.fetch_usage('cpu'), None)
-      self.assertEqual(n1.fetch_usage('memory'), None)
+      self.assertEqual(n1.resource_usage('cpu'), None)
+      self.assertEqual(n1.resource_usage('memory'), None)
 
       self.assertEqual(mocked_metrics.call_count, 2)

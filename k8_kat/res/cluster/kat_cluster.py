@@ -17,7 +17,7 @@ class KatCluster:
   @classmethod
   def cpu_usage(cls) -> float:
     """Aggregates and returns CPU usage from nodes in cluster (in cores)."""
-    return aggregate_usage(KatNode.cpu_usage)
+    return aggregate_usage(KatNode.cpu_used)
 
   @classmethod
   def cpu_limits(cls) -> Optional[float]:
@@ -37,7 +37,7 @@ class KatCluster:
   @classmethod
   def memory_usage(cls) -> float:
     """Aggregates and returns memory usage from nodes in cluster (in bytes)."""
-    return aggregate_usage(KatNode.memory_usage)
+    return aggregate_usage(KatNode.memory_used)
 
   @classmethod
   def memory_limits(cls) -> Optional[float]:

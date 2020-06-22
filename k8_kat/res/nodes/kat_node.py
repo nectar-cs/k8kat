@@ -21,13 +21,13 @@ class KatNode(KatRes):
   def is_namespaced(cls) -> bool:
     return False
 
-  # --
-  # --
-  # --
-  # -------------------------------INTEL-------------------------------
-  # --
-  # --
-  # --
+# --
+# --
+# --
+# -------------------------------INTEL-------------------------------
+# --
+# --
+# --
 
   def body(self) -> V1Node:
     return self.raw
@@ -57,7 +57,7 @@ class KatNode(KatRes):
       name=self.name
     )
 
-  def fetch_usage(self, resource_type: str) -> Optional[float]:
+  def resource_usage(self, resource_type: str) -> Optional[float]:
     """Fetches node's total usage for either CPU (cores) or memory (bytes).
     Overwritten at node level because there are no containers to index into.
     """
