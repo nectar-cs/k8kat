@@ -36,17 +36,6 @@ class Base:
       self.assertEqual(res.raw.metadata.name, self.res_name)
       self.assertEqual(res.raw.kind, res.kind)
 
-    # def test_init_with_dict(self):
-    #   body = self.create_res(self.res_name, self.pns)
-    #   res = self.res_class()(body)
-    #   dict_repr = res.raw.__dict__
-    #   from_dict = self.res_class()(dict_repr)
-    #   self.assertIsInstance(from_dict, self.res_class())
-    #   self.assertEqual(from_dict.raw.metadata.name, self.res_name)
-    #   self.assertEqual(from_dict.raw.kind, res.kind)
-
-
-
     def test_find(self):
       self.create_res(self.res_name, self.pns)
       res = self.get_res()
@@ -130,6 +119,27 @@ class Base:
     def test_ternary_state(self):
       res = self.res_class()(self.create_res(self.res_name, self.pns))
       self.assertEqual(res.ternary_status(), 'positive')
+
+
+    def test_fetch_usage(self):
+      res = self.res_class()(self.create_res(self.res_name, self.pns))
+
+      if not res.load_metrics():
+        return None
+
+      class_module = self.res_class().__module__
+      method_sig = self.res_class().load_metrics.__qualname__
+
+      with patch(f"{class_module}.{method_sig}") as mocked_metrics:
+        mocked_container_usage = {'cpu': '750m', 'memory': '1.25G'}
+        full_mocked_value = {'name': 'x', 'usage': mocked_container_usage}
+        mocked_metrics.return_value = [dict(containers=[full_mocked_value])]
+
+        self.assertEqual(res.mem_used(), .75)
+        self.assertEqual(res.cpu_used())
+
+        self.assertEqual(mocked_metrics.call_count, 2)
+
 
     def get_res(self) -> KatRes:
       return self.res_class().find(self.res_name, self.pns)
