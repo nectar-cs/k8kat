@@ -1,10 +1,12 @@
 from urllib.parse import unquote_plus
 from http.client import HTTPResponse
 from io import BytesIO
-from typing import List, Optional
+from typing import List, Optional, Dict
+from kubernetes.client import V1Container
+
+from k8_kat.utils.main import units
 
 
-# noinspection PyUnusedLocal
 class FakeSocket:
   def __init__(self, response_bytes):
     self._file = BytesIO(response_bytes)
@@ -20,6 +22,14 @@ def coerce_cmd_format(cmd) -> List[str]:
     return parts
   else:
     return cmd
+
+def container_req_or_lim(container: V1Container, metric: str, resource: str) -> Optional[float]:
+  """Gets container capacity and returns in cores (cpu) / bytes (memory)."""
+  assert metric in ['requests', 'limits']
+  assert resource in ['cpu', 'memory', 'ephemeral-storage']
+  metrics_dict: Dict = getattr(container.resources, metric, None)
+  capacity_expr = (metrics_dict or {}).get(resource, None)
+  return capacity_expr and units.parse_quant_expr(capacity_expr)
 
 
 def build_curl_cmd(**params) -> List[str]:

@@ -9,15 +9,15 @@ from kubernetes.client.rest import ApiException
 
 from k8_kat.auth.kube_broker import broker
 from k8_kat.res.base.kat_res import KatRes, MetricsDict
-from k8_kat.res.base.workload_host import WorkloadHost
+from k8_kat.res.base.metrics_aggregator import MetricsAggregator
 from k8_kat.res.pod import pod_utils
-from k8_kat.utils.main import utils, units
+from k8_kat.utils.main import utils
 from k8_kat.utils.main.class_property import classproperty
 
 Fn = TypeVar('Fn', bound=Callable[..., Any])
 KP = TypeVar('KP')
 
-class KatPod(KatRes, WorkloadHost):
+class KatPod(KatRes, MetricsAggregator):
   def __init__(self, raw, wait_until_running=False):
     super().__init__(raw)
     if wait_until_running:
@@ -30,7 +30,7 @@ class KatPod(KatRes, WorkloadHost):
 # --
 # --
 # --
-  def running_normally(func: Fn) -> Callable:
+  def when_running_normally(func: Fn) -> Callable:
     """Note: needs to be defined at top of class."""
     @wraps(func)
     def running_normally_func(self, *args, **kwargs):
@@ -108,6 +108,7 @@ class KatPod(KatRes, WorkloadHost):
            not self.is_pending_morbidly()
 
   def is_running_morbidly(self):
+    """Whether this pod is in the Running state but one or more container is crashing."""
     return self.is_running() and \
            not self.is_running_normally()
 
@@ -124,6 +125,7 @@ class KatPod(KatRes, WorkloadHost):
     return not self.is_pending_normally()
 
   def is_pending_morbidly(self) -> bool:
+    """Whether this pod is pending because one or more container is failing to start."""
     if self.is_pending():
       init_states = self.init_container_states()
       waiting_init = filter_states(init_states, 'waiting')
@@ -137,19 +139,24 @@ class KatPod(KatRes, WorkloadHost):
       return False
 
   def is_running(self) -> bool:
+    """Whether this pod is in the Running state"""
     return self.body().status.phase == 'Running'
 
   def is_pending(self) -> bool:
+    """Whether this pod is in the Pending state"""
     return self.body().status.phase == 'Pending'
 
-  def has_run(self) -> bool:
-    return self.body().status.phase in ['Failed', 'Succeeded']
-
   def has_failed(self) -> bool:
+    """Whether this pod is in the Failed state"""
     return self.body().status.phase == 'Failed'
 
   def has_succeeded(self):
+    """Whether this pod is in the Succeeded state"""
     return self.body().status.phase == 'Succeeded'
+
+  def has_run(self) -> bool:
+    """Whether this pod is in the Failed or Succeeded state"""
+    return self.has_failed() or self.has_succeeded()
 
   def raw_logs(self, seconds=60) -> Optional[str]:
     try:
@@ -168,31 +175,31 @@ class KatPod(KatRes, WorkloadHost):
     else:
       return []
 
-  def cpu_limits(self) -> Optional[float]:
-    """Returns pod's total CPU limits in cores."""
-    return self.fetch_pod_capacity('limits', 'cpu')
-
-  def cpu_requests(self) -> Optional[float]:
-    """Returns pod's total CPU requests in cores."""
-    return self.fetch_pod_capacity('requests', 'cpu')
-
-  def memory_limits(self) -> Optional[float]:
+  def cpu_request(self) -> Optional[float]:
     """Returns pod's total memory limits in bytes."""
-    return self.fetch_pod_capacity('limits', 'memory')
+    return self.read_res_request_or_limit('requests', 'cpu')
 
-  def memory_requests(self) -> Optional[float]:
+  def cpu_limit(self) -> Optional[float]:
+    """Returns pod's total memory limits in bytes."""
+    return self.read_res_request_or_limit('limits', 'cpu')
+
+  def mem_limit(self) -> Optional[float]:
+    """Returns pod's total memory limits in bytes."""
+    return self.read_res_request_or_limit('limits', 'memory')
+
+  def mem_request(self) -> Optional[float]:
     """Returns pod's total memory requests in bytes."""
-    return self.fetch_pod_capacity('requests', 'memory')
+    return self.read_res_request_or_limit('requests', 'memory')
 
-  def ephemeral_storage_limits(self) -> Optional[float]:
+  def eph_storage_limit(self) -> Optional[float]:
     """Returns pod's total ephemeral storage limits in bytes."""
-    return self.fetch_pod_capacity('limits', 'ephemeral-storage')
+    return self.read_res_request_or_limit('limits', 'ephemeral-storage')
 
-  def ephemeral_storage_requests(self) -> Optional[float]:
+  def eph_storage_request(self) -> Optional[float]:
     """Returns pod's total ephemeral storage requests in bytes."""
-    return self.fetch_pod_capacity('requests', 'ephemeral-storage')
+    return self.read_res_request_or_limit('requests', 'ephemeral-storage')
 
-  @running_normally
+  @when_running_normally
   @lru_cache(maxsize=128)
   def load_metrics(self) -> Optional[List[MetricsDict]]:
     """Loads the appropriate metrics dict from k8s metrics API."""
@@ -204,16 +211,15 @@ class KatPod(KatRes, WorkloadHost):
       name=self.name
     )]
 
-  def fetch_pod_capacity(self, metrics_src: str, resource_type: str) -> Optional[float]:
+  def read_res_request_or_limit(self, metric: str, resource: str) -> Optional[float]:
     """Fetches pod's total resource capacity (either limits or requests)
     for either CPU (cores) or memory (bytes)."""
-    try:
-      container_capacity_vals = [
-        fetch_container_capacity(ctr, metrics_src, resource_type)
-        for ctr in self.body().spec.containers]
-      return round(sum(container_capacity_vals), 3)
-    except TypeError:
-      return None
+    container_lvl_value = lambda c: pod_utils.container_req_or_lim(c, metric, resource)
+    containers = self.body().spec.containers or []
+    per_container_results = [container_lvl_value(c) for c in containers]
+    are_all_undefined = len([v for v in per_container_results if v is not None]) == 0
+    return sum(per_container_results) if not are_all_undefined else None
+
 
 # --
 # --
@@ -236,7 +242,7 @@ class KatPod(KatRes, WorkloadHost):
     else:
       return None
 
-  @running_normally
+  @when_running_normally
   def shell_exec(self, command) -> Optional[str]:
     fmt_command = pod_utils.coerce_cmd_format(command)
     result = k8s_streaming.stream(
@@ -305,13 +311,3 @@ def has_morbid_pending_reasons(states: List[V1ContainerState]):
 
 def filter_states(states: List[V1ContainerState], _type: str) -> List[V1ContainerState]:
   return [state for state in states if getattr(state, _type)]
-
-@lru_cache(maxsize=128)
-def fetch_container_capacity(ctr, metrics_src: str, resource_type: str) -> Optional[float]:
-  """Gets container capacity and returns in cores (cpu) / bytes (memory)."""
-  metrics_dict: Dict = getattr(ctr.resources, metrics_src, {})
-  try:
-    capacity_expr = metrics_dict.get(resource_type, '')
-    return units.parse_quant_expr(capacity_expr)
-  except AttributeError:
-    return None

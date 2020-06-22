@@ -13,6 +13,7 @@ twine = "*"
 keyrings-alt = "*"
 coverage = "*"
 codecov = "*"
+typing-extensions = "*"
 
 [requires]
 python_version = "3.6"

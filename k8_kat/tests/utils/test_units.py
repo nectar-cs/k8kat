@@ -13,7 +13,7 @@ class TestUnits(unittest.TestCase):
     self.assertEqual('15Kb', units.humanize_mem_quant(15_000))
     self.assertEqual('15Mb', units.humanize_mem_quant(15_000_000))
 
-  def test_valid_cpu_expr_to_millicores(self):
+  def test_valid_cpu_expr_to_cores(self):
     self.assertEqual(1.5, units.parse_quant_expr("1.5"))
     self.assertEqual(1.5, units.parse_quant_expr("15e2m"))
     self.assertEqual(1.5, units.parse_quant_expr("1500m"))
