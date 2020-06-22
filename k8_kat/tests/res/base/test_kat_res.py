@@ -3,9 +3,8 @@ from typing import Type, List
 from unittest.mock import patch
 
 from k8_kat.res.base.kat_res import KatRes
-from k8_kat.res.dep.kat_dep import KatDep
 from k8_kat.tests.res.base.cluster_test import ClusterTest
-from k8_kat.utils.main import utils, units
+from k8_kat.utils.main import utils
 from k8_kat.utils.testing import ns_factory
 
 
@@ -50,7 +49,6 @@ class Base:
       self.assertIsNotNone(kat_instance)
       self.assertIsInstance(kat_instance, self.res_class())
 
-
     def test_list_namespaced(self, expected=None):
       if self.res_class().is_namespaced():
         ns, = ns_factory.request(1)
@@ -74,17 +72,9 @@ class Base:
         right.label(foo='bar')
         wrong.label(foo='baz')
 
-        result = self.res_class().list(ns=ns, labels=dict(foo='bar'))
+        label_query = dict(foo='bar')
+        result = self.res_class().list(ns=ns, labels=label_query)
         self.assertEqual(sorted(names(result)), sorted([right.name]))
-
-    def test_list_namespaced_field_filters(self):
-      if self.res_class().is_namespaced():
-        ns, = ns_factory.request(1)
-        right = self.res_class()(self.create_res(utils.rand_str(), ns))
-        wrong = self.res_class()(self.create_res(utils.rand_str(), ns))
-
-        right.wait_until(right.has_settled)
-        wrong.wait_until(wrong.has_settled)
 
         field_query = {'metadata.name': right.name}
         result = self.res_class().list(ns=ns, fields=field_query)
@@ -120,26 +110,17 @@ class Base:
       res = self.res_class()(self.create_res(self.res_name, self.pns))
       self.assertEqual(res.ternary_status(), 'positive')
 
+    def gen_mock_metrics(self):
+      """Subclasses must return 1 CPU core Core and 1GB mem"""
+      return None
 
-    def test_fetch_usage(self):
-      res = self.res_class()(self.create_res(self.res_name, self.pns))
-
-      if not res.load_metrics():
-        return None
-
-      class_module = self.res_class().__module__
-      method_sig = self.res_class().load_metrics.__qualname__
-
-      with patch(f"{class_module}.{method_sig}") as mocked_metrics:
-        mocked_container_usage = {'cpu': '750m', 'memory': '1.25G'}
-        full_mocked_value = {'name': 'x', 'usage': mocked_container_usage}
-        mocked_metrics.return_value = [dict(containers=[full_mocked_value])]
-
-        self.assertEqual(res.mem_used(), .75)
-        self.assertEqual(res.cpu_used())
-
-        self.assertEqual(mocked_metrics.call_count, 2)
-
+    def test_mem_and_cpu_used(self):
+      if self.gen_mock_metrics():
+        res = self.res_class()(self.create_res(self.res_name, self.pns))
+        with patch.object(self.res_class(), 'load_metrics') as mocked_metrics:
+          mocked_metrics.return_value = self.gen_mock_metrics()
+          self.assertEqual(res.mem_used(), 1_000_000_000)
+          self.assertEqual(res.cpu_used(), 1)
 
     def get_res(self) -> KatRes:
       return self.res_class().find(self.res_name, self.pns)

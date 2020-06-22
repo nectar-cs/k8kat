@@ -60,6 +60,14 @@ class TestKatPod(Base.TestKatRes):
     pod.wait_until_running()
     self.assertEqual(pod.ternary_status(), "positive")
 
+# --
+# --
+# --
+# ----------------------------MISC TESTS----------------------------
+# --
+# --
+# --
+
   def test_logs(self):
     pod = self.busybox_pod("echo one && echo two && exit 0")
     pod.wait_until(pod.has_settled)
@@ -78,26 +86,40 @@ class TestKatPod(Base.TestKatRes):
     self.assertIsNone(result)
     self.assertIsNone(KatPod.find(self.res_name, self.pns))
 
+  def test_curl_from(self):
+    receiver = KatPod(simple_pod.create(
+      ns=self.pns,
+      name=utils.rand_str(),
+      image="hashicorp/http-echo",
+      args=["-text", "pong"]
+    ))
+    sender = KatPod(simple_pod.create(
+      ns=self.pns,
+      name=self.res_name,
+      image="ewoutp/docker-nginx-curl"
+    ))
+    receiver.wait_until(receiver.has_settled)
+    sender.wait_until(sender.has_settled)
+    ping = sender.invoke_curl(url=f"{receiver.ip}:5678")
+    self.assertEqual(ping.status, 200)
+    self.assertEqual(ping.read(100).decode(), 'pong')
+
 # --
 # --
 # --
-# -------------------------------REQUESTS / LIMITS TESTS-------------------------------
+# -------------------------REQ / LIM TESTS--------------------------
 # --
 # --
 # --
 
-  def test_load_metrics(self):
-    pod = KatPod(simple_pod.create(
-        ns=self.pns,
-        name=self.res_name,
-        image='nginx'
-      )
-    )
-    pod.wait_until(pod.has_settled)
-    with patch(f"{KatPod.__module__}.broker.custom.get_namespaced_custom_object") as mocked_get:
-      mocked_get.return_value = "test value"
-      self.assertEqual(pod.load_metrics(), ["test value"])
-      self.assertEqual(mocked_get.call_count, 1)
+  def gen_mock_metrics(self):
+    return [
+      dict(containers=[
+        dict(name='x', usage=dict(cpu='750m', memory='0.25G')),
+        dict(name='y', usage=dict(cpu='0.25', memory='750M')),
+        dict(name='z')
+      ])
+    ]
 
   def test_cpu_requests_and_limits(self):
     p1 = self.reqs_pod(requests=dict(cpu="100m"), limits=dict(cpu="1"))
@@ -129,24 +151,6 @@ class TestKatPod(Base.TestKatRes):
     self.assertEqual(pod.shell_exec("echo foo"), "foo")
     self.assertEqual(pod.shell_exec("whoami"), "root")
     self.assertEqual(pod.shell_exec("bad-cmd"), None)
-
-  def test_curl_from(self):
-    receiver = KatPod(simple_pod.create(
-      ns=self.pns,
-      name=utils.rand_str(),
-      image="hashicorp/http-echo",
-      args=["-text", "pong"]
-    ))
-    sender = KatPod(simple_pod.create(
-      ns=self.pns,
-      name=self.res_name,
-      image="ewoutp/docker-nginx-curl"
-    ))
-    receiver.wait_until(receiver.has_settled)
-    sender.wait_until(sender.has_settled)
-    ping = sender.invoke_curl(url=f"{receiver.ip}:5678")
-    self.assertEqual(ping.status, 200)
-    self.assertEqual(ping.read(100).decode(), 'pong')
 
 # --
 # --
@@ -223,8 +227,6 @@ class TestKatPod(Base.TestKatRes):
       args=[args]
     ))
 
-
-
 # --
 # --
 # --
@@ -234,18 +236,19 @@ class TestKatPod(Base.TestKatRes):
 # --
 
 
-
 def create_crasher(**kwargs) -> KatPod:
   return KatPod(simple_pod.create(
     command=["not-a-real-command"],
     **kwargs
   ))
 
+
 def create_puller(**kwargs):
   return KatPod(simple_pod.create(
     image="not-a-real-image",
     **kwargs
   ))
+
 
 def create_init_crasher(**kwargs):
   orig = simple_pod.pod(**kwargs)

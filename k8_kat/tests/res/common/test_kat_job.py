@@ -1,6 +1,5 @@
 import time
 from typing import Type
-from unittest.mock import patch
 
 from k8_kat.res.base.kat_res import KatRes
 from k8_kat.res.job.kat_job import KatJob
@@ -33,11 +32,14 @@ class TestKatJob(Base.TestKatRes):
     p2.wait_until(p2.is_running_normally)
     self.assertIn(r2.name, p2.name)
 
-  def test_load_metrics(self):
-    make = lambda: simple_job.create(ns=self.pns, name=utils.rand_str(), labels={"simple": "test"}, replicas=2)
-    r1, r2 = KatJob(make()), KatJob(make())
-
-    with patch(f"{KatJob.__module__}.broker.custom.list_namespaced_custom_object") as mocked_get:
-      mocked_get.return_value = {"items": ["test value"]}
-      self.assertEqual(r1.load_metrics(), ["test value"])
-      self.assertEqual(mocked_get.call_count, 1)
+  def gen_mock_metrics(self):
+    return [
+      dict(containers=[
+        dict(name='x', usage=dict(cpu='500m', memory='.25G')),
+        dict(name='y', usage=dict(cpu='0.5', memory='750M'))
+      ]),
+      dict(containers=[
+        dict(name='x', usage=dict(cpu='0m', memory=None)),
+        dict(name='y', usage=dict(memory=None))
+      ])
+    ]

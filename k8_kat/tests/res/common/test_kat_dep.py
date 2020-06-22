@@ -1,5 +1,3 @@
-from unittest.mock import patch
-
 from k8_kat.res.dep.kat_dep import KatDep
 from k8_kat.tests.res.base.test_kat_res import Base
 from k8_kat.utils.main import utils
@@ -44,26 +42,31 @@ class TestKatDep(Base.TestKatRes):
     self.assertEqual(dep.ternary_status(), 'negative')
 
   def test_pods(self):
-    make = lambda: create(ns=self.pns, name=utils.rand_str(), replicas=2)
-    d1, d2 = KatDep(make()), KatDep(make())
+    def make():
+      dep = KatDep(create(ns=self.pns, name=utils.rand_str(), replicas=2))
+      return dep.wait_until(dep.is_running_normally) and dep
+
+    d1, d2 = make(), make()
 
     p1, p2 = d1.pods()
-    p1.wait_until(p1.is_running_normally)
-    p2.wait_until(p2.is_running_normally)
     self.assertIn(d1.name, p1.name)
     self.assertIn(d1.name, p2.name)
 
     p1, p2 = d2.pods()
-    p1.wait_until(p1.is_running_normally)
-    p2.wait_until(p2.is_running_normally)
     self.assertIn(d2.name, p1.name)
     self.assertIn(d2.name, p2.name)
 
-  def test_load_metrics(self):
-    make = lambda: create(ns=self.pns, name=utils.rand_str(), replicas=2)
-    d1, d2 = KatDep(make()), KatDep(make())
+  def test_mem_and_cpu_used(self):
+    super().test_mem_and_cpu_used()
 
-    with patch(f"{KatDep.__module__}.broker.custom.list_namespaced_custom_object") as mocked_get:
-      mocked_get.return_value = {"items": ["test value"]}
-      self.assertEqual(d1.load_metrics(), ["test value"])
-      self.assertEqual(mocked_get.call_count, 1)
+  def gen_mock_metrics(self):
+    return [
+      dict(containers=[
+        dict(name='x', usage=dict(cpu='250m', memory='0.25G')),
+        dict(name='y', usage=dict(cpu='0.25', memory='750M'))
+      ]),
+      dict(containers=[
+        dict(name='x', usage=dict(cpu='500m', memory=None)),
+        dict(name='y', usage=dict(memory=None))
+      ])
+    ]

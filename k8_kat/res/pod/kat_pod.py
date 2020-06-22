@@ -1,6 +1,6 @@
+from functools import lru_cache
 from http.client import HTTPResponse
-from typing import List, Optional, Dict, Callable, TypeVar, Any
-from functools import lru_cache, wraps
+from typing import List, Optional, Callable, TypeVar, Any
 
 from kubernetes import stream as k8s_streaming
 from kubernetes.client import V1Pod, V1Container, \
@@ -9,15 +9,16 @@ from kubernetes.client.rest import ApiException
 
 from k8_kat.auth.kube_broker import broker
 from k8_kat.res.base.kat_res import KatRes, MetricsDict
-from k8_kat.res.base.metrics_aggregator import MetricsAggregator
 from k8_kat.res.pod import pod_utils
+from k8_kat.res.pod.pod_utils import when_running_normally
 from k8_kat.utils.main import utils
 from k8_kat.utils.main.class_property import classproperty
 
 Fn = TypeVar('Fn', bound=Callable[..., Any])
 KP = TypeVar('KP')
 
-class KatPod(KatRes, MetricsAggregator):
+
+class KatPod(KatRes):
   def __init__(self, raw, wait_until_running=False):
     super().__init__(raw)
     if wait_until_running:
@@ -30,16 +31,6 @@ class KatPod(KatRes, MetricsAggregator):
 # --
 # --
 # --
-  def when_running_normally(func: Fn) -> Callable:
-    """Note: needs to be defined at top of class."""
-    @wraps(func)
-    def running_normally_func(self, *args, **kwargs):
-      if self.is_running_normally():
-        return func(self, *args, **kwargs)
-      else:
-        return None
-
-    return running_normally_func
 
   @classproperty
   def kind(self):
@@ -60,7 +51,7 @@ class KatPod(KatRes, MetricsAggregator):
     return utils.try_or(lambda: self.body().status.pod_ip)
 
   @property
-  def has_parent (self) -> bool:
+  def has_parent(self) -> bool:
     refs = self.raw.metadata.owner_references
     return refs is not None and len(refs) > 0
 
@@ -81,13 +72,13 @@ class KatPod(KatRes, MetricsAggregator):
   def image(self, index=0) -> str:
     return self.container and self.container(index).image
 
-  def main_container_states(self) -> List[V1ContainerState]:
-    statuses = self.body().status.container_statuses or []
-    return [status.state for status in statuses]
-
-  def init_container_states(self) -> List[V1ContainerState]:
-    statuses = self.body().status.init_container_statuses or []
-    return [status.state for status in statuses]
+# --
+# --
+# --
+# -------------------------------STATE-------------------------------
+# --
+# --
+# --
 
   def ternary_status(self) -> str:
     if self.is_working():
@@ -108,7 +99,6 @@ class KatPod(KatRes, MetricsAggregator):
            not self.is_pending_morbidly()
 
   def is_running_morbidly(self):
-    """Whether this pod is in the Running state but one or more container is crashing."""
     return self.is_running() and \
            not self.is_running_normally()
 
@@ -175,6 +165,14 @@ class KatPod(KatRes, MetricsAggregator):
     else:
       return []
 
+# --
+# --
+# --
+# ---------------------------REQ / LIM / METRICS---------------------------
+# --
+# --
+# --
+
   def cpu_request(self) -> Optional[float]:
     """Returns pod's total memory limits in bytes."""
     return self.read_res_request_or_limit('requests', 'cpu')
@@ -199,6 +197,15 @@ class KatPod(KatRes, MetricsAggregator):
     """Returns pod's total ephemeral storage requests in bytes."""
     return self.read_res_request_or_limit('requests', 'ephemeral-storage')
 
+  def read_res_request_or_limit(self, metric: str, resource: str) -> Optional[float]:
+    """Fetches pod's total resource capacity (either limits or requests)
+    for either CPU (cores) or memory (bytes)."""
+    container_lvl_value = lambda c: pod_utils.container_req_or_lim(c, metric, resource)
+    containers = self.body().spec.containers or []
+    per_container_results = [container_lvl_value(c) for c in containers]
+    are_all_undefined = len([v for v in per_container_results if v is not None]) == 0
+    return sum(per_container_results) if not are_all_undefined else None
+
   @when_running_normally
   @lru_cache(maxsize=128)
   def load_metrics(self) -> Optional[List[MetricsDict]]:
@@ -211,16 +218,6 @@ class KatPod(KatRes, MetricsAggregator):
       name=self.name
     )
     return [self_metrics]
-
-  def read_res_request_or_limit(self, metric: str, resource: str) -> Optional[float]:
-    """Fetches pod's total resource capacity (either limits or requests)
-    for either CPU (cores) or memory (bytes)."""
-    container_lvl_value = lambda c: pod_utils.container_req_or_lim(c, metric, resource)
-    containers = self.body().spec.containers or []
-    per_container_results = [container_lvl_value(c) for c in containers]
-    are_all_undefined = len([v for v in per_container_results if v is not None]) == 0
-    return sum(per_container_results) if not are_all_undefined else None
-
 
 # --
 # --
@@ -282,18 +279,6 @@ class KatPod(KatRes, MetricsAggregator):
       list=broker.coreV1.list_namespaced_pod
     )
 
-  def reload(self) -> Optional['KatRes']:
-    return super().reload()
-
-# --
-# --
-# --
-# -------------------------------RELATION-------------------------------
-# --
-# --
-# --
-
-
 # --
 # --
 # --
@@ -301,6 +286,14 @@ class KatPod(KatRes, MetricsAggregator):
 # --
 # --
 # --
+
+  def main_container_states(self) -> List[V1ContainerState]:
+    statuses = self.body().status.container_statuses or []
+    return [status.state for status in statuses]
+
+  def init_container_states(self) -> List[V1ContainerState]:
+    statuses = self.body().status.init_container_statuses or []
+    return [status.state for status in statuses]
 
 
 def has_morbid_pending_reasons(states: List[V1ContainerState]):

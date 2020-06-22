@@ -1,7 +1,7 @@
 from urllib.parse import unquote_plus
 from http.client import HTTPResponse
 from io import BytesIO
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Callable
 from kubernetes.client import V1Container
 
 from k8_kat.utils.main import units
@@ -50,6 +50,7 @@ def build_curl_cmd(**params) -> List[str]:
   ]
   return [part for part in cmd if part is not None]
 
+
 def parse_response(response_str) -> Optional[HTTPResponse]:
   if response_str:
     source = FakeSocket(response_str.encode('ascii'))
@@ -60,3 +61,14 @@ def parse_response(response_str) -> Optional[HTTPResponse]:
 
   else:
     return None
+
+
+def when_running_normally(func: Callable) -> Callable:
+  """Note: needs to be defined at top of class."""
+  def running_normally_func(*args, **kwargs):
+    if args[0].is_running_normally():
+      return func(*args, **kwargs)
+    else:
+      return None
+
+  return running_normally_func

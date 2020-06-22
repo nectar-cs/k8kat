@@ -6,13 +6,12 @@ from kubernetes.client import V1PodSpec, V1Container, V1Scale, V1ScaleSpec, V1De
 from k8_kat.auth.kube_broker import broker
 from k8_kat.res.base.kat_res import KatRes, MetricsDict
 from k8_kat.res.base.label_set_expressions import label_conditions_to_expr
-from k8_kat.res.base.metrics_aggregator import MetricsAggregator
 from k8_kat.res.pod.kat_pod import KP
 from k8_kat.res.relation.relation import Relation
 from k8_kat.utils.main.class_property import classproperty
 
 
-class KatDep(KatRes, MetricsAggregator):
+class KatDep(KatRes):
 
   @classproperty
   def kind(self):
@@ -71,11 +70,12 @@ class KatDep(KatRes, MetricsAggregator):
   @lru_cache(maxsize=128)
   def load_metrics(self) -> List[MetricsDict]:
     """Loads the appropriate metrics dict from k8s metrics API."""
+    label_sel = label_conditions_to_expr(self.pod_select_labels.items(), [])
     return broker.custom.list_namespaced_custom_object(
       group='metrics.k8s.io',
       version='v1beta1',
       namespace=self.namespace,
-      label_selector=label_conditions_to_expr(self.pod_select_labels.items(), []),
+      label_selector=label_sel,
       plural='pods'
     )['items']
 
