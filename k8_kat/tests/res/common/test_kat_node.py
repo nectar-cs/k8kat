@@ -6,5 +6,5 @@ class TestKatNode(ClusterTest):
 
   def test_capacity(self):
     node = KatNode.list()[0]
-    self.assertGreater(node.cpu_capacity(), 1)
-    self.assertGreater(node.mem_capacity(), 1)
+    self.assertGreater(node.cpu_capacity(), 0)
+    self.assertGreater(node.mem_capacity(), 0)
