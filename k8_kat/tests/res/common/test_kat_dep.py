@@ -56,10 +56,10 @@ class TestKatDep(Base.TestKatRes):
     self.assertIn(d2.name, p1.name)
     self.assertIn(d2.name, p2.name)
 
-  def test_mem_and_cpu_used(self):
-    super().test_mem_and_cpu_used()
+  def test_mem_and_cpu_reqs(self):
+    super().test_mem_and_cpu_reqs()
 
-  def gen_mock_metrics(self):
+  def gen_mock_usage_metrics(self):
     return [
       dict(containers=[
         dict(name='x', usage=dict(cpu='250m', memory='0.25G')),

@@ -175,29 +175,29 @@ class KatPod(KatRes):
 
   def cpu_request(self) -> Optional[float]:
     """Returns pod's total memory limits in bytes."""
-    return self.read_res_request_or_limit('requests', 'cpu')
+    return self.read_resources_req_or_lim('requests', 'cpu')
 
   def cpu_limit(self) -> Optional[float]:
     """Returns pod's total memory limits in bytes."""
-    return self.read_res_request_or_limit('limits', 'cpu')
+    return self.read_resources_req_or_lim('limits', 'cpu')
 
   def mem_limit(self) -> Optional[float]:
     """Returns pod's total memory limits in bytes."""
-    return self.read_res_request_or_limit('limits', 'memory')
+    return self.read_resources_req_or_lim('limits', 'memory')
 
   def mem_request(self) -> Optional[float]:
     """Returns pod's total memory requests in bytes."""
-    return self.read_res_request_or_limit('requests', 'memory')
+    return self.read_resources_req_or_lim('requests', 'memory')
 
   def eph_storage_limit(self) -> Optional[float]:
     """Returns pod's total ephemeral storage limits in bytes."""
-    return self.read_res_request_or_limit('limits', 'ephemeral-storage')
+    return self.read_resources_req_or_lim('limits', 'ephemeral-storage')
 
   def eph_storage_request(self) -> Optional[float]:
     """Returns pod's total ephemeral storage requests in bytes."""
-    return self.read_res_request_or_limit('requests', 'ephemeral-storage')
+    return self.read_resources_req_or_lim('requests', 'ephemeral-storage')
 
-  def read_res_request_or_limit(self, metric: str, resource: str) -> Optional[float]:
+  def read_resources_req_or_lim(self, metric: str, resource: str) -> Optional[float]:
     """Fetches pod's total resource capacity (either limits or requests)
     for either CPU (cores) or memory (bytes)."""
     container_lvl_value = lambda c: pod_utils.container_req_or_lim(c, metric, resource)
@@ -217,7 +217,7 @@ class KatPod(KatRes):
       plural='pods',
       name=self.name
     )
-    return [self_metrics]
+    return [self_metrics] if self_metrics else None
 
 # --
 # --

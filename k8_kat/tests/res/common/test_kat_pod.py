@@ -1,5 +1,4 @@
 import time
-from unittest.mock import patch
 from urllib.parse import quote
 
 from kubernetes.client import V1Container, V1EnvVar, V1EnvVarSource, V1ConfigMapKeySelector
@@ -112,12 +111,13 @@ class TestKatPod(Base.TestKatRes):
 # --
 # --
 
-  def gen_mock_metrics(self):
+  def gen_mock_usage_metrics(self):
     return [
       dict(containers=[
         dict(name='x', usage=dict(cpu='750m', memory='0.25G')),
         dict(name='y', usage=dict(cpu='0.25', memory='750M')),
-        dict(name='z')
+        dict(name='z'),
+        None
       ])
     ]
 

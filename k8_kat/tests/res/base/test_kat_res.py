@@ -9,6 +9,25 @@ from k8_kat.utils.testing import ns_factory
 
 
 class Base:
+
+  # noinspection PyMethodMayBeStatic
+  class FakePod:
+
+    def __init__(self, val):
+      self.val = val
+
+    def cpu_request(self):
+      return self.val
+
+    def cpu_limit(self):
+      return self.val
+
+    def mem_request(self):
+      return self.val
+
+    def mem_limit(self):
+      return self.val
+
   class TestKatRes(ClusterTest):
 
     @classmethod
@@ -110,15 +129,23 @@ class Base:
       res = self.res_class()(self.create_res(self.res_name, self.pns))
       self.assertEqual(res.ternary_status(), 'positive')
 
-    def gen_mock_metrics(self):
+    def gen_mock_usage_metrics(self):
       """Subclasses must return 1 CPU core Core and 1GB mem"""
       return None
 
     def test_mem_and_cpu_used(self):
-      if self.gen_mock_metrics():
+      res = self.res_class()(self.create_res(self.res_name, self.pns))
+
+      with patch.object(res, 'pods') as mocked_pods:
+        mocked_pods.return_value = [Base.FakePod(0), Base.FakePod(1)]
+        print(res.cpu_request())
+        print(res.mem_limit())
+
+    def test_mem_and_cpu_reqs(self):
+      if self.gen_mock_usage_metrics():
         res = self.res_class()(self.create_res(self.res_name, self.pns))
         with patch.object(self.res_class(), 'load_metrics') as mocked_metrics:
-          mocked_metrics.return_value = self.gen_mock_metrics()
+          mocked_metrics.return_value = self.gen_mock_usage_metrics()
           self.assertEqual(res.mem_used(), 1_000_000_000)
           self.assertEqual(res.cpu_used(), 1)
 
@@ -136,3 +163,4 @@ class Base:
 
 def names(res_list) -> List[str]:
   return [r.name for r in res_list]
+

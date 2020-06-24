@@ -41,7 +41,6 @@ class TestKatQuota(Base.TestKatRes):
     pod.wait_until(pod.has_settled)
     quota.reload()
 
-    # unpredictable behavior in Kind CI, so just ensure not crashing
     quota.cpu_used()
     quota.mem_used()
 

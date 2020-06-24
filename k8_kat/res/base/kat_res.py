@@ -92,7 +92,6 @@ class KatRes:
   def short_desc(self):
     return self.annotations.get('short_desc')
 
-
 # --
 # --
 # --
@@ -230,7 +229,7 @@ class KatRes:
 # --
 # --
 # --
-# -------------------------------USAGE METRICS-------------------------------
+# -------------------------------USAGE / REQ / LIM-------------------------------
 # --
 # --
 # --
@@ -252,14 +251,36 @@ class KatRes:
     if per_pod_metrics is not None:
       total = 0
       for pod_metrics in per_pod_metrics:
-        per_container_metrics = pod_metrics['containers']
+        per_container_metrics = pod_metrics.get('containers', [])
         for container_metrics in per_container_metrics:
-          usage_quant_expr = utils.deep_get(container_metrics, 'usage', resource_type)
+          container_metrics = container_metrics or {}
+          metric_deep_key = ('usage', resource_type)
+          usage_quant_expr = utils.deep_get(container_metrics, *metric_deep_key)
           usage_quant = units.parse_quant_expr(usage_quant_expr)
           total += usage_quant or 0
       return round(total, 3)
     else:
       return None
+
+  def pods(self):
+    return []
+
+  def _sum_pod_req_or_lim(self, func):
+    bytes_per_pod = [func(pod) for pod in self.pods()]
+    bytes_per_pod = [value or 0 for value in bytes_per_pod]
+    return sum(bytes_per_pod)
+
+  def cpu_limit(self) -> Optional[float]:
+    return self._sum_pod_req_or_lim(lambda p: p.cpu_request)
+
+  def cpu_request(self) -> Optional[float]:
+    return self._sum_pod_req_or_lim(lambda p: p.cpu_request)
+
+  def mem_limit(self) -> Optional[float]:
+    return self._sum_pod_req_or_lim(lambda p: p.mem_limit)
+
+  def mem_request(self) -> Optional[float]:
+    return self._sum_pod_req_or_lim(lambda p: p.mem_request)
 
 # --
 # --
@@ -273,11 +294,11 @@ class KatRes:
     patch_method = self.k8s_verb_methods().get('patch')
     self.ns_agnostic_call(patch_method, body=self.raw)
 
-  def _enter_patch_loop(self, modification):
+  def _enter_patch_loop(self, modification_delegate: Callable):
     failed_attempts = 0
     while True:
       try:
-        modification(self.raw)
+        modification_delegate(self.raw)
         self._perform_patch_self()
         return
       except kubernetes.client.rest.ApiException as e:
