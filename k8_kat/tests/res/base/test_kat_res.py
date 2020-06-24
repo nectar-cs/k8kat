@@ -134,6 +134,7 @@ class Base:
       return None
 
     def gen_res_with_capped_pods(self, ns, name) -> Optional[KatRes]:
+      """Subclasses must return .25, .5, 50Mb, 100Mb CPU r/l and mem r/l respectively"""
       return None
 
     def test_mem_and_cpu_reqs(self):

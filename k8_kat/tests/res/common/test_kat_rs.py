@@ -17,31 +17,18 @@ class TestKatRs(Base.TestKatRes):
 
   @classmethod
   def create_res(cls, name, ns=None):
-    return simple_rs.create(ns=ns, name=name, labels={"simple": "test"})
+    return simple_rs.create(ns=ns, name=name)
 
-  def test_pods(self):
-    make = lambda: simple_rs.create(ns=self.pns, name=utils.rand_str(), labels={"simple": "test"}, replicas=2)
-    r1, r2 = KatRs(make()), KatRs(make())
-
+  def gen_res_with_capped_pods(self, ns, name):
+    one_pod_requests = dict(memory="50M", cpu="0.25")
+    one_pod_limits = dict(memory="0.1G", cpu="0.5")
+    resources = dict(requests=one_pod_requests, limits=one_pod_limits)
+    raw_dep = simple_rs.create(ns=ns, name=name, resources=resources)
     time.sleep(5)
+    return KatRs(raw_dep)
 
-    p1, p2 = r1.pods()
-    p1.wait_until(p1.is_running_normally)
-    p2.wait_until(p2.is_running_normally)
-    self.assertIn(r1.name, p1.name)
-    self.assertIn(r1.name, p2.name)
+  def gen_mock_usage_metrics(self):
+    return [
+      dict(containers=[dict(name='x', usage=dict(cpu='1', memory='1G'))])
+    ]
 
-    p1, p2 = r2.pods()
-    p1.wait_until(p1.is_running_normally)
-    p2.wait_until(p2.is_running_normally)
-    self.assertIn(r2.name, p1.name)
-    self.assertIn(r2.name, p2.name)
-
-  def test_load_metrics(self):
-    make = lambda: simple_rs.create(ns=self.pns, name=utils.rand_str(), labels={"simple": "test"}, replicas=2)
-    r1, r2 = KatRs(make()), KatRs(make())
-
-    with patch(f"{KatRs.__module__}.broker.custom.list_namespaced_custom_object") as mocked_get:
-      mocked_get.return_value = {"items": ["test value"]}
-      self.assertEqual(r1.load_metrics(), ["test value"])
-      self.assertEqual(mocked_get.call_count, 1)

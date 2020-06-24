@@ -65,31 +65,3 @@ class TestKatNs(Base.TestKatRes):
 
   def test_delete_without_wait(self):
     pass
-
-  def test_pods(self):
-    n1 = KatNs(self.create_res('nss1'))
-    n2 = KatNs(self.create_res('nss2'))
-
-    n1.wait_until(n1.is_work_ready)
-    n2.wait_until(n2.is_work_ready)
-
-    simple_pod.create(ns="nss1", name=utils.rand_str())
-    simple_pod.create(ns="nss2", name=utils.rand_str())
-
-    p1 = n1.pods()
-    p2 = n2.pods()
-
-    for p in p1:
-      self.assertEqual(p.ns, n1.body().metadata.name)
-    for p in p2:
-      self.assertEqual(p.ns, n2.body().metadata.name)
-
-  def test_load_metrics(self):
-    n1 = KatNs(self.create_res('nss1'))
-    n1.wait_until(n1.is_work_ready)
-    simple_pod.create(ns="nss1", name=utils.rand_str())
-
-    with patch(f"{KatNs.__module__}.broker.custom.list_namespaced_custom_object") as mocked_get:
-      mocked_get.return_value = {"items": ["test value"]}
-      self.assertEqual(n1.load_metrics(), ["test value"])
-      self.assertEqual(mocked_get.call_count, 1)

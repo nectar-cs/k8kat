@@ -29,8 +29,10 @@ def replica_set(**subs):
               image=subs.get('image', 'nginx'),
               image_pull_policy="IfNotPresent",
               command=subs.get('command'),
-              args=subs.get('args')
-            )]
+              args=subs.get('args'),
+              resources=subs.get('resources', None)
+            )
+          ]
         )
       )
     )
