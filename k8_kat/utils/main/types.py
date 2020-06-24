@@ -14,3 +14,7 @@ class ContainerMetricsDict(TypedDict):
 class PodMetricsDict(TypedDict):
   containers: List[ContainerMetricsDict]
 
+
+class NodeMetricsDict(TypedDict):
+  usage: List[UsageDict]
+

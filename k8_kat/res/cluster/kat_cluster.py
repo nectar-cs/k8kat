@@ -1,50 +1,38 @@
-from typing import Callable, Optional
+from typing import List
 
-from k8_kat.res.nodes.kat_node import KatNode
+from k8_kat.auth.kube_broker import broker
+from k8_kat.res.node.kat_node import KatNode
+from k8_kat.utils.main import utils, units
+from k8_kat.utils.main.types import NodeMetricsDict
 
-
-def aggregate_usage(fn: Callable) -> float:
-  return sum([(fn(node) or 0) for node in KatNode.list()])
 
 
 class KatCluster:
 
   @classmethod
-  def cpu_capacity(cls) -> float:
-    """Aggregates and returns CPU capacity from nodes in cluster."""
-    return aggregate_usage(KatNode.cpu_capacity)
+  def load_metrics(cls) -> List[NodeMetricsDict]:
+    return broker.custom.list_cluster_custom_object(
+      group='metrics.k8s.io',
+      version='v1beta1',
+      plural='nodes'
+    ).get('items', [])
 
   @classmethod
-  def cpu_usage(cls) -> float:
-    """Aggregates and returns CPU usage from nodes in cluster (in cores)."""
-    return aggregate_usage(KatNode.cpu_used)
+  def resources_available(cls):
+    nodes = KatNode.list()
+    cpu_caps = [n.cpu_capacity() or 0 for n in nodes]
+    mem_caps = [n.mem_capacity() or 0 for n in nodes]
+    return sum(cpu_caps), sum(mem_caps)
 
   @classmethod
-  def cpu_limits(cls) -> Optional[float]:
-    """Aggregates and returns CPU limits from nodes in cluster (in cores)."""
-    return aggregate_usage(KatNode.cpu_limits)
+  def resources_used(cls):
+    per_node_metrics = cls.load_metrics()
+    per_node_cpu = [read_node_res_used(m, 'cpu') for m in per_node_metrics]
+    per_node_mem = [read_node_res_used(m, 'memory') for m in per_node_metrics]
+    return sum(per_node_cpu), sum(per_node_mem)
 
-  @classmethod
-  def cpu_requests(cls) -> Optional[float]:
-    """Aggregates and returns CPU requests from nodes in cluster (in cores)."""
-    return aggregate_usage(KatNode.cpu_requests)
-
-  @classmethod
-  def mem_capacity(cls) -> float:
-    """Aggregates and returns memory capacity from nodes in cluster."""
-    return aggregate_usage(KatNode.mem_capacity)
-
-  @classmethod
-  def memory_usage(cls) -> float:
-    """Aggregates and returns memory usage from nodes in cluster (in bytes)."""
-    return aggregate_usage(KatNode.memory_used)
-
-  @classmethod
-  def memory_limits(cls) -> Optional[float]:
-    """Aggregates and returns memory limits from nodes in cluster (in bytes)."""
-    return aggregate_usage(KatNode.memory_limits)
-
-  @classmethod
-  def memory_requests(cls) -> Optional[float]:
-    """Aggregates and returns memory requests from nodes in cluster (in bytes)."""
-    return aggregate_usage(KatNode.memory_requests)
+def read_node_res_used(node_metrics: NodeMetricsDict, resource_type: str):
+  metric_deep_key = ('usage', resource_type)
+  usage_quant_expr = utils.deep_get(node_metrics, *metric_deep_key)
+  quant_bytes = units.parse_quant_expr(usage_quant_expr)
+  return quant_bytes or 0
