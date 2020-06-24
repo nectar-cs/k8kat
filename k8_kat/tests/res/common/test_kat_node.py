@@ -1,8 +1,3 @@
-from typing import Type
-from unittest.mock import patch
-
-from kubernetes.client import V1NodeStatus
-
 from k8_kat.res.node.kat_node import KatNode
 from k8_kat.tests.res.base.cluster_test import ClusterTest
 

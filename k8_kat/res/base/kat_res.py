@@ -234,7 +234,7 @@ class KatRes:
 # --
 # --
 
-  def load_metrics(self) -> Optional[List[PodMetricsDict]]:
+  def load_per_pod_metrics(self) -> Optional[List[PodMetricsDict]]:
     """Loads the appropriate metrics dict from k8s metrics API."""
     return None
 
@@ -247,7 +247,7 @@ class KatRes:
     return self._resource_usage('memory')
 
   def _resource_usage(self, resource_type: str) -> Optional[float]:
-    per_pod_metrics: List[PodMetricsDict] = self.load_metrics()
+    per_pod_metrics: List[PodMetricsDict] = self.load_per_pod_metrics()
     if per_pod_metrics is not None:
       total = 0
       for pod_metrics in per_pod_metrics:

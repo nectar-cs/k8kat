@@ -43,7 +43,7 @@ class KatNs(KatRes):
     return False
 
   @lru_cache(maxsize=128)
-  def load_metrics(self) -> List[MetricsDict]:
+  def load_per_pod_metrics(self) -> List[MetricsDict]:
     """Loads the appropriate metrics dict from k8s metrics API."""
     return broker.custom.list_namespaced_custom_object(
       group='metrics.k8s.io',

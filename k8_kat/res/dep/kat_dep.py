@@ -68,7 +68,7 @@ class KatDep(KatRes):
     return len(pods) == 0 or set(pod_settle_states) == {True}
 
   @lru_cache(maxsize=128)
-  def load_metrics(self) -> List[MetricsDict]:
+  def load_per_pod_metrics(self) -> List[MetricsDict]:
     """Loads the appropriate metrics dict from k8s metrics API."""
     label_sel = label_conditions_to_expr(self.pod_select_labels.items(), [])
     return broker.custom.list_namespaced_custom_object(

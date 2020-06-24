@@ -148,7 +148,7 @@ class Base:
     def test_mem_and_cpu_used(self):
       if self.gen_mock_usage_metrics():
         res = self.res_class()(self.create_res(self.res_name, self.pns))
-        with patch.object(self.res_class(), 'load_metrics') as mocked_metrics:
+        with patch.object(self.res_class(), 'load_per_pod_metrics') as mocked_metrics:
           mocked_metrics.return_value = self.gen_mock_usage_metrics()
           self.assertEqual(res.mem_used(), 1_000_000_000)
           self.assertEqual(res.cpu_used(), 1)

@@ -1,10 +1,10 @@
-from typing import List
+from typing import List, Optional
 from typing_extensions import TypedDict
 
 
 class UsageDict(TypedDict):
-  cpu: str
-  memory: str
+  cpu: Optional[str]
+  memory: Optional[str]
 
 
 class ContainerMetricsDict(TypedDict):
@@ -16,5 +16,5 @@ class PodMetricsDict(TypedDict):
 
 
 class NodeMetricsDict(TypedDict):
-  usage: List[UsageDict]
+  usage: UsageDict
 

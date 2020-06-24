@@ -208,7 +208,7 @@ class KatPod(KatRes):
 
   @when_running_normally
   @lru_cache(maxsize=128)
-  def load_metrics(self) -> Optional[List[MetricsDict]]:
+  def load_per_pod_metrics(self) -> Optional[List[MetricsDict]]:
     """Loads the appropriate metrics dict from k8s metrics API."""
     self_metrics = broker.custom.get_namespaced_custom_object(
       group='metrics.k8s.io',
