@@ -1,5 +1,5 @@
 import time
-from typing import Type, List
+from typing import Type, List, Optional
 from unittest.mock import patch
 
 from k8_kat.res.base.kat_res import KatRes
@@ -133,15 +133,18 @@ class Base:
       """Subclasses must return 1 CPU core Core and 1GB mem"""
       return None
 
-    def test_mem_and_cpu_used(self):
-      res = self.res_class()(self.create_res(self.res_name, self.pns))
-
-      with patch.object(res, 'pods') as mocked_pods:
-        mocked_pods.return_value = [Base.FakePod(0), Base.FakePod(1)]
-        print(res.cpu_request())
-        print(res.mem_limit())
+    def gen_res_with_capped_pods(self, ns, name) -> Optional[KatRes]:
+      return None
 
     def test_mem_and_cpu_reqs(self):
+      res = self.gen_res_with_capped_pods(self.pns, self.res_name)
+      if res:
+        self.assertEqual(0.25, res.pods_cpu_request())
+        self.assertEqual(0.5, res.pods_cpu_limit())
+        self.assertEqual(50_000_000, res.pods_mem_request())
+        self.assertEqual(100_000_000, res.pods_mem_limit())
+
+    def test_mem_and_cpu_used(self):
       if self.gen_mock_usage_metrics():
         res = self.res_class()(self.create_res(self.res_name, self.pns))
         with patch.object(self.res_class(), 'load_metrics') as mocked_metrics:

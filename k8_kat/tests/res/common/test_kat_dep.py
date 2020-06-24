@@ -56,8 +56,12 @@ class TestKatDep(Base.TestKatRes):
     self.assertIn(d2.name, p1.name)
     self.assertIn(d2.name, p2.name)
 
-  def test_mem_and_cpu_reqs(self):
-    super().test_mem_and_cpu_reqs()
+  def gen_res_with_capped_pods(self, ns, name):
+    one_pod_requests = dict(memory="25M", cpu="0.125")
+    one_pod_limits = dict(memory="0.05G", cpu="0.25")
+    resources = dict(requests=one_pod_requests, limits=one_pod_limits)
+    raw_dep = simple_dep.create(ns=ns, name=name, replicas=2, resources=resources)
+    return KatDep(raw_dep)
 
   def gen_mock_usage_metrics(self):
     return [
@@ -70,3 +74,4 @@ class TestKatDep(Base.TestKatRes):
         dict(name='y', usage=dict(memory=None))
       ])
     ]
+
