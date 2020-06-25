@@ -21,28 +21,31 @@ class TestKatQuota(Base.TestKatRes):
   def res_class(cls) -> Type[KatRes]:
     return KatQuota
 
-  def test_cpu_and_mem_limits(self):
-    quota = KatQuota(create(self.res_name, self.pns))
-    self.assertEqual(quota.cpu_limit(), 1.5)
-    self.assertEqual(quota.mem_limit(), 200_000_000)
+  def test_requests_and_limits_allowed(self):
+    args = {
+      'requests.cpu': '1.1',
+      'memory': '10M',
+      'limits.memory': '20M'
+    }
 
-  def test_cpu_and_mem_usage(self):
+    quota = KatQuota(create(self.res_name, self.pns, **args))
+    self.assertEqual(1.1, quota.cpu_request_sum_allowed())
+    self.assertEqual(10_000_000, quota.mem_request_sum_allowed())
+
+    self.assertEqual(None, quota.cpu_limit_sum_allowed())
+    self.assertEqual(20_000_000, quota.mem_limit_sum_allowed())
+
+  def test_requests_and_limits_deployed(self):
     pod = KatPod(simple_pod.create(
       ns=self.pns,
       name=utils.rand_str(),
-      resources=dict(
-        requests=dict(cpu=0.5, memory='150M'),
-        limits=dict(cpu=1, memory='300Mi')
-      )
+      resources=dict(requests=dict(cpu=0.5, memory='40M'))
     ))
-    quota = KatQuota(create(self.res_name, self.pns))
-
-    self.assertEqual([None, None], [quota.cpu_used(), quota.mem_used()])
+    quota = KatQuota(create(self.res_name, self.pns, cpu='1', memory='50M'))
     pod.wait_until(pod.has_settled)
     quota.reload()
-
-    quota.cpu_used()
-    quota.mem_used()
+    self.assertEqual(0.5, quota.cpu_request_sum_deployed())
+    self.assertEqual(40_000_000, quota.mem_request_sum_deployed())
 
 
 def create(name, ns, **kwargs) -> V1ResourceQuota:
@@ -53,10 +56,7 @@ def create(name, ns, **kwargs) -> V1ResourceQuota:
         name=name
       ),
       spec=V1ResourceQuotaSpec(
-        hard=dict(
-          cpu=kwargs.get('cpu', '1.5'),
-          memory=kwargs.get('memory', '200M')
-        )
+        hard=kwargs
       )
     )
   )

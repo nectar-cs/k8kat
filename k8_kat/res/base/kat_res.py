@@ -271,13 +271,13 @@ class KatRes:
     return sum(bytes_per_pod)
 
   def pods_cpu_limit(self) -> Optional[float]:
-    return self._sum_pod_req_or_lim(lambda p: p.cpu_limit())
+    return self._sum_pod_req_or_lim(lambda p: p.cpu_limit_cap())
 
   def pods_cpu_request(self) -> Optional[float]:
     return self._sum_pod_req_or_lim(lambda p: p.cpu_request())
 
   def pods_mem_limit(self) -> Optional[float]:
-    return self._sum_pod_req_or_lim(lambda p: p.mem_limit())
+    return self._sum_pod_req_or_lim(lambda p: p.mem_limit_sum_allowed())
 
   def pods_mem_request(self) -> Optional[float]:
     return self._sum_pod_req_or_lim(lambda p: p.mem_request())

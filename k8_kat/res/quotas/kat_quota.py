@@ -17,26 +17,45 @@ class KatQuota(KatRes):
   def body(self) -> V1ResourceQuota:
     return self.raw
 
-  def mem_limit(self) -> Optional[float]:
+  def mem_request_sum_allowed(self, target_unit='') -> Optional[float]:
     expr = self.extract_value('spec', 'hard', 'memory')
-    return units.parse_quant_expr(expr)
+    return units.parse_quant_expr(expr, target_unit)
 
-  def mem_used(self) -> Optional[float]:
+  def mem_request_sum_deployed(self, target_unit='') -> Optional[float]:
     expr = self.extract_value('status', 'used', 'memory')
-    return units.parse_quant_expr(expr)
+    return units.parse_quant_expr(expr, target_unit)
 
-  def cpu_limit(self) -> Optional[float]:
+  def mem_limit_sum_allowed(self, target_unit='') -> Optional[float]:
+    expr = self.extract_value('spec', 'hard', 'limits.memory')
+    return units.parse_quant_expr(expr, target_unit)
+
+  def mem_limit_sum_deployed(self, target_unit='') -> Optional[float]:
+    expr = self.extract_value('status', 'used', 'limits.memory')
+    return units.parse_quant_expr(expr, target_unit)
+
+  def cpu_request_sum_allowed(self, target_unit='') -> Optional[float]:
     expr = self.extract_value('spec', 'hard', 'cpu')
-    return units.parse_quant_expr(expr)
+    return units.parse_quant_expr(expr, target_unit)
 
-  def cpu_used(self) -> Optional[float]:
+  def cpu_request_sum_deployed(self, target_unit='') -> Optional[float]:
     expr = self.extract_value('status', 'used', 'cpu')
-    return units.parse_quant_expr(expr)
+    return units.parse_quant_expr(expr, target_unit)
+
+  def cpu_limit_sum_allowed(self, target_unit='') -> Optional[float]:
+    expr = self.extract_value('spec', 'hard', 'limits.cpu')
+    return units.parse_quant_expr(expr, target_unit)
+
+  def cpu_limit_sum_deployed(self, target_unit='') -> Optional[float]:
+    expr = self.extract_value('status', 'used', 'limits.cpu')
+    return units.parse_quant_expr(expr, target_unit)
 
   def extract_value(self, source_name, source_key, value_key) -> str:
     source = getattr(self.body(), source_name, None)
     values = getattr(source, source_key, {}) if source else {}
-    return values.get(value_key, '') if values else ''
+    result = values.get(value_key, '')
+    if not result and 'requests.' not in value_key:
+      result = values.get(f"requests.{value_key}", '')
+    return result
 
   @classmethod
   def k8s_verb_methods(cls):
