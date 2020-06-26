@@ -52,9 +52,9 @@ class KatQuota(KatRes):
   def extract_value(self, source_name, source_key, value_key) -> str:
     source = getattr(self.body(), source_name, None)
     values = getattr(source, source_key, {}) if source else {}
-    result = values.get(value_key, '')
+    result = (values or {}).get(value_key, '')
     if not result and 'requests.' not in value_key:
-      result = values.get(f"requests.{value_key}", '')
+      result = (values or {}).get(f"requests.{value_key}", '')
     return result
 
   @classmethod

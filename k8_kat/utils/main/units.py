@@ -13,19 +13,21 @@ def find_multiplier_mapping(expr: str) -> Optional[Tuple[str, Union[int,float]]]
 def parse_quant_expr(src_expr: str, target: str = '') -> Optional[float]:
   """Parses the source expression into standard units
   or target units (if specified)."""
-  src_mapping = find_multiplier_mapping(src_expr)
-  target_mapping = find_multiplier_mapping(target)
-  if not src_mapping or not target_mapping:
-    return None
+  if src_expr is not None:
+    src_mapping = find_multiplier_mapping(src_expr)
+    target_mapping = find_multiplier_mapping(target)
+    if not src_mapping or not target_mapping:
+      return None
 
-  try:
-    src_quantity, src_multiplier = src_mapping
-    _, target_multiplier = target_mapping
-    unitless = float(src_expr.strip(src_quantity))
-    return unitless * src_multiplier / target_multiplier
-  except ValueError:
+    try:
+      src_quantity, src_multiplier = src_mapping
+      _, target_multiplier = target_mapping
+      unitless = float(src_expr.strip(src_quantity))
+      return unitless * src_multiplier / target_multiplier
+    except ValueError:
+      return None
+  else:
     return None
-
 
 def humanize_cpu_quant(cores: float, with_unit: bool = False) -> str:
   """Returns CPU quantity in cores rounded to single decimal."""
