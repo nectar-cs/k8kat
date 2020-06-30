@@ -30,7 +30,6 @@ class Relation(List[KT]):
         **self.logical_to_k8s_query()
       ).items
 
-
   def logical_to_k8s_query(self) -> Dict[str, Optional[str]]:
     k8s_query = dict()
     k8s_query['label_selector'] = process_labels(self._query)

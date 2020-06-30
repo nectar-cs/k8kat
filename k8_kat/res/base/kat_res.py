@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Dict, Callable, Optional, Type, TypeVar, List
 
 import kubernetes
+from cachetools.func import lru_cache
 from kubernetes.client.rest import ApiException
 
 from k8_kat.auth.kube_broker import broker
@@ -114,6 +115,10 @@ class KatRes:
     )
 
   @classmethod
+  def list_excluding_sys(cls, ns=None, **query) -> List[KR]:
+    return cls.list(ns, **query)
+
+  @classmethod
   def wait_until_exists(cls, name: str, ns: str = None):
     res = None
     for attempts in range(0, 20):
@@ -221,9 +226,10 @@ class KatRes:
     return host(raw) if host else None
 
   @classmethod
-  def find_res_class(cls, kind) -> Optional[Type[KR]]:
+  def find_res_class(cls, kind: str) -> Optional[Type[KR]]:
     subclasses = res_utils.kat_classes()
-    matches = [sc for sc in subclasses if sc.kind == kind]
+    predicate = lambda s: s.kind.lower() == kind.lower()
+    matches = [subclass for subclass in subclasses if predicate(subclass)]
     return matches[0] if len(matches) == 1 else None
 
 # --
@@ -262,6 +268,7 @@ class KatRes:
     else:
       return None
 
+  @lru_cache
   def pods(self):
     return []
 
@@ -271,13 +278,13 @@ class KatRes:
     return sum(bytes_per_pod)
 
   def pods_cpu_limit(self) -> Optional[float]:
-    return self._sum_pod_req_or_lim(lambda p: p.cpu_limit_cap())
+    return self._sum_pod_req_or_lim(lambda p: p.cpu_limit())
 
   def pods_cpu_request(self) -> Optional[float]:
     return self._sum_pod_req_or_lim(lambda p: p.cpu_request())
 
   def pods_mem_limit(self) -> Optional[float]:
-    return self._sum_pod_req_or_lim(lambda p: p.mem_limit_sum_allowed())
+    return self._sum_pod_req_or_lim(lambda p: p.mem_limit())
 
   def pods_mem_request(self) -> Optional[float]:
     return self._sum_pod_req_or_lim(lambda p: p.mem_request())

@@ -58,6 +58,17 @@ class KatQuota(KatRes):
     return result
 
   @classmethod
+  def list_excluding_sys(cls, ns=None, **query):
+    updated_query = dict(
+      **query,
+      not_fields={
+        **(query.get('not_fields', {})),
+        'metadata.name': 'gke-resource-quotas',
+      }
+    )
+    return cls.list(ns, **updated_query)
+
+  @classmethod
   def k8s_verb_methods(cls):
     return dict(
       read=broker.coreV1.read_namespaced_resource_quota,

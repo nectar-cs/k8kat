@@ -17,8 +17,19 @@ class KatServiceAccount(KatRes):
     return self.raw
 
   @classmethod
+  def list_excluding_sys(cls, ns=None, **query):
+    updated_query = dict(
+      **query,
+      not_fields={
+        **(query.get('not_fields', {})),
+        'metadata.name': 'default',
+      }
+    )
+    return cls.list(ns, **updated_query)
+
+  @classmethod
   def k8s_verb_methods(cls):
-    return(
+    return (
       dict(
         read=broker.coreV1.read_namespaced_service_account,
         patch=broker.coreV1.patch_namespaced_service_account,
