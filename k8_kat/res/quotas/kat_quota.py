@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Dict
 
 from kubernetes.client import V1ResourceQuota
 
@@ -16,6 +16,17 @@ class KatQuota(KatRes):
 
   def body(self) -> V1ResourceQuota:
     return self.raw
+
+  def dump(self):
+    output = {}
+    raw_spec_hard = self.extract_values('spec', 'hard')
+    raw_status_used = self.extract_values('status', 'used')
+    for key in raw_spec_hard.keys():
+      output[key] = dict(
+        spec=units.parse_quant_expr(raw_spec_hard[key]),
+        used=units.parse_quant_expr(raw_status_used.get(key))
+      )
+    return output
 
   def mem_request_sum_allowed(self, target_unit='') -> Optional[float]:
     expr = self.extract_value('spec', 'hard', 'memory')
@@ -56,6 +67,10 @@ class KatQuota(KatRes):
     if not result and 'requests.' not in value_key:
       result = (values or {}).get(f"requests.{value_key}", '')
     return result
+
+  def extract_values(self, source_name, source_key) -> Dict[str, str]:
+    source = getattr(self.body(), source_name, None)
+    return getattr(source, source_key, {}) if source else {}
 
   @classmethod
   def list_excluding_sys(cls, ns=None, **query):

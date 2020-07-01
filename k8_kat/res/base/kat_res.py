@@ -2,6 +2,7 @@ import time
 from datetime import datetime
 from typing import Dict, Callable, Optional, Type, TypeVar, List
 
+import inflection
 import kubernetes
 from cachetools.func import lru_cache
 from kubernetes.client.rest import ApiException
@@ -228,7 +229,8 @@ class KatRes:
   @classmethod
   def find_res_class(cls, kind: str) -> Optional[Type[KR]]:
     subclasses = res_utils.kat_classes()
-    predicate = lambda s: s.kind.lower() == kind.lower()
+    fmt = lambda s: inflection.underscore(s)
+    predicate = lambda s: fmt(s.kind) == fmt(kind)
     matches = [subclass for subclass in subclasses if predicate(subclass)]
     return matches[0] if len(matches) == 1 else None
 

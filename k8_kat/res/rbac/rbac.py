@@ -1,6 +1,19 @@
+from typing import List
+
+from kubernetes.client import V1Role, V1PolicyRule
+
 from k8_kat.auth.kube_broker import broker
 from k8_kat.res.base.kat_res import KatRes
 from k8_kat.utils.main.class_property import classproperty
+
+main_verbs = ['list', 'read', 'patch', 'create', 'delete']
+
+
+def verbs_to_bools(rule_verbs: List[str]):
+  if rule_verbs == ['*']:
+    return {verb: True for verb in main_verbs}
+  else:
+    return {verb: (verb in rule_verbs) for verb in main_verbs}
 
 
 class KatRole(KatRes):
@@ -8,6 +21,20 @@ class KatRole(KatRes):
   @classproperty
   def kind(self):
     return "Role"
+
+  def body(self) -> V1Role:
+    return self.raw
+
+  def matrix_form(self):
+    out = []
+    for rule in self.body().rules:
+      for resource_type in rule.resources:
+        out.append(dict(
+          resource=resource_type,
+          apis=rule.api_groups,
+          verbs=verbs_to_bools(rule.verbs)
+        ))
+    return out
 
   @classmethod
   def k8s_verb_methods(cls):
