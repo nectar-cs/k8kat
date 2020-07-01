@@ -270,7 +270,7 @@ class KatRes:
     else:
       return None
 
-  @lru_cache
+  @lru_cache(maxsize=128)
   def pods(self):
     return []
 

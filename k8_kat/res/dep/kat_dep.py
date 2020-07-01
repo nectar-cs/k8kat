@@ -143,7 +143,7 @@ class KatDep(KatRes):
 # --
 # --
 
-  @lru_cache
+  @lru_cache(maxsize=128)
   def pods(self, **query) -> List[KP]:
     """Selects and returns pods associated with the deployment."""
     from k8_kat.res.pod.kat_pod import KatPod
