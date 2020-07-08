@@ -49,6 +49,10 @@ class KatRes:
   def namespace(self) -> str:
     return self.raw.metadata.namespace
 
+  def sig(self, with_ns=False):
+    ns_less = f'{self.kind}:{self.name}'
+    return f'{self.ns}:{ns_less}' if with_ns else ns_less
+
   @property
   def ns(self) -> str:
     return self.namespace

@@ -158,6 +158,10 @@ class KatPod(KatRes):
     except ApiException:
       return None
 
+  def clean_logs(self, seconds=60) -> str:
+    _raw_logs = self.raw_logs(seconds)
+    return (_raw_logs or '').strip()
+
   def log_lines(self, seconds=60) -> List[str]:
     raw_log_str = self.raw_logs(seconds)
     if raw_log_str:
@@ -256,7 +260,6 @@ class KatPod(KatRes):
       stdout=True,
       tty=False
     )
-
     return result.strip() if result else None
 
   def replace_image(self, new_image_name, index=0):
