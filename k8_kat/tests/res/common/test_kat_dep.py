@@ -20,26 +20,25 @@ class TestKatDep(Base.TestKatRes):
 
   def test_image_name(self):
     dep = KatDep(create(ns=self.pns, name=self.res_name, image='busybox'))
-    self.assertEqual(dep.image_name(), "busybox")
+    self.assertEqual("busybox", dep.image_name())
 
   def test_image_pull_policy(self):
     dep = KatDep(create(ns=self.pns, name=self.res_name, ipp='Always'))
-    self.assertEqual(dep.ipp(), "Always")
+    self.assertEqual("Always", dep.ipp())
 
   def test_ternary_state(self):
     pass
 
   def test_ternary_state_positive(self):
     dep = KatDep(create(ns=self.pns, name=self.res_name, replicas=2))
-    self.assertEqual(dep.ternary_status(), 'pending')
+    self.assertEqual('pending', dep.ternary_status())
     dep.wait_until(dep.is_running_normally)
-    self.assertEqual(dep.ternary_status(), 'positive')
+    self.assertEqual('positive', dep.ternary_status())
 
   def test_ternary_state_negative(self):
     dep = KatDep(create(ns=self.pns, name=self.res_name, image='bro-ken'))
-    self.assertEqual(dep.ternary_status(), 'pending')
     dep.wait_until(dep.has_settled)
-    self.assertEqual(dep.ternary_status(), 'negative')
+    self.assertEqual('negative', dep.ternary_status())
 
   def test_pods(self):
     def make():

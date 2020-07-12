@@ -319,7 +319,6 @@ class KatRes:
           raise e
         else:
           failed_attempts += 1
-          print(f"Fail {failed_attempts} for {self.__class__.__name__}")
           time.sleep(1)
           self.reload()
 

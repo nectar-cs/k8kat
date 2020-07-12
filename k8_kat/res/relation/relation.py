@@ -1,16 +1,18 @@
-from typing import Callable, TypeVar, List, Dict, Optional
+from typing import Callable, TypeVar, List, Dict, Optional, Type
 
 from k8_kat.res.base.kat_res import KatRes
 from k8_kat.res.base.label_set_expressions import label_conditions_to_expr
 
 KT = TypeVar('KT', bound=KatRes)
+
+
 class Relation(List[KT]):
 
-  def __init__(self, model_class: KT, ns=None, **query):
+  def __init__(self, model_class: Type[KT], ns=None, **query):
     if not model_class:
       raise RuntimeError("Cannot compute relation without model_class")
 
-    self.model_class: KT = model_class
+    self.model_class: Type[KT] = model_class
     self.ns: str = ns
     self._query: Dict[str, str] = query
 

@@ -64,7 +64,7 @@ class KatDep(KatRes):
   def has_settled(self) -> bool:
     from k8_kat.res.pod.kat_pod import KatPod
     pods: List[KatPod] = self.pods()
-    pod_settle_states = [p.has_settled() for p in pods]
+    pod_settle_states = list(map(KatPod.has_settled, pods))
     return len(pods) == 0 or set(pod_settle_states) == {True}
 
   @lru_cache(maxsize=128)
@@ -143,7 +143,6 @@ class KatDep(KatRes):
 # --
 # --
 
-  @lru_cache(maxsize=128)
   def pods(self, **query) -> List[KP]:
     """Selects and returns pods associated with the deployment."""
     from k8_kat.res.pod.kat_pod import KatPod
