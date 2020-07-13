@@ -15,6 +15,7 @@ coverage = "*"
 codecov = "*"
 typing-extensions = "*"
 inflection = "*"
+importlib-metadata = "*"
 
 [requires]
 python_version = "3.6"
