@@ -23,8 +23,8 @@ class KubeBroker:
     self.client = None
     self.extsV1 = None
 
-  def connect(self):
-    self.connect_config = default_config()
+  def connect(self, passed_config=None):
+    self.connect_config = passed_config if passed_config else default_config()
     connect_in = self.connect_in_cluster
     connect_out = self.connect_out_cluster
     connect_fn = connect_in if self.is_in_cluster_auth() else connect_out
@@ -32,8 +32,8 @@ class KubeBroker:
     self.load_api() if self.is_connected else None
     return self.is_connected
 
-  def connect_or_raise(self):
-    if not self.connect():
+  def connect_or_raise(self, passed_config=None):
+    if not self.connect(passed_config):
       raise Exception("Cluster authentication failed")
 
   def load_api(self):
