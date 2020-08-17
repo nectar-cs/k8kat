@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
   name="k8-kat",
-  version="0.0.155",
+  version="0.0.156",
   author="Nectar Cloud Software",
   author_email="xavier@codenectar.com",
   description="Sugar for Kubernetes",
