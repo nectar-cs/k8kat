@@ -1,5 +1,7 @@
 import argparse
 
+import dotenv
+
 from k8_kat.auth.kube_broker import broker
 from k8_kat.res.dep.kat_dep import KatDep
 from k8_kat.res.ns.kat_ns import KatNs
@@ -9,7 +11,6 @@ from k8_kat.res.rbac.rbac import KatClusterRole, KatClusterRoleBinding, KatRole,
 from k8_kat.res.sa.kat_service_account import KatServiceAccount
 from k8_kat.res.svc.kat_svc import KatSvc
 from k8_kat.utils.main import utils
-from k8_kat.utils.testing import ci_perms
 
 
 parser = argparse.ArgumentParser()
@@ -23,9 +24,9 @@ def coerce_env():
 
 
 def main():
+  dotenv.load_dotenv()
   coerce_env()
   print(f"Running shell in {utils.run_env()}")
-  ci_perms.apply_perms()
   broker.connect()
 
 

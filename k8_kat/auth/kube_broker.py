@@ -2,8 +2,10 @@ import base64
 
 from kubernetes import config, client
 import urllib3
+from kubernetes.client import CoreV1Api, AppsV1Api, CustomObjectsApi, ExtensionsV1beta1Api, BatchV1Api
 
-from k8_kat.auth.broker_configs import default_config
+from k8_kat.auth.broker_configs import default_config, AUTH_TYPE_IN, AUTH_TYPE_OUT, AUTH_TYPE_KUBE_CONF, AUTH_TYPE_SKIP, \
+  BrokerConfig
 from k8_kat.utils.main import utils
 
 
@@ -22,15 +24,34 @@ class KubeBroker:
     self.appsV1 = None
     self.client = None
     self.extsV1 = None
+    self.custom = None
+    self.batchV1 = None
 
-  def connect(self, passed_config=None):
-    self.connect_config = passed_config if passed_config else default_config()
-    connect_in = self.connect_in_cluster
-    connect_out = self.connect_out_cluster
-    connect_fn = connect_in if self.is_in_cluster_auth() else connect_out
-    self.is_connected = connect_fn()
-    self.load_api() if self.is_connected else None
+  def connect(self, passed_config: BrokerConfig = None) -> bool:
+    connect_config = passed_config or default_config()
+    connect_type = connect_config['auth_type']
+
+    if connect_type == AUTH_TYPE_IN:
+      outcome = self.connect_in_cluster()
+    elif connect_type == AUTH_TYPE_OUT:
+      outcome = self.connect_out_cluster()
+    elif connect_type == AUTH_TYPE_KUBE_CONF:
+      outcome = self.connect_kube_config()
+    elif connect_type == AUTH_TYPE_SKIP:
+      outcome = self.test_connected()
+    else:
+      outcome = None
+
+    self.is_connected = outcome
+    self.connect_config = connect_config
+
+    if outcome:
+      self.load_api()
+
     return self.is_connected
+
+  def test_connected(self) -> bool:
+    pass
 
   def connect_or_raise(self, passed_config=None):
     if not self.connect(passed_config):
@@ -39,11 +60,11 @@ class KubeBroker:
   def load_api(self):
     self.client = client
     self.rbacV1 = client.RbacAuthorizationV1Api()
-    self.coreV1 = client.CoreV1Api()
-    self.appsV1 = client.AppsV1Api()
-    self.custom = client.CustomObjectsApi()
-    self.extsV1 = client.ExtensionsV1beta1Api()
-    self.batchV1 = client.BatchV1Api()
+    self.coreV1: CoreV1Api = client.CoreV1Api()
+    self.appsV1: AppsV1Api = client.AppsV1Api()
+    self.custom: CustomObjectsApi = client.CustomObjectsApi()
+    self.extsV1: ExtensionsV1beta1Api = client.ExtensionsV1beta1Api()
+    self.batchV1: BatchV1Api = client.BatchV1Api()
 
   def connect_in_cluster(self):
     try:
@@ -56,7 +77,19 @@ class KubeBroker:
       self.last_error = e
       return False
 
+  def connect_kube_config(self):
+    try:
+      print("[k8kat::kube_broker] Default config auth...")
+      config.load_kube_config()
+      print("[k8kat::kube_broker] Default config auth success")
+    except Exception as e:
+      print(f"[kube_broker] In-cluster connect Failed: {e}")
+      self.last_error = e
+      return False
+
   def connect_out_cluster(self):
+    print("CONT")
+    print(self.connect_config)
     context = self.connect_config['context']
     cluster_name = self.connect_config['cluster_name']
     sa_name = self.connect_config['sa_name']
