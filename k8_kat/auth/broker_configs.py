@@ -7,7 +7,7 @@ from k8_kat.utils.main import utils
 
 AUTH_TYPE_IN = 'in'
 AUTH_TYPE_OUT = 'out'
-AUTH_TYPE_KUBE_CONF = 'default-config'
+AUTH_TYPE_KUBE_CONF = 'kube-config'
 AUTH_TYPE_SKIP = 'already-authed'
 
 
@@ -47,7 +47,7 @@ _test_defaults = BrokerConfig(
 )
 
 
-def _load_config() -> BrokerConfig:
+def env_default_config() -> BrokerConfig:
   if utils.is_prod():
     return _prod_defaults
   elif utils.is_dev():
@@ -60,15 +60,15 @@ def _load_config() -> BrokerConfig:
 
 def _load_value(env_var_key: str, dict_key: str) -> Optional[str]:
   env = os.environ
-  default_value = _load_config().get(dict_key)
+  from_env_default = env_default_config().get(dict_key)
   from_specific_env = env.get(f"{utils.run_env().upper()}_{env_var_key}")
   from_global_env = env.get(env_var_key)
-  return from_specific_env or from_global_env or default_value
+  return from_specific_env or from_global_env or from_env_default
 
 
-def default_config() -> BrokerConfig:
+def read_env_config() -> BrokerConfig:
   return BrokerConfig(
-    auth_type=_load_value('CONNECT_AUTH_TYPE', 'auth_type'),
+    auth_type=_load_value('CONNECT_TYPE', 'auth_type'),
     sa_name=_load_value('CONNECT_SA_NAME', 'sa_name'),
     sa_ns=_load_value('CONNECT_SA_NS', 'sa_ns'),
     crb_name=_load_value('CONNECT_CRB_NAME', 'cbr_name'),

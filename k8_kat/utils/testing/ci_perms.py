@@ -4,7 +4,7 @@ import os
 import dotenv
 import yaml
 
-from k8_kat.auth.broker_configs import default_config
+from k8_kat.auth.broker_configs import read_env_config
 from k8_kat.auth.kube_broker import broker
 from k8_kat.utils.main import utils
 
@@ -58,8 +58,8 @@ def apply_perms(sa_file=None, crb_file=None, passed_config=None):
     sa_ns = parsed_sa_file['metadata']['namespace']
     sa = parsed_sa_file
   else:
-    sa_name = passed_config.get('sa_name', None) or default_config()['sa_name'] or 'nectar-ci'
-    sa_ns = passed_config.get('sa_ns', None) or default_config()['sa_ns'] or 'default'
+    sa_name = passed_config.get('sa_name', None) or read_env_config()['sa_name'] or 'nectar-ci'
+    sa_ns = passed_config.get('sa_ns', None) or read_env_config()['sa_ns'] or 'default'
     sa = sa_dict(name=sa_name, ns=sa_ns)
 
   if crb_file:
@@ -67,15 +67,15 @@ def apply_perms(sa_file=None, crb_file=None, passed_config=None):
     crb_name = parsed_crb_file['metadata']['name']
     crb = parsed_crb_file
   else:
-    crb_name = passed_config.get('crb_name', None) or default_config()['crb_name'] or 'nectar-ci'
+    crb_name = passed_config.get('crb_name', None) or read_env_config()['crb_name'] or 'nectar-ci'
     subject = f"system:serviceaccount:{sa_ns}:{sa_name}"
     crb = crb_dict(name=crb_name, subject=subject)
 
-  context = passed_config.get('context', None) or default_config()['context']
-  kubectl = passed_config.get('kubectl', None) or default_config()['kubectl']
+  context = passed_config.get('context', None) or read_env_config()['context']
+  kubectl = passed_config.get('kubectl', None) or read_env_config()['kubectl']
 
   message = dict(sa_name=sa_name, sa_ns=sa_ns, crb_name=crb_name)
-  print(f"Perms for context {default_config()['context']}: {message}...")
+  print(f"Perms for context {read_env_config()['context']}: {message}...")
 
   with open(out_file, 'w') as f: f.write(yaml.dump_all([sa, crb]))
 

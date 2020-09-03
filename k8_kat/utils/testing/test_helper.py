@@ -1,7 +1,7 @@
 import os
 from typing import List, Tuple
 
-from k8_kat.auth.broker_configs import default_config
+from k8_kat.auth.broker_configs import read_env_config
 from k8_kat.auth.kube_broker import broker
 from k8_kat.res.pod.kat_pod import KatPod
 from k8_kat.utils.main import utils
@@ -26,7 +26,7 @@ def nk_label_dep(ns: str, name: str, labels: List[Tuple[str, str]]):
 
 
 def k_apply(filename, **kwargs):
-  config = default_config()
+  config = read_env_config()
   root = utils.root_path()
   filename = os.path.join(root, f"utils/testing/fixtures/{filename}.yaml")
   kubectl, context = config['kubectl'], config['context']

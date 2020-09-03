@@ -13,19 +13,8 @@ from k8_kat.res.svc.kat_svc import KatSvc
 from k8_kat.utils.main import utils
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--env', '-e', help=f"Set the env: {utils.legal_envs}")
-args = parser.parse_args()
-
-
-def coerce_env():
-  if args.env:
-    utils.set_run_env(args.env)
-
-
 def main():
   dotenv.load_dotenv()
-  coerce_env()
   print(f"Running shell in {utils.run_env()}")
   broker.connect()
 
