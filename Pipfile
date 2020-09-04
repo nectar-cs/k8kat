@@ -6,16 +6,7 @@ verify_ssl = true
 [dev-packages]
 
 [packages]
-python-dotenv = "*"
-kubernetes = "*"
-keyring = "*"
-twine = "*"
-keyrings-alt = "*"
-coverage = "*"
-codecov = "*"
-typing-extensions = "*"
-inflection = "*"
-importlib-metadata = "*"
+k8kat = {editable = true,path = "."}
 
 [requires]
 python_version = "3.6"

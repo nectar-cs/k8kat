@@ -1,4 +1,3 @@
-import argparse
 import os
 
 import dotenv
@@ -50,7 +49,7 @@ def apply_perms(sa_file=None, crb_file=None, passed_config=None):
 
   if utils.run_env() == 'production':
     raise Exception('Cannot terraform in production!')
-  out_file = '/tmp/k8-kat-testing-manifest.yaml'
+  out_file = '/tmp/k8kat-testing-manifest.yaml'
 
   if sa_file:
     parsed_sa_file = parse_yaml_config_file(sa_file)

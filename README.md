@@ -1,8 +1,8 @@
 
-[![PyPI pyversions](https://img.shields.io/pypi/pyversions/k8-kat.svg)](https://pypi.python.org/pypi/k8-kat/)
-[![PyPI version fury.io](https://badge.fury.io/py/k8-kat.svg)](https://pypi.org/project/k8-kat/)
+[![PyPI pyversions](https://img.shields.io/pypi/pyversions/k8kat.svg)](https://pypi.python.org/pypi/k8kat/)
+[![PyPI version fury.io](https://badge.fury.io/py/k8kat.svg)](https://pypi.org/project/k8kat/)
 [![Client Support Level](https://img.shields.io/badge/kubernetes%20client-alpha-green.svg?style=plastic&colorA=306CE8)](/contributors/design-proposals/api-machinery/csi-new-client-library-procedure.md#client-support-level)
-[![codecov](https://codecov.io/gh/nectar-cs/k8-kat/branch/master/graph/badge.svg)](https://codecov.io/gh/nectar-cs/k8-kat)
+[![codecov](https://codecov.io/gh/nectar-cs/k8kat/branch/master/graph/badge.svg)](https://codecov.io/gh/nectar-cs/k8kat)
 
 ## Development
 

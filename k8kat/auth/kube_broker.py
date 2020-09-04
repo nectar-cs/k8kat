@@ -52,7 +52,7 @@ class KubeBroker:
     return outcome
 
   def test_connected(self) -> bool:
-    pass
+    return self.coreV1.read_namespaced_pod()
 
   def connect_or_raise(self, passed_config=None):
     if not self.connect(passed_config):
@@ -118,10 +118,10 @@ broker = KubeBroker()
 
 
 def _out_conn_debug_strs(_config: BrokerConfig) -> str:
-  context = _config['context']
-  cluster_name = _config['cluster_name']
-  sa_name = _config['sa_name']
-  sa_ns = _config['sa_ns']
+  context = _config.get('context')
+  cluster_name = _config.get('cluster_name')
+  sa_name = _config.get('sa_name')
+  sa_ns = _config.get('sa_ns')
   return f"cluster={cluster_name}/{context}, perms={sa_ns}/{sa_name}"
 
 

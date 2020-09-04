@@ -1,5 +1,5 @@
 images:
-  - "gcr.io/nectar-bazaar/k8-kat:latest"
+  - "gcr.io/nectar-bazaar/k8kat:latest"
 
 timeout: 1200s
 
@@ -11,7 +11,7 @@ steps:
     waitFor: []
     args:
       - '-c'
-      - 'gcloud secrets versions access latest --secret=k8-kat-codecov-token > covp.txt;
+      - 'gcloud secrets versions access latest --secret=k8kat-codecov-token > covp.txt;
          gcloud secrets versions access latest --secret=pypi-password > pypip.txt;
        '
 
@@ -27,7 +27,7 @@ steps:
     waitFor: []
     args:
       - "pull"
-      - "gcr.io/nectar-bazaar/k8-kat:latest"
+      - "gcr.io/nectar-bazaar/k8kat:latest"
 
   - id: "Build Main Image"
     name: 'gcr.io/cloud-builders/docker'
@@ -38,9 +38,9 @@ steps:
     args:
       -  '-c'
       - 'docker build .
-         --cache-from gcr.io/nectar-bazaar/k8-kat:latest
+         --cache-from gcr.io/nectar-bazaar/k8kat:latest
          --build-arg CODECOV_TOKEN=$(cat covp.txt)
-         -t gcr.io/nectar-bazaar/k8-kat:latest
+         -t gcr.io/nectar-bazaar/k8kat:latest
          -t test-image:latest
       '
 
@@ -63,6 +63,6 @@ steps:
     args:
       - '-c'
       - 'docker run --env PYPI_PASSWORD="$(cat pypip.txt)"
-         gcr.io/nectar-bazaar/k8-kat:latest
+         gcr.io/nectar-bazaar/k8kat:latest
          publish
         '
