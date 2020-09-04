@@ -1,6 +1,6 @@
 from k8kat.res.svc.kat_svc import KatSvc
 from k8kat.tests.res.base.test_kat_res import Base
-from k8kat.utils.testing import test_helper, ns_factory
+from k8kat.utils.testing import test_helper
 
 
 class TestKatSvc(Base.TestKatRes):

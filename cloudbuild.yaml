@@ -1,5 +1,5 @@
 images:
-  - "gcr.io/nectar-bazaar/k8kat:latest"
+  - "gcr.io/nectar-bazaar/k8kat-ci:latest"
 
 timeout: 1200s
 
@@ -27,22 +27,22 @@ steps:
     waitFor: []
     args:
       - "pull"
-      - "gcr.io/nectar-bazaar/k8kat:latest"
+      - "gcr.io/nectar-bazaar/k8kat-ci:latest"
 
   - id: "Build Main Image"
     name: 'gcr.io/cloud-builders/docker'
-    entrypoint: 'bash'
     waitFor:
       - "Pull Cached Main Image"
       - "Fetch Secrets"
     args:
-      -  '-c'
-      - 'docker build .
-         --cache-from gcr.io/nectar-bazaar/k8kat:latest
-         --build-arg CODECOV_TOKEN=$(cat covp.txt)
-         -t gcr.io/nectar-bazaar/k8kat:latest
-         -t test-image:latest
-      '
+      - 'build'
+      - "."
+      - "-t"
+      - "gcr.io/nectar-bazaar/k8kat-ci:latest"
+      - "-t"
+      - "test-image:latest"
+      - "--cache-from"
+      - "gcr.io/nectar-bazaar/k8kat-ci:latest"
 
   - id: "Run Tests in Virtual Cluster"
     name: 'gcr.io/cloud-builders/docker'
@@ -58,11 +58,12 @@ steps:
 
   - id: "Publish"
     name: 'gcr.io/cloud-builders/docker'
-    waitFor: ["Run Tests in Virtual Cluster"]
+    waitFor:
+      - "Run Tests in Virtual Cluster"
     entrypoint: 'bash'
     args:
       - '-c'
       - 'docker run --env PYPI_PASSWORD="$(cat pypip.txt)"
-         gcr.io/nectar-bazaar/k8kat:latest
+         test-image:latest
          publish
         '

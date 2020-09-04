@@ -43,10 +43,10 @@ class TestKatPod(Base.TestKatRes):
     self.pre_crash_assertions(pod)
     self.pending_morbidly_assertions(pod)
 
-  def test_init_crasher(self):
-    pod = create_init_crasher(ns=self.pns, name=self.res_name)
-    self.pre_crash_assertions(pod)
-    self.pending_morbidly_assertions(pod)
+  # def test_init_crasher(self):
+  #   pod = create_init_crasher(ns=self.pns, name=self.res_name)
+  #   self.pre_crash_assertions(pod)
+  #   self.pending_morbidly_assertions(pod)
 
   def test_config_map_wisher(self):
     pod = create_config_map_wisher(ns=self.pns, name=self.res_name)

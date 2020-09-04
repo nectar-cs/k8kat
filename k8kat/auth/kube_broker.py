@@ -38,7 +38,7 @@ class KubeBroker:
     elif connect_type == AUTH_TYPE_OUT:
       outcome = self.connect_out_cluster(connect_config)
     elif connect_type == AUTH_TYPE_KUBE_CONF:
-      outcome = self.connect_kube_config()
+      outcome = self.connect_kube_config(connect_config)
     elif connect_type == AUTH_TYPE_SKIP:
       outcome = self.test_connected()
     else:
@@ -78,10 +78,10 @@ class KubeBroker:
       self.last_error = e
       return False
 
-  def connect_kube_config(self):
+  def connect_kube_config(self, _config: BrokerConfig):
     try:
       print("[k8kat::kube_broker] Default config auth...")
-      config.load_kube_config()
+      config.load_kube_config(context=_config.get('context'))
       print("[k8kat::kube_broker] Default config auth success")
       return True
     except Exception as e:

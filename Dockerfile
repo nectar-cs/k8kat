@@ -1,14 +1,6 @@
 FROM gcr.io/nectar-bazaar/py-ci:latest
-
 WORKDIR /app
-
-ADD Pipfile Pipfile.lock ./
-RUN pip3 install pipenv
-RUN pipenv install
-
 ADD . /app
-
-ARG CODECOV_TOKEN
-ENV CODECOV_TOKEN=$CODECOV_TOKEN
-
+RUN pipenv lock -r > requirements.txt
+RUN pip3 install -r requirements.txt
 ENTRYPOINT ["/py-ci/start.sh"]

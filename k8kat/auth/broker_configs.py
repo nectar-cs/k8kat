@@ -37,13 +37,7 @@ _dev_defaults = BrokerConfig(
 
 
 _test_defaults = BrokerConfig(
-  auth_type=AUTH_TYPE_OUT,
-  sa_name='nectar-ci',
-  sa_ns='default',
-  kubectl="microk8s.kubectl",
-  crb_name='nectar-ci',
-  cluster_name='microk8s-cluster',
-  context='microk8s'
+  auth_type=AUTH_TYPE_KUBE_CONF,
 )
 
 
