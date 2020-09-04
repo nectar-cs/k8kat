@@ -4,8 +4,8 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-  name="k8-kat",
-  version="0.0.156",
+  name="k8kat",
+  version="0.0.2",
   author="Nectar Cloud Software",
   author_email="xavier@codenectar.com",
   description="Sugar for Kubernetes",
