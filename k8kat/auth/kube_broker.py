@@ -1,4 +1,5 @@
 import base64
+import traceback
 
 from kubernetes import config, client
 import urllib3
@@ -30,6 +31,7 @@ class KubeBroker:
     self.batchV1 = None
 
   def connect(self, _config: BrokerConfig = None) -> bool:
+    traceback.print_stack()
     connect_config = _config or read_env_config()
     connect_type = connect_config['auth_type']
 
