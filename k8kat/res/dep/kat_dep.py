@@ -17,6 +17,14 @@ class KatDep(KatRes):
   def kind(self):
     return "Deployment"
 
+  @classproperty
+  def kind_aliases(self) -> List[str]:
+    return [
+      *super().kind_aliases,
+      'deployment.apps',
+      'deploy'
+    ]
+
   @property
   def pod_spec(self) -> V1PodSpec:
     return self.raw.spec.template.spec

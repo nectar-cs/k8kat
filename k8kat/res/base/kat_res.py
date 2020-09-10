@@ -14,7 +14,7 @@ from k8kat.utils.main.class_property import classproperty
 from k8kat.utils.main.types import PodMetricsDict
 
 MetricsDict = TypeVar('MetricsDict')
-KR = TypeVar('KR')
+KR = TypeVar('KR', bound='KatRes')
 
 
 class KatRes:
@@ -38,8 +38,16 @@ class KatRes:
     return self.raw.metadata.uid
 
   @classproperty
-  def kind(self):
+  def kind(self) -> str:
     raise NotImplementedError
+
+  @classproperty
+  def kind_aliases(self) -> List[str]:
+    return [
+      self.kind,
+      inflection.underscore(self.kind),
+      f"{inflection.underscore(self.kind)}s"
+    ]
 
   @property
   def name(self) -> str:
@@ -230,13 +238,11 @@ class KatRes:
     host = cls.find_res_class(raw.kind)
     return host(raw) if host else None
 
-  @classmethod
-  def find_res_class(cls, kind: str) -> Optional[Type[KR]]:
+  @staticmethod
+  def find_res_class(kind: str) -> Optional[Type[KR]]:
     subclasses = res_utils.kat_classes()
-    fmt = lambda s: inflection.underscore(s)
-    predicate = lambda s: fmt(s.kind) == fmt(kind)
-    matches = [subclass for subclass in subclasses if predicate(subclass)]
-    return matches[0] if len(matches) == 1 else None
+    predicate = lambda s: kind in s.kind_aliases
+    return next(filter(predicate, subclasses), None)
 
 # --
 # --
