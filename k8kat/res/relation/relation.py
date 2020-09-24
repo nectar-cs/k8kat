@@ -17,20 +17,20 @@ class Relation(List[KT]):
     self._query: Dict[str, str] = query
 
     raw_k8s_res_list = self.perform_in_ns()
-    kat_res_list = [model_class(kr) for kr in raw_k8s_res_list]
+    kat_res_list = list(map(model_class, raw_k8s_res_list))
     super().__init__(kat_res_list)
 
   def perform_in_ns(self):
     impl = self.namespaced_query_impl()
     if self.model_class.is_namespaced():
-      return impl(
+      return normalize_response(impl(
         namespace=self.ns,
         **self.logical_to_k8s_query()
-      ).items
+      ))
     else:
-      return impl(
+      return normalize_response(impl(
         **self.logical_to_k8s_query()
-      ).items
+      ))
 
   def logical_to_k8s_query(self) -> Dict[str, Optional[str]]:
     k8s_query = dict()
@@ -64,3 +64,10 @@ def process_fields(query) -> Optional[str]:
     return label_conditions_to_expr(with_l.items(), without_l.items())
   else:
     return ''
+
+
+def normalize_response(result):
+  if type(result) == dict:
+    return result['items']
+  else:
+    return result.items

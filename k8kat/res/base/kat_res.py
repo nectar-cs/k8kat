@@ -5,9 +5,11 @@ from typing import Dict, Callable, Optional, Type, TypeVar, List
 import inflection
 import kubernetes
 from cachetools.func import lru_cache
+from kubernetes.client import ApiClient
 from kubernetes.client.rest import ApiException
 
 from k8kat.auth.kube_broker import broker
+from k8kat.res.base import rest_backend
 from k8kat.res.events.kat_event import KatEvent
 from k8kat.utils.main import utils, res_utils, units
 from k8kat.utils.main.class_property import classproperty
@@ -244,6 +246,11 @@ class KatRes:
     predicate = lambda s: kind in s.kind_aliases
     return next(filter(predicate, subclasses), None)
 
+  @classmethod
+  def class_for(cls, kind: str, api_name) -> Optional[Type[KR]]:
+    expl_class = cls.find_res_class(kind)
+    return expl_class or auto_namespaced_kat_cls(kind, api_name)
+
 # --
 # --
 # --
@@ -342,8 +349,31 @@ class KatRes:
     return serializer(self)
 
 
+def auto_namespaced_kat_cls(kind, api_version) -> Type[KatRes]:
+  class NsdKatShell(KatRes):
+    def kind(self) -> str:
+      return kind
+
+    @classmethod
+    def is_namespaced(cls) -> bool:
+      return True
+
+    @classmethod
+    def k8s_verb_methods(cls) -> Dict[str, Callable]:
+      def _list(namespace, **kwargs):
+        return rest_backend.list_namespaced(
+          kind,
+          api_version,
+          namespace,
+          **kwargs
+        )
+      return dict(list=_list)
+
+  return NsdKatShell
+
+
 def from_dict(dict_repr: Dict):
-  api = broker.client.api_client
+  api = ApiClient()
   mocked_kube_http_resp = FakeKubeResponse(dict_repr)
   kind = dict_repr['kind']
   return api.deserialize(mocked_kube_http_resp, f"V1{kind}")
