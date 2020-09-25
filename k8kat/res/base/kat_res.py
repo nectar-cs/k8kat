@@ -249,6 +249,7 @@ class KatRes:
   @classmethod
   def class_for(cls, kind: str, api_name) -> Optional[Type[KR]]:
     expl_class = cls.find_res_class(kind)
+    kind = f'{kind}s' if not kind.endswith('s') else kind
     return expl_class or auto_namespaced_kat_cls(kind, api_name)
 
 # --

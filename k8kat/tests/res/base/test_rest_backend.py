@@ -13,6 +13,12 @@ class TestRestBackend(ClusterTest):
       'apps/v1',
       'default'
     )
+
+    result = rest_backend.list_namespaced(
+      'persistentvolumeclaims',
+      '',
+      'default'
+    )
     print(result)
 
   def test_auto_namespaced_kat_cls(self):
