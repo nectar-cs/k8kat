@@ -19,7 +19,6 @@ class TestRestBackend(ClusterTest):
       '',
       'default'
     )
-    print(result)
 
   def test_auto_namespaced_kat_cls(self):
     auto_cls = auto_namespaced_kat_cls(
@@ -27,3 +26,10 @@ class TestRestBackend(ClusterTest):
       'apps/v1',
     )
     auto_cls.list('default')
+
+  def test_request_sig(self):
+    self.assertEqual('/api/v1', rest_backend.request_sig(''))
+    self.assertEqual('/api/v1', rest_backend.request_sig('v1'))
+    self.assertEqual('/apis/foo/v1', rest_backend.request_sig('foo'))
+    self.assertEqual('/apis/foo/v2', rest_backend.request_sig('foo/v2'))
+    self.assertEqual('/apis/foo.bar/v1', rest_backend.request_sig('foo.bar'))

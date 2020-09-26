@@ -4,7 +4,7 @@ import six
 from kubernetes.client import ApiClient
 
 
-def list_namespaced(kind, api_ver, namespace, **kwargs):
+def list_namespaced(kind, api_group, namespace, **kwargs):
   local_var_params = locals()
 
   all_params = [
@@ -47,11 +47,12 @@ def list_namespaced(kind, api_ver, namespace, **kwargs):
 
   auth_settings = ['BearerToken']  # noqa: E501
 
-  b0 = f"/api/v1" if api_ver in ['v1', ''] else f'/apis/{api_ver}'
-  base = f"{b0}/namespaces/{{namespace}}/{kind}"
+  # api_ver = 'v1' if api_ver == '' else api_ver
+  # api_ver = ''
 
   response = api_client.call_api(
-    base, 'GET',
+    f"{request_sig(api_group)}/namespaces/{{namespace}}/{kind}",
+    'GET',
     path_params,
     query_params,
     header_params,
@@ -71,3 +72,12 @@ def list_namespaced(kind, api_ver, namespace, **kwargs):
   for item in reg['items']:
     item['kind'] = inferred_kind
   return reg
+
+
+def request_sig(api_group: str):
+  api_group = '' if api_group == 'v1' else api_group
+  prefix = 'api' if api_group == '' else 'apis'
+  version = api_group.split('/')[1] if '/' in api_group else 'v1'
+  api_group = api_group.split('/')[0] if '/' in api_group else api_group
+  parts = [s for s in [prefix, api_group, version] if s]
+  return f"/{'/'.join(parts)}"

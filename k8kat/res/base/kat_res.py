@@ -12,6 +12,7 @@ from k8kat.auth.kube_broker import broker
 from k8kat.res.base import rest_backend
 from k8kat.res.events.kat_event import KatEvent
 from k8kat.utils.main import utils, res_utils, units
+from k8kat.utils.main.api_defs_man import api_defs_man
 from k8kat.utils.main.class_property import classproperty
 from k8kat.utils.main.types import PodMetricsDict
 
@@ -247,10 +248,16 @@ class KatRes:
     return next(filter(predicate, subclasses), None)
 
   @classmethod
-  def class_for(cls, kind: str, api_name) -> Optional[Type[KR]]:
+  def class_for(cls, kind: str) -> Optional[Type[KR]]:
     expl_class = cls.find_res_class(kind)
-    kind = f'{kind}s' if not kind.endswith('s') else kind
-    return expl_class or auto_namespaced_kat_cls(kind, api_name)
+    if expl_class:
+      return expl_class
+    else:
+      definition = api_defs_man.find_def(kind)
+      return auto_namespaced_kat_cls(
+        definition['name'],
+        definition['apigroup']
+      )
 
 # --
 # --
