@@ -25,7 +25,7 @@ class ApiDefsMan:
 
   def find_def(self, kind: str) -> Optional[ResDefDict]:
     predicate = lambda e: res_matches_entry(kind, e)
-    return next(filter(predicate, self.defs_list()))
+    return next(filter(predicate, self.defs_list()), None)
 
   def find_api_group(self, kind: str) -> Optional[str]:
     entry = self.find_def(kind)

@@ -46,12 +46,10 @@ def list_namespaced(kind, api_group, namespace, **kwargs):
   ])
 
   auth_settings = ['BearerToken']  # noqa: E501
-
-  # api_ver = 'v1' if api_ver == '' else api_ver
-  # api_ver = ''
+  url = f"{request_sig(api_group)}/namespaces/{{namespace}}/{kind}"
 
   response = api_client.call_api(
-    f"{request_sig(api_group)}/namespaces/{{namespace}}/{kind}",
+    url,
     'GET',
     path_params,
     query_params,

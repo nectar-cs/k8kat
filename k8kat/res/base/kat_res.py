@@ -250,14 +250,7 @@ class KatRes:
   @classmethod
   def class_for(cls, kind: str) -> Optional[Type[KR]]:
     expl_class = cls.find_res_class(kind)
-    if expl_class:
-      return expl_class
-    else:
-      definition = api_defs_man.find_def(kind)
-      return auto_namespaced_kat_cls(
-        definition['name'],
-        definition['apigroup']
-      )
+    return expl_class or auto_namespaced_kat_cls(kind)
 
 # --
 # --
@@ -357,27 +350,30 @@ class KatRes:
     return serializer(self)
 
 
-def auto_namespaced_kat_cls(kind, api_version) -> Type[KatRes]:
-  class NsdKatShell(KatRes):
-    def kind(self) -> str:
-      return kind
+def auto_namespaced_kat_cls(kind: str) -> Optional[Type[KatRes]]:
+  definition = api_defs_man.find_def(kind)
+  if definition:
+    class NsdKatShell(KatRes):
+      def kind(self) -> str:
+        return kind
 
-    @classmethod
-    def is_namespaced(cls) -> bool:
-      return True
+      @classmethod
+      def is_namespaced(cls) -> bool:
+        return True
 
-    @classmethod
-    def k8s_verb_methods(cls) -> Dict[str, Callable]:
-      def _list(namespace, **kwargs):
-        return rest_backend.list_namespaced(
-          kind,
-          api_version,
-          namespace,
-          **kwargs
-        )
-      return dict(list=_list)
-
-  return NsdKatShell
+      @classmethod
+      def k8s_verb_methods(cls) -> Dict[str, Callable]:
+        def _list(namespace, **kwargs):
+          return rest_backend.list_namespaced(
+            definition['name'],
+            definition['apigroup'],
+            namespace,
+            **kwargs
+          )
+        return dict(list=_list)
+    return NsdKatShell
+  else:
+    return None
 
 
 def from_dict(dict_repr: Dict):
