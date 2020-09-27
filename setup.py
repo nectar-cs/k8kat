@@ -5,14 +5,14 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
   name="k8kat",
-  version="0.0.208",
+  version="0.0.209",
   author="Nectar Cloud Software",
   author_email="xavier@codenectar.com",
   description="Sugar for Kubernetes",
   long_description=long_description,
   long_description_content_type="text/markdown",
   url="https://github.com/nectar-cs/k8kat",
-  packages = setuptools.find_packages(exclude=[
+  packages=setuptools.find_packages(exclude=[
     "k8kat.tests.*", "k8kat.tests"
   ]),
   install_requires=[

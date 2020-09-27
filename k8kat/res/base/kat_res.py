@@ -45,11 +45,14 @@ class KatRes:
     raise NotImplementedError
 
   @classproperty
+  def res_name_plural(self):
+    return f"{self.kind.lower()}s"
+
+  @classproperty
   def kind_aliases(self) -> List[str]:
     return [
       self.kind,
-      inflection.underscore(self.kind),
-      f"{inflection.underscore(self.kind)}s"
+      self.res_name_plural
     ]
 
   @property
@@ -350,12 +353,17 @@ class KatRes:
     return serializer(self)
 
 
-def auto_namespaced_kat_cls(kind: str) -> Optional[Type[KatRes]]:
-  definition = api_defs_man.find_def(kind)
+def auto_namespaced_kat_cls(res_name_or_kind: str) -> Optional[Type[KatRes]]:
+  definition = api_defs_man.find_def(res_name_or_kind)
   if definition:
     class NsdKatShell(KatRes):
+      @classproperty
       def kind(self) -> str:
-        return kind
+        return definition['kind']
+
+      @classproperty
+      def res_name_plural(self) -> str:
+        return definition['name']
 
       @classmethod
       def is_namespaced(cls) -> bool:

@@ -35,9 +35,16 @@ class TestRestBackend(ClusterTest):
     auto_cls.list('default')
     self.assertIsNone(auto_namespaced_kat_cls('not-real'))
 
+  def test_auto_namespaced_kat_cls2(self):
+    auto_cls = auto_namespaced_kat_cls('replicasets')
+    self.assertEqual('ReplicaSet', auto_cls.kind)
+    self.assertEqual('replicasets', auto_cls.res_name_plural)
 
+    auto_cls = auto_namespaced_kat_cls('rolebinding')
+    self.assertEqual('RoleBinding', auto_cls.kind)
+    self.assertEqual('rolebindings', auto_cls.res_name_plural)
 
-def test_request_sig(self):
+  def test_request_sig(self):
     self.assertEqual('/api/v1', rest_backend.request_sig(''))
     self.assertEqual('/api/v1', rest_backend.request_sig('v1'))
     self.assertEqual('/apis/foo/v1', rest_backend.request_sig('foo'))
