@@ -372,13 +372,26 @@ def auto_namespaced_kat_cls(res_name_or_kind: str) -> Optional[Type[KatRes]]:
       @classmethod
       def k8s_verb_methods(cls) -> Dict[str, Callable]:
         def _list(namespace, **kwargs):
-          return rest_backend.list_namespaced(
+          return rest_backend.list_namespaced_resources(
             definition['name'],
             definition['apigroup'],
             namespace,
             **kwargs
           )
-        return dict(list=_list)
+
+        def _delete(name, namespace, **kwargs):
+          return rest_backend.delete_namespaced_resource(
+            definition['name'],
+            definition['apigroup'],
+            namespace,
+            name,
+            **kwargs
+          )
+
+        return dict(
+          list=_list,
+          delete=_delete
+        )
     return NsdKatShell
   else:
     return None

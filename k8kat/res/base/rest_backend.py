@@ -4,7 +4,7 @@ import six
 from kubernetes.client import ApiClient
 
 
-def list_namespaced(kind, api_group, namespace, **kwargs):
+def list_namespaced_resources(kind, api_group, namespace, **kwargs):
   local_var_params = locals()
 
   all_params = [
@@ -70,6 +70,63 @@ def list_namespaced(kind, api_group, namespace, **kwargs):
   for item in reg['items']:
     item['kind'] = inferred_kind
   return reg
+
+
+def delete_namespaced_resource(kind, api_group, namespace, name, **kwargs):
+  local_var_params = locals()
+
+  all_params = [
+    'namespace',
+    'resource_version'
+  ]
+
+  for key, val in six.iteritems(local_var_params['kwargs']):
+    local_var_params[key] = val
+
+  path_params = {
+    'name': local_var_params['name'],
+    'namespace': local_var_params['namespace']
+  }
+
+  del local_var_params['kwargs']
+
+  query_params = []
+  if 'resource_version' in local_var_params:
+    query_params.append(('resourceVersion', local_var_params['resource_version']))
+
+  header_params = {}
+
+  api_client = ApiClient()
+
+  body_params = None
+  header_params['Accept'] = api_client.select_header_accept([
+    'application/json',
+    'application/yaml',
+    'application/vnd.kubernetes.protobuf',
+    'application/json;stream=watch',
+    'application/vnd.kubernetes.protobuf;stream=watch'
+  ])
+
+  url = f"{request_sig(api_group)}/namespaces/{{namespace}}/{kind}/{{name}}"
+
+  response = api_client.call_api(
+    url,
+    'DELETE',
+    path_params,
+    query_params,
+    {},
+    body=body_params,
+    post_params=[],
+    files={},
+    auth_settings=['BearerToken'],
+    async_req=local_var_params.get('async_req'),
+    _return_http_data_only=True,
+    _preload_content=False,
+    _request_timeout=local_var_params.get('_request_timeout'),
+    collection_formats={}
+  )
+
+  return response.status == 200
 
 
 def request_sig(api_group: str):
