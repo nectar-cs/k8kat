@@ -24,6 +24,12 @@ class TestApisDefsMan(ClusterTest):
     if broker.is_in_cluster_auth():
       read_defs_list()
 
+  def test_kind2plurname(self):
+    self.assertEqual('pods', api_defs_man.kind2plurname('Pod'))
+    self.assertEqual('pods', api_defs_man.kind2plurname('pod'))
+    self.assertEqual('pods', api_defs_man.kind2plurname('pods'))
+    self.assertEqual('pods', api_defs_man.kind2plurname('Pods'))
+
   def test_find_api_group(self):
     api_defs_man._defs_list = [
       {'name': 'foos', 'apigroup': 'g1', 'kind': 'NotFoo'},

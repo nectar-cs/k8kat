@@ -31,6 +31,11 @@ class ApiDefsMan:
     entry = self.find_def(kind)
     return entry and entry['apigroup']
 
+  def kind2plurname(self, kind):
+    entry = self.find_def(kind)
+    if entry:
+      return entry['name']
+
 
 def read_defs_list() -> List[ResDefDict]:
   kontext = broker.connect_config.get('context')
