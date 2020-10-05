@@ -21,7 +21,7 @@ class KatDep(KatRes):
   def kind_aliases(self) -> List[str]:
     return [
       *super().kind_aliases,
-      'deployment.apps',
+      'deployment.apps',  # why? seems terrible
       'deploy'
     ]
 
@@ -45,13 +45,13 @@ class KatDep(KatRes):
   def ready_replicas(self):
     return self.raw.status.ready_replicas
 
-# --
-# --
-# --
-# -------------------------------INTEL-------------------------------
-# --
-# --
-# --
+  # --
+  # --
+  # --
+  # -------------------------------INTEL-------------------------------
+  # --
+  # --
+  # --
 
   def ternary_status(self):
     if self.is_running_normally():
@@ -87,13 +87,13 @@ class KatDep(KatRes):
       plural='pods'
     )['items']
 
-# --
-# --
-# --
-# -------------------------------ACTION-------------------------------
-# --
-# --
-# --
+  # --
+  # --
+  # --
+  # -------------------------------ACTION-------------------------------
+  # --
+  # --
+  # --
 
   def body(self) -> V1Deployment:
     return self.raw
@@ -143,13 +143,13 @@ class KatDep(KatRes):
       list=broker.appsV1.list_namespaced_deployment
     )
 
-# --
-# --
-# --
-# -------------------------------RELATIONS-------------------------------
-# --
-# --
-# --
+  # --
+  # --
+  # --
+  # -------------------------------RELATIONS-------------------------------
+  # --
+  # --
+  # --
 
   def pods(self, **query) -> List[KP]:
     """Selects and returns pods associated with the deployment."""

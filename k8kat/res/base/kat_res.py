@@ -2,7 +2,6 @@ import time
 from datetime import datetime
 from typing import Dict, Callable, Optional, Type, TypeVar, List
 
-import inflection
 import kubernetes
 from cachetools.func import lru_cache
 from kubernetes.client import ApiClient
@@ -52,6 +51,7 @@ class KatRes:
   def kind_aliases(self) -> List[str]:
     return [
       self.kind,
+      self.kind.lower(),
       self.res_name_plural
     ]
 

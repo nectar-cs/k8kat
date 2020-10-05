@@ -54,8 +54,8 @@ def list_namespaced_resources(kind, api_group, namespace, **kwargs):
     path_params,
     query_params,
     header_params,
-    body=body_params,
-    post_params=form_params,
+    body=None,
+    post_params=[],
     files=local_var_files,
     auth_settings=auth_settings,
     async_req=local_var_params.get('async_req'),
@@ -136,3 +136,44 @@ def request_sig(api_group: str):
   api_group = api_group.split('/')[0] if '/' in api_group else api_group
   parts = [s for s in [prefix, api_group, version] if s]
   return f"/{'/'.join(parts)}"
+
+#
+# def http_via_proxy(kind, api_group, namespace, name, path, **kwargs):
+#   local_var_params = locals()
+#
+#   all_params = [
+#     'namespace',
+#     'resource_version'
+#   ]
+#
+#   for key, val in six.iteritems(local_var_params['kwargs']):
+#     local_var_params[key] = val
+#
+#   path_params = {
+#     'name': local_var_params['name'],
+#     'namespace': local_var_params['namespace']
+#   }
+#
+#   del local_var_params['kwargs']
+#
+#   auth_settings = ['BearerToken']  # noqa: E501
+#   url = f"{request_sig(api_group)}/namespaces/{{namespace}}/{kind}"
+#
+#   response = api_client.call_api(
+#     url,
+#     'GET',
+#     path_params,
+#     query_params,
+#     header_params,
+#     body=body_params,
+#     post_params=form_params,
+#     files=[],
+#     auth_settings=auth_settings,
+#     async_req=local_var_params.get('async_req'),
+#     _return_http_data_only=True,
+#     _preload_content=False,
+#     _request_timeout=local_var_params.get('_request_timeout'),
+#     collection_formats={}
+#   )
+#
+#   return response.data.decode('utf-8'))
