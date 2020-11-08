@@ -6,6 +6,7 @@ from k8kat.auth.kube_broker import broker
 from k8kat.res.base.kat_res import KatRes
 from k8kat.res.dep.kat_dep import KatDep
 from k8kat.res.ns.kat_ns import KatNs
+from k8kat.res.node.kat_node import KatNode
 from k8kat.res.pod.kat_pod import KatPod
 from k8kat.res.quotas.kat_quota import KatQuota
 from k8kat.res.rbac.rbac import KatClusterRole, KatClusterRoleBinding, KatRole, KatRoleBinding

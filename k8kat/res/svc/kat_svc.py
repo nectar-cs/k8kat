@@ -1,6 +1,8 @@
-from typing import Dict
+import traceback
+from typing import Dict, Optional
 
-from kubernetes.client import V1ServicePort
+from kubernetes.client import V1ServicePort, V1Service
+from kubernetes.client.rest import ApiException
 
 from k8kat.auth.kube_broker import broker
 from k8kat.res.base.kat_res import KatRes
@@ -14,9 +16,35 @@ class KatSvc(KatRes):
   def kind(self):
     return "Service"
 
+  def body(self) -> V1Service:
+    return self.raw
+
+  def proxy_get(self, path, port=None) -> Optional[str]:
+    port = port if port else self.first_tcp_port_num()
+    if port:
+      try:
+        return broker.coreV1.connect_get_namespaced_service_proxy_with_path(
+          name=f"{self.name}:{port}",
+          namespace=self.ns,
+          path=path
+        )
+      except ApiException:
+        print(f"[k8kat:svc] proxy {self.name} -> {path}[{port} failed]")
+        print(traceback.format_exc())
+      return None
+    else:
+      print(f"[k8kat:svc] can't infer {self.name} port for proxy")
+      return None
+
   @property
   def pod_select_labels(self) -> Dict[str, str]:
     return self.raw.spec.selector or {}
+
+  def first_tcp_port_num(self) -> Optional[int]:
+    tcp_finder = lambda p: (p.protocol or '').lower() == 'tcp'
+    port_obj = next(filter(tcp_finder, self.body().spec.ports), None)
+    return port_obj.port if port_obj else None
+
 
   @property
   def main_port_obj(self) -> V1ServicePort:
