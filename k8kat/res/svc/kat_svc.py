@@ -5,6 +5,7 @@ from kubernetes.client import V1ServicePort, V1Service
 from kubernetes.client.rest import ApiException
 
 from k8kat.auth.kube_broker import broker
+from k8kat.res.base import rest_backend
 from k8kat.res.base.kat_res import KatRes
 from k8kat.utils.main import utils
 from k8kat.utils.main.class_property import classproperty
@@ -19,15 +20,38 @@ class KatSvc(KatRes):
   def body(self) -> V1Service:
     return self.raw
 
-  def proxy_get(self, path, port=None) -> Optional[str]:
+  def proxy_get(self, path: str, args, port=None) -> Optional[str]:
     port = port if port else self.first_tcp_port_num()
     if port:
       try:
-        return broker.coreV1.connect_get_namespaced_service_proxy_with_path(
+        # return broker.coreV1.connect_get_namespaced_service_proxy(
+        #   name=f"{self.name}:{port}",
+        #   namespace=self.ns,
+        #   path=f"{path}{args}",
+        # )
+        # return broker.coreV1.connect_get_namespaced_service_proxy(
+        #   name=f"{self.name}:{port}",
+        #   namespace=self.ns,
+        #   path=f"",
+        # )
+        return rest_backend.svc_proxy_get(
           name=f"{self.name}:{port}",
           namespace=self.ns,
-          path=path
+          path=path,
+          args=args
         )
+        # return broker.coreV1.connect_get_namespaced_service_proxy_with_path(
+        #   f"{self.name}:{port}",
+        #   self.ns,
+        #   path,
+        #   args
+        # )
+        # return broker.coreV1.connect_get_namespaced_service_proxy_with_path(
+        #   name=f"{self.name}:{port}",
+        #   namespace=self.ns,
+        #   path='',
+        #   path2=f"{path}{args}",
+        # )
       except ApiException:
         print(f"[k8kat:svc] proxy {self.name} -> {path}[{port} failed]")
         print(traceback.format_exc())
