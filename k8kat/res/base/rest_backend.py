@@ -40,8 +40,6 @@ def svc_proxy_get(name, namespace, path, args, **kwargs):  # noqa: E501
   body_params = None
   # HTTP header `Accept`
 
-  print(f"URL PARAMS {query_params}")
-
   r = api_client.call_api(
     '/api/v1/namespaces/{namespace}/services/{name}/proxy/{path}', 'GET',
     path_params,

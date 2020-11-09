@@ -20,38 +20,16 @@ class KatSvc(KatRes):
   def body(self) -> V1Service:
     return self.raw
 
-  def proxy_get(self, path: str, args, port=None) -> Optional[str]:
+  def proxy_get(self, path: str, args: Dict, port=None) -> Optional[str]:
     port = port if port else self.first_tcp_port_num()
     if port:
       try:
-        # return broker.coreV1.connect_get_namespaced_service_proxy(
-        #   name=f"{self.name}:{port}",
-        #   namespace=self.ns,
-        #   path=f"{path}{args}",
-        # )
-        # return broker.coreV1.connect_get_namespaced_service_proxy(
-        #   name=f"{self.name}:{port}",
-        #   namespace=self.ns,
-        #   path=f"",
-        # )
         return rest_backend.svc_proxy_get(
           name=f"{self.name}:{port}",
           namespace=self.ns,
           path=path,
-          args=args
+          args=(args or {})
         )
-        # return broker.coreV1.connect_get_namespaced_service_proxy_with_path(
-        #   f"{self.name}:{port}",
-        #   self.ns,
-        #   path,
-        #   args
-        # )
-        # return broker.coreV1.connect_get_namespaced_service_proxy_with_path(
-        #   name=f"{self.name}:{port}",
-        #   namespace=self.ns,
-        #   path='',
-        #   path2=f"{path}{args}",
-        # )
       except ApiException:
         print(f"[k8kat:svc] proxy {self.name} -> {path}[{port} failed]")
         print(traceback.format_exc())
