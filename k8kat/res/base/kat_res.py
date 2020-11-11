@@ -83,10 +83,9 @@ class KatRes:
   def annotations(self) -> Dict[str, str]:
     return self.raw.metadata.annotations or {}
 
-  @property
-  def created_at(self) -> Optional[str]:
-    ts = self.raw.metadata.creation_timestamp
-    return ts.isoformat(' ', 'seconds') if ts else None
+  def created_at(self) -> datetime:
+    return self.raw.metadata.creation_timestamp
+
 
 # --
 # --

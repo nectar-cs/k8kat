@@ -48,6 +48,12 @@ class TestKatPod(Base.TestKatRes):
   #   self.pre_crash_assertions(pod)
   #   self.pending_morbidly_assertions(pod)
 
+  def test_cpu_abuser(self):
+    pod = create_cpu_abuser(ns=self.pns, name=self.res_name)
+    time.sleep(10)
+    pod.reload()
+    self.scheduling_failed_assertions(pod)
+
   def test_config_map_wisher(self):
     pod = create_config_map_wisher(ns=self.pns, name=self.res_name)
     self.pre_crash_assertions(pod)
@@ -133,12 +139,12 @@ class TestKatPod(Base.TestKatRes):
 
   def test_requests_and_limits_with_undefined(self):
     p1 = KatPod(simple_pod.create(ns=self.pns, name=utils.rand_str()), True)
-    self.assertEqual(p1.cpu_request(), None)
-    self.assertEqual(p1.cpu_limit(), None)
-    self.assertEqual(p1.mem_request(), None)
-    self.assertEqual(p1.mem_limit(), None)
-    self.assertEqual(p1.eph_storage_request(), None)
-    self.assertEqual(p1.eph_storage_limit(), None)
+    self.assertEqual(p1.cpu_request(), 0)
+    self.assertEqual(p1.cpu_limit(), 0)
+    self.assertEqual(p1.mem_request(), 0)
+    self.assertEqual(p1.mem_limit(), 0)
+    self.assertEqual(p1.eph_storage_request(), 0)
+    self.assertEqual(p1.eph_storage_limit(), 0)
 
   def test_fmt_command(self):
     call = pod_utils.coerce_cmd_format
@@ -172,7 +178,7 @@ class TestKatPod(Base.TestKatRes):
     time.sleep(10)
     pod.reload()
 
-  def running_morbidly_assertions(self, pod):
+  def running_morbidly_assertions(self, pod: KatPod):
     self.assertTrue(pod.is_running())
     self.assertFalse(pod.is_pending())
     self.assertFalse(pod.is_running_normally())
@@ -182,7 +188,7 @@ class TestKatPod(Base.TestKatRes):
     self.assertTrue(pod.has_settled())
     self.assertEqual(pod.ternary_status(), "negative")
 
-  def pending_morbidly_assertions(self, pod):
+  def pending_morbidly_assertions(self, pod: KatPod):
     self.assertFalse(pod.is_running())
     self.assertTrue(pod.is_pending())
     self.assertFalse(pod.is_running_normally())
@@ -191,6 +197,10 @@ class TestKatPod(Base.TestKatRes):
     self.assertFalse(pod.is_running_morbidly())
     self.assertTrue(pod.has_settled())
     self.assertEqual(pod.ternary_status(), "negative")
+
+  def scheduling_failed_assertions(self, pod: KatPod):
+    self.assertTrue(pod.did_scheduling_fail())
+    self.assertTrue(pod.is_pending_morbidly())
 
 # --
 # --
@@ -240,6 +250,24 @@ def create_crasher(**kwargs) -> KatPod:
   return KatPod(simple_pod.create(
     command=["not-a-real-command"],
     **kwargs
+  ))
+
+
+def create_cpu_abuser(**kwargs) -> KatPod:
+  orig = simple_pod.pod(**kwargs)
+  orig.spec.containers = [
+    V1Container(
+      name='cpu-abuser',
+      image='nginx',
+      resources=dict(
+        requests=dict(cpu='50'),
+      )
+    )
+  ]
+
+  return KatPod(broker.coreV1.create_namespaced_pod(
+    body=orig,
+    namespace=kwargs.get('ns')
   ))
 
 

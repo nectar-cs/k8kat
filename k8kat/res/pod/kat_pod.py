@@ -1,3 +1,4 @@
+from datetime import datetime
 from functools import lru_cache
 from http.client import HTTPResponse
 from typing import List, Optional, Callable, TypeVar, Any
@@ -13,6 +14,7 @@ from k8kat.res.pod import pod_utils
 from k8kat.res.pod.pod_utils import when_running_normally
 from k8kat.utils.main import utils
 from k8kat.utils.main.class_property import classproperty
+from k8kat.utils.main.types import IntelDict
 
 Fn = TypeVar('Fn', bound=Callable[..., Any])
 KP = TypeVar('KP')
@@ -88,21 +90,21 @@ class KatPod(KatRes):
     else:
       return 'pending'
 
-  def is_running_normally(self):
+  def is_running_normally(self) -> bool:
     if self.is_running():
       main_states = self.main_container_states()
       runners = filter_states(main_states, 'running')
       return len(main_states) == len(runners)
 
-  def is_pending_normally(self):
+  def is_pending_normally(self) -> bool:
     return self.is_pending() and \
            not self.is_pending_morbidly()
 
-  def is_running_morbidly(self):
+  def is_running_morbidly(self) -> bool:
     return self.is_running() and \
            not self.is_running_normally()
 
-  def is_working(self):
+  def is_working(self) -> bool:
     return self.is_running_normally() or \
            self.has_succeeded()
 
@@ -114,27 +116,37 @@ class KatPod(KatRes):
   def has_settled(self) -> bool:
     return not self.is_pending_normally()
 
+  def did_scheduling_fail(self):
+    lifecycle_conditions = self.body().status.conditions
+    return did_scheduling_fail(lifecycle_conditions)
+
   def is_pending_morbidly(self) -> bool:
     """Whether this pod is pending because one or more container is failing to start."""
     if self.is_pending():
 
-      if has_morbid_condition_statuses(self.body().status.conditions):
+      if self.did_scheduling_fail():
         return True
 
       init_states = self.init_container_states()
       waiting_init = filter_states(init_states, 'waiting')
-      if has_morbid_pending_reasons(waiting_init):
+      if len(morbid_pending_reasons(waiting_init)) > 0:
         return True
 
       main_states = self.main_container_states()
       main_init = filter_states(main_states, 'waiting')
-      if has_morbid_pending_reasons(main_init):
+      if len(morbid_pending_reasons(main_init)):
         return True
 
       return False
-
     else:
       return False
+
+  def is_old_enough_for_morbidity(self) -> bool:
+    if self.created_at():
+      elapsed_since_creation = datetime.now() - self.created_at()
+      return elapsed_since_creation.seconds > 7.5
+    else:
+      return True
 
   def is_running(self) -> bool:
     """Whether this pod is in the Running state"""
@@ -292,6 +304,20 @@ class KatPod(KatRes):
       list=broker.coreV1.list_namespaced_pod
     )
 
+  def generate_intel_items(self) -> List[IntelDict]:
+    if self.is_broken():
+      if self.is_pending_morbidly():
+        return self.pending_morbidly_intel()
+      elif self.is_running_morbidly():
+        return self.running_morbidly_intel()
+    else:
+      return []
+
+  # def pending_morbidly_intel(self) -> List[IntelDict]:
+
+  def running_morbidly_intel(self) -> List[IntelDict]:
+    pass
+
 # --
 # --
 # --
@@ -309,23 +335,18 @@ class KatPod(KatRes):
     return [status.state for status in statuses]
 
 
-def has_morbid_condition_statuses(conditions: List[V1PodCondition]):
+def did_scheduling_fail(conditions: List[V1PodCondition]) -> bool:
   def finder(name: str):
     pred = lambda c: c.type == name
-    return next(filter(pred, conditions), None)
+    return next(filter(pred, conditions or []), None)
 
-  schedule_cond = finder('PodScheduled')
-  if schedule_cond and not schedule_cond.status == 'True':
-    return True
+  relevant_cond = finder('PodScheduled')
+  return relevant_cond and relevant_cond.status == 'False'
 
-  return False
-
-
-def has_morbid_pending_reasons(states: List[V1ContainerState]):
+def morbid_pending_reasons(states: List[V1ContainerState]):
   stated_reasons = set([state.waiting.reason for state in states])
   good_reasons = {'ContainerCreating', 'PullingImage', 'PodInitializing'}
-  bad_reasons = stated_reasons - good_reasons
-  return len(bad_reasons) > 0
+  return stated_reasons - good_reasons
 
 
 def filter_states(states: List[V1ContainerState], _type: str) -> List[V1ContainerState]:

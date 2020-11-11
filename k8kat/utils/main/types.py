@@ -18,3 +18,8 @@ class PodMetricsDict(TypedDict):
 class NodeMetricsDict(TypedDict):
   usage: UsageDict
 
+
+class IntelDict(TypedDict):
+  tone: str
+  title: str
+  message: str
