@@ -4,7 +4,7 @@ from typing import List, Optional, Callable, TypeVar, Any
 
 from kubernetes import stream as k8s_streaming
 from kubernetes.client import V1Pod, V1Container, \
-  V1ContainerState
+  V1ContainerState, V1PodCondition
 from kubernetes.client.rest import ApiException
 
 from k8kat.auth.kube_broker import broker
@@ -117,6 +117,10 @@ class KatPod(KatRes):
   def is_pending_morbidly(self) -> bool:
     """Whether this pod is pending because one or more container is failing to start."""
     if self.is_pending():
+
+      if has_morbid_condition_statuses(self.body().status.conditions):
+        return True
+
       init_states = self.init_container_states()
       waiting_init = filter_states(init_states, 'waiting')
       if has_morbid_pending_reasons(waiting_init):
@@ -124,7 +128,11 @@ class KatPod(KatRes):
 
       main_states = self.main_container_states()
       main_init = filter_states(main_states, 'waiting')
-      return has_morbid_pending_reasons(main_init)
+      if has_morbid_pending_reasons(main_init):
+        return True
+
+      return False
+
     else:
       return False
 
@@ -300,6 +308,18 @@ class KatPod(KatRes):
   def init_container_states(self) -> List[V1ContainerState]:
     statuses = self.body().status.init_container_statuses or []
     return [status.state for status in statuses]
+
+
+def has_morbid_condition_statuses(conditions: List[V1PodCondition]):
+  def finder(name: str):
+    pred = lambda c: c.type == name
+    return next(filter(pred, conditions), None)
+
+  schedule_cond = finder('PodScheduled')
+  if schedule_cond and not schedule_cond.status == 'True':
+    return True
+
+  return False
 
 
 def has_morbid_pending_reasons(states: List[V1ContainerState]):
