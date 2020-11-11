@@ -175,6 +175,13 @@ class KatRes:
     return condition_met
 
   def events(self):
+    # api = broker.coreV1
+    # raw_list = api.list_namespaced_event(
+    #   namespace=self.ns,
+    #   field_selector=f"involved_object.uid={self.uid}"
+    # ).items
+    # kat_list = [KatEvent(raw_event) for raw_event in raw_list]
+    # return [event for event in kat_list if event.is_for(self)]
     api = broker.coreV1
     raw_list = api.list_namespaced_event(namespace=self.ns).items
     kat_list = [KatEvent(raw_event) for raw_event in raw_list]

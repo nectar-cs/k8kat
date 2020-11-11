@@ -1,8 +1,22 @@
+from kubernetes.client import V1Event
+
+from k8kat.utils.main.types import IntelDict
+
 
 class KatEvent:
 
   def __init__(self, raw):
     self.raw = raw
+
+  def body(self) -> V1Event:
+    return self.raw
+
+  def intel_bundle(self) -> IntelDict:
+    return dict(
+      type='Event',
+      message=self.message,
+      status=self.reason
+    )
 
   @property
   def name(self):
@@ -44,7 +58,10 @@ class KatEvent:
   def occurred_at(self):
     return self.raw.first_timestamp
 
-  def meaning(self):
+  def is_failure(self) -> bool:
+    return not self.body().type == 'Normal'
+
+  def hint(self):
     if self.is_config_map_err():
       return "This suggests it's not reading a ConfigMap right."
     elif self.is_secrets_err():

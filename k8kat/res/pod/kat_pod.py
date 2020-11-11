@@ -10,6 +10,7 @@ from kubernetes.client.rest import ApiException
 
 from k8kat.auth.kube_broker import broker
 from k8kat.res.base.kat_res import KatRes, MetricsDict
+from k8kat.res.events.kat_event import KatEvent
 from k8kat.res.pod import pod_utils
 from k8kat.res.pod.pod_utils import when_running_normally
 from k8kat.utils.main import utils
@@ -306,17 +307,47 @@ class KatPod(KatRes):
 
   def generate_intel_items(self) -> List[IntelDict]:
     if self.is_broken():
-      if self.is_pending_morbidly():
-        return self.pending_morbidly_intel()
-      elif self.is_running_morbidly():
-        return self.running_morbidly_intel()
+      return [
+        *self.bad_events_intel(),
+        *self.running_morbidly_intel(),
+        *self.bad_events_intel()
+      ]
     else:
       return []
 
-  # def pending_morbidly_intel(self) -> List[IntelDict]:
-
   def running_morbidly_intel(self) -> List[IntelDict]:
-    pass
+    return []
+
+  def condition_status_intel(self):
+    intel = []
+    for cond in self.body().status.conditions or []:
+      if cond.status == 'False':
+        intel.append(IntelDict(
+          type='StatusCondition',
+          status=cond.reason,
+          message=cond.message
+        ))
+    return intel
+
+  def container_status_intel(self):
+    bad_states: List[V1ContainerState] = filter_states([
+      *self.init_container_states(),
+      *self.main_container_states()
+    ], 'waiting')
+
+    intel = []
+    for state in bad_states:
+      intel.append(IntelDict(
+        type='ContainerStatus',
+        message=state.waiting.message,
+        status=state.waiting.reason
+      ))
+
+    return intel
+
+  def bad_events_intel(self) -> List[IntelDict]:
+    bad_events = list(filter(KatEvent.is_failure, self.events()))
+    return list(map(KatEvent.intel_bundle, bad_events))
 
 # --
 # --

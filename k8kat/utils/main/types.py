@@ -20,6 +20,6 @@ class NodeMetricsDict(TypedDict):
 
 
 class IntelDict(TypedDict):
-  tone: str
-  title: str
+  type: str
+  status: str
   message: str
