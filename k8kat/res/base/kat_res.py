@@ -269,11 +269,11 @@ class KatRes:
 
   def cpu_used(self) -> float:
     """Returns resource's total CPU usage in cores or 0"""
-    return self._resource_usage('cpu')
+    return self._resource_usage('cpu') or 0
 
   def mem_used(self) -> float:
     """Returns resource's total memory usage in bytes or 0"""
-    return self._resource_usage('memory')
+    return self._resource_usage('memory') or 0
 
   def _resource_usage(self, resource_type: str) -> Optional[float]:
     per_pod_metrics: List[PodMetricsDict] = self.load_per_pod_metrics()

@@ -185,38 +185,37 @@ class KatPod(KatRes):
 # --
 # --
 
-  def cpu_request(self) -> Optional[float]:
+  def cpu_request(self) -> float:
     """Returns pod's total memory limits in bytes."""
     return self.read_resources_req_or_lim('requests', 'cpu')
 
-  def cpu_limit(self) -> Optional[float]:
+  def cpu_limit(self) -> float:
     """Returns pod's total memory limits in bytes."""
     return self.read_resources_req_or_lim('limits', 'cpu')
 
-  def mem_limit(self) -> Optional[float]:
+  def mem_limit(self) -> float:
     """Returns pod's total memory limits in bytes."""
     return self.read_resources_req_or_lim('limits', 'memory')
 
-  def mem_request(self) -> Optional[float]:
+  def mem_request(self) -> float:
     """Returns pod's total memory requests in bytes."""
     return self.read_resources_req_or_lim('requests', 'memory')
 
-  def eph_storage_limit(self) -> Optional[float]:
+  def eph_storage_limit(self) -> float:
     """Returns pod's total ephemeral storage limits in bytes."""
     return self.read_resources_req_or_lim('limits', 'ephemeral-storage')
 
-  def eph_storage_request(self) -> Optional[float]:
+  def eph_storage_request(self) -> float:
     """Returns pod's total ephemeral storage requests in bytes."""
     return self.read_resources_req_or_lim('requests', 'ephemeral-storage')
 
-  def read_resources_req_or_lim(self, metric: str, resource: str) -> Optional[float]:
+  def read_resources_req_or_lim(self, metric: str, resource: str) -> float:
     """Fetches pod's total resource capacity (either limits or requests)
     for either CPU (cores) or memory (bytes)."""
-    container_lvl_value = lambda c: pod_utils.container_req_or_lim(c, metric, resource)
+    def container_level_value(container):
+      return pod_utils.container_req_or_lim(container, metric, resource) or 0
     containers = self.body().spec.containers or []
-    per_container_results = [container_lvl_value(c) for c in containers]
-    are_all_undefined = len([v for v in per_container_results if v is not None]) == 0
-    return sum(per_container_results) if not are_all_undefined else None
+    return sum(list(map(container_level_value, containers)))
 
   @when_running_normally
   @lru_cache(maxsize=128)
