@@ -13,7 +13,7 @@ from k8kat.res.events.kat_event import KatEvent
 from k8kat.utils.main import utils, res_utils, units
 from k8kat.utils.main.api_defs_man import api_defs_man
 from k8kat.utils.main.class_property import classproperty
-from k8kat.utils.main.types import PodMetricsDict
+from k8kat.utils.main.types import PodMetricsDict, IntelDict
 
 MetricsDict = TypeVar('MetricsDict')
 KR = TypeVar('KR', bound='KatRes')
@@ -163,7 +163,7 @@ class KatRes:
   def wait_until(self, predicate, max_time_sec=None) -> bool:
     start_time = time.time()
     condition_met = False
-    for attempts in range(0, 50):
+    for attempts in range(0, 1_000):
       if predicate():
         condition_met = True
         break
@@ -173,6 +173,9 @@ class KatRes:
         time.sleep(1)
         self.reload()
     return condition_met
+
+  def intel(self) -> List[IntelDict]:
+    return []
 
   def events(self):
     # api = broker.coreV1

@@ -39,6 +39,7 @@ class TestKatDep(Base.TestKatRes):
     dep = KatDep(create(ns=self.pns, name=self.res_name, image='bro-ken'))
     dep.wait_until(dep.has_settled)
     self.assertEqual('negative', dep.ternary_status())
+    self.assertGreater(len(dep.intel()), 0)
 
   def test_pods(self):
     def make():
@@ -73,4 +74,3 @@ class TestKatDep(Base.TestKatRes):
         dict(name='y', usage=dict(memory=None))
       ])
     ]
-

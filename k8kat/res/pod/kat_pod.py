@@ -305,7 +305,7 @@ class KatPod(KatRes):
       list=broker.coreV1.list_namespaced_pod
     )
 
-  def generate_intel_items(self) -> List[IntelDict]:
+  def intel(self) -> List[IntelDict]:
     if self.is_broken():
       return [
         *self.bad_events_intel(),

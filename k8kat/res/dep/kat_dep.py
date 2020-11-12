@@ -9,6 +9,7 @@ from k8kat.res.base.label_set_expressions import label_conditions_to_expr
 from k8kat.res.pod.kat_pod import KP
 from k8kat.res.relation.relation import Relation
 from k8kat.utils.main.class_property import classproperty
+from k8kat.utils.main.types import IntelDict
 
 
 class KatDep(KatRes):
@@ -24,6 +25,7 @@ class KatDep(KatRes):
       'deployment.apps',  # why? seems terrible
       'deploy'
     ]
+
 
   @property
   def pod_spec(self) -> V1PodSpec:
@@ -68,6 +70,16 @@ class KatDep(KatRes):
     from k8kat.res.pod.kat_pod import KatPod
     pods: List[KatPod] = self.pods()
     return len([p for p in pods if p.is_broken()]) > 0
+
+  def intel(self) -> List[IntelDict]:
+    items = []
+    for pod in self.pods():
+      for intel_item in pod.intel():
+        items.append({
+          **intel_item,
+          'type': f"{intel_item['type']} ({pod.name})"
+        })
+    return items
 
   def has_settled(self) -> bool:
     from k8kat.res.pod.kat_pod import KatPod
