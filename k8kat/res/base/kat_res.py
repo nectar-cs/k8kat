@@ -84,8 +84,15 @@ class KatRes:
     return self.raw.metadata.annotations or {}
 
   def created_at(self) -> datetime:
-    return self.raw.metadata.creation_timestamp
+    value: datetime = self.raw.metadata.creation_timestamp
+    return value.replace(tzinfo=None) if value else None
 
+  def seconds_existed(self) -> int:
+    created_ts = self.created_at()
+    if created_ts:
+      return (datetime.utcnow() - created_ts).seconds
+    else:
+      return 1_000_000_000
 
 # --
 # --

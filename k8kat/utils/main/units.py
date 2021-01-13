@@ -35,7 +35,7 @@ def humanize_cpu_quant(cores: float, with_unit: bool = False) -> str:
   return f"{base} {'Cores' if with_unit else ''}".strip(' ')
 
 
-def humanize_mem_quant(byte_value: float) -> Optional[str]:
+def mem_quant_mult(byte_value: float) -> Optional[Tuple[int, str]]:
   """ Returns memory quantity converted from bytes to higher level units.
   Automatically picks the right units for friendliest display."""
   unit_map_items = list(unit_map.items())
@@ -46,6 +46,13 @@ def humanize_mem_quant(byte_value: float) -> Optional[str]:
     if try_unit and bytes_in_unit < 1000:
       unit = try_unit
       break
+  return bytes_in_unit, unit
+
+
+def humanize_mem_quant(byte_value: float) -> Optional[str]:
+  """ Returns memory quantity converted from bytes to higher level units.
+  Automatically picks the right units for friendliest display."""
+  bytes_in_unit, unit = mem_quant_mult(byte_value)
   return f"{int(bytes_in_unit)}{unit}b" if bytes_in_unit else None
 
 

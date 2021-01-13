@@ -1,4 +1,7 @@
+import time
+
 from k8kat.res.dep.kat_dep import KatDep
+from k8kat.res.pod.kat_pod import KatPod
 from k8kat.tests.res.base.test_kat_res import Base
 from k8kat.utils.main import utils
 from k8kat.utils.testing import simple_dep
@@ -18,6 +21,75 @@ class TestKatDep(Base.TestKatRes):
   def test_annotate(self,  wait_sec=2):
     pass
 
+  def test_bad_to_good_state_progression(self):
+    dep = KatDep(simple_dep.create(
+      ns=self.pns,
+      name=self.res_name,
+      image='bullshit-asd-x12'
+    ))
+    i = 0
+
+    def pod_statuses():
+      return [f"{p.name}[{p.ternary_status()}]" for p in dep.pods()]
+
+    while i in range(20):
+      dep.reload()
+      print(f"{dep.ternary_status()} {pod_statuses()} {dep.seconds_existed()}")
+      time.sleep(1)
+      if not dep.ternary_status() == 'pending':
+        break
+    print("PHASE 2")
+    print(f"{dep.ternary_status()} {pod_statuses()} {dep.seconds_existed()}")
+    time.sleep(4)
+
+    first_pod: KatPod = dep.pods()[0]
+    dep.replace_image("nginx")
+
+    while i in range(20):
+      dep.reload()
+      first_pod.reload()
+      print(f"{dep.ternary_status()} {pod_statuses()} {dep.seconds_existed()}")
+      time.sleep(1)
+      if not dep.body():
+        break
+      # if dep.is_terminating():
+      #   print(f"am terminating {dep.is_terminating()}")
+
+  def test_good_to_bad_state_progression(self):
+    dep = KatDep(simple_dep.create(
+      ns=self.pns,
+      name=self.res_name,
+      image='nginx'
+    ))
+    i = 0
+
+    def pod_statuses():
+      return [f"{p.name}[{p.ternary_status()}]" for p in dep.pods()]
+
+    while i in range(20):
+      dep.reload()
+      print(f"{dep.ternary_status()} {pod_statuses()} {dep.seconds_existed()}")
+      time.sleep(1)
+      if not dep.ternary_status() == 'pending':
+        break
+
+    print("PHASE 2")
+    print(f"{dep.ternary_status()} {pod_statuses()} {dep.seconds_existed()}")
+    time.sleep(4)
+
+    first_pod: KatPod = dep.pods()[0]
+    dep.replace_image("bullshit-asd-x12")
+
+    while i in range(20):
+      dep.reload()
+      first_pod.reload()
+      print(f"{dep.ternary_status()} {pod_statuses()} {dep.seconds_existed()}")
+      time.sleep(1)
+      if not dep.body():
+        break
+      # if dep.is_terminating():
+      #   print(f"am terminating {dep.is_terminating()}")
+
   def test_image_name(self):
     dep = KatDep(create(ns=self.pns, name=self.res_name, image='busybox'))
     self.assertEqual("busybox", dep.image_name())
@@ -33,6 +105,7 @@ class TestKatDep(Base.TestKatRes):
     dep = KatDep(create(ns=self.pns, name=self.res_name, replicas=2))
     self.assertEqual('pending', dep.ternary_status())
     dep.wait_until(dep.is_running_normally)
+    time.sleep(4)
     self.assertEqual('positive', dep.ternary_status())
 
   def test_ternary_state_negative(self):

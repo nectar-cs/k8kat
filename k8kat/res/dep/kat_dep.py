@@ -1,5 +1,6 @@
+from datetime import datetime
 from functools import lru_cache
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from kubernetes.client import V1PodSpec, V1Container, V1Scale, V1ScaleSpec, V1Deployment
 
@@ -26,7 +27,6 @@ class KatDep(KatRes):
       'deploy'
     ]
 
-
   @property
   def pod_spec(self) -> V1PodSpec:
     return self.raw.spec.template.spec
@@ -47,6 +47,10 @@ class KatDep(KatRes):
   def ready_replicas(self):
     return self.raw.status.ready_replicas
 
+  @property
+  def replica_count(self):
+    return self.raw.status.replicas
+
   # --
   # --
   # --
@@ -56,15 +60,34 @@ class KatDep(KatRes):
   # --
 
   def ternary_status(self):
-    if self.is_running_normally():
-      return 'positive'
-    elif self.has_broken_pod():
-      return 'negative'
+    from k8kat.res.pod.kat_pod import KatPod
+    statuses = list(map(KatPod.ternary_status, self.pods()))
+    if len(set(statuses)) == 1:
+      return statuses[0]
+    elif len(set(statuses)) > 1:
+      statuses = list(map(KatPod.ternary_status, self.latest_gen_pods()))
+      return 'negative' if 'negative' in statuses else 'pending'
     else:
       return 'pending'
 
+  def latest_gen_pods(self) -> List:
+    from k8kat.res.pod.kat_pod import KatPod
+    pods: List[KatPod] = sorted(self.pods(), key=lambda p: p.created_at())
+    latest_generation_ts = datetime.min
+    latest_generation_pods = []
+
+    for i in range(len(pods)):
+      pod = pods[i]
+      if (pod.created_at() - latest_generation_ts).seconds > 3:
+        latest_generation_ts = pod.created_at()
+        latest_generation_pods = [pod]
+      else:
+        latest_generation_pods.append(pod)
+
+    return latest_generation_pods
+
   def is_running_normally(self):
-    return self.ready_replicas == self.desired_replicas
+    return self.ready_replicas == self.replica_count
 
   def has_broken_pod(self) -> bool:
     from k8kat.res.pod.kat_pod import KatPod

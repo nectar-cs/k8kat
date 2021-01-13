@@ -30,6 +30,25 @@ class TestKatPod(Base.TestKatRes):
 # --
 # --
 
+  # def test_state_progression(self):
+  #   pod = KatPod(simple_pod.create(ns=self.pns, name=self.res_name))
+  #   i = 0
+  #   while i in range(20):
+  #     pod.reload()
+  #     print(f"{pod.ternary_status()} {pod.seconds_existed()}")
+  #     time.sleep(1)
+  #     if not pod.ternary_status() == 'pending':
+  #       break
+  #   print("PHASE 2")
+  #   print(f"{pod.ternary_status()} {pod.seconds_existed()}")
+  #   pod.delete(wait_until_gone=False)
+  #   while i in range(20):
+  #     pod.reload()
+  #     print(f"{pod.ternary_status()} {pod.seconds_existed()}")
+  #     time.sleep(1)
+  #     if pod.is_terminating():
+  #       print(f"am terminating {pod.is_terminating()}")
+
   def test_ternary_state(self):
     pass
 
