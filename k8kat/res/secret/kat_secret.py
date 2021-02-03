@@ -1,3 +1,6 @@
+import base64
+from typing import Dict
+
 from kubernetes.client import V1Secret
 
 from k8kat.auth.kube_broker import broker
@@ -13,6 +16,14 @@ class KatSecret(KatRes):
   @classproperty
   def kind(self):
     return "Secret"
+
+  def decoded_data(self) -> Dict:
+    def dec(enc_str: str) -> str:
+      message_bytes = base64.b64decode(enc_str.encode('ascii'))
+      return message_bytes.decode('ascii')
+
+    encoded_data: Dict = self.raw_ob().data or {}
+    return {k: dec(v) for k, v in encoded_data.items()}
 
   @classmethod
   def list_excluding_sys(cls, ns=None, **query):
